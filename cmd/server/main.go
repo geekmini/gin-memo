@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"gin-sample/internal/config"
+	"gin-sample/internal/database"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,6 +13,10 @@ import (
 func main() {
 	// Load configuration from .env
 	cfg := config.Load()
+
+	// Connect to MongoDB
+	mongoDB := database.NewMongoDB(cfg.MongoURI, cfg.MongoDatabase)
+	defer mongoDB.Close() // Close connection when main() exits
 
 	// Set Gin mode (debug/release)
 	gin.SetMode(cfg.GinMode)
