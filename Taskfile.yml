@@ -1,0 +1,47 @@
+version: '3'
+
+# Load environment variables from .env file
+dotenv: ['.env']
+
+vars:
+  BINARY_NAME: gin-sample
+
+tasks:
+  # Development
+  run:
+    desc: Run the server
+    cmd: go run cmd/server/main.go
+
+  build:
+    desc: Build the binary
+    cmd: go build -o {{.BINARY_NAME}} cmd/server/main.go
+
+  test:
+    desc: Run tests
+    cmd: go test -v ./...
+
+  sync:
+    desc: Sync dependencies
+    cmd: go mod tidy
+
+  # Docker
+  docker:up:
+    desc: Start Docker services (MongoDB, Redis)
+    cmd: docker compose up -d
+
+  docker:down:
+    desc: Stop Docker services
+    cmd: docker compose down
+
+  docker:logs:
+    desc: View Docker logs
+    cmd: docker compose logs -f
+
+  # Utilities
+  lint:
+    desc: Run linter (requires golangci-lint)
+    cmd: golangci-lint run
+
+  fmt:
+    desc: Format code
+    cmd: go fmt ./...
