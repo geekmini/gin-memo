@@ -8,19 +8,19 @@ API for fetching a user's voice memos. This is a **read-only** API - voice memos
 
 ### VoiceMemo
 
-| Field | Type | Description |
-|-------|------|-------------|
-| id | string | Unique identifier (MongoDB ObjectID) |
-| userId | string | Owner's user ID (foreign key) |
-| title | string | Memo title |
-| transcription | string | Full text transcription of the audio |
-| audioFileUrl | string | Pre-signed S3 URL (expires after 1 hour) |
-| duration | int | Audio duration in seconds |
-| fileSize | int | File size in bytes |
-| audioFormat | string | Audio format (mp3, wav, m4a, etc.) |
-| tags | []string | Array of tags |
-| isFavorite | bool | Whether memo is starred |
-| createdAt | datetime | When the recording was created |
+| Field         | Type     | Description                              |
+| ------------- | -------- | ---------------------------------------- |
+| id            | string   | Unique identifier (MongoDB ObjectID)     |
+| userId        | string   | Owner's user ID (foreign key)            |
+| title         | string   | Memo title                               |
+| transcription | string   | Full text transcription of the audio     |
+| audioFileUrl  | string   | Pre-signed S3 URL (expires after 1 hour) |
+| duration      | int      | Audio duration in seconds                |
+| fileSize      | int      | File size in bytes                       |
+| audioFormat   | string   | Audio format (mp3, wav, m4a, etc.)       |
+| tags          | []string | Array of tags                            |
+| isFavorite    | bool     | Whether memo is starred                  |
+| createdAt     | datetime | When the recording was created           |
 
 ### Relationships
 
@@ -41,10 +41,10 @@ GET /api/v1/voice-memos
 
 **Query Parameters:**
 
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| page | int | 1 | Page number (1-indexed) |
-| limit | int | 10 | Items per page (max: 10) |
+| Param | Type | Default | Description              |
+| ----- | ---- | ------- | ------------------------ |
+| page  | int  | 1       | Page number (1-indexed)  |
+| limit | int  | 10      | Items per page (max: 10) |
 
 **Response:** `200 OK`
 
@@ -81,10 +81,10 @@ GET /api/v1/voice-memos
 
 **Errors:**
 
-| Status | Description |
-|--------|-------------|
-| 401 | Unauthorized - invalid or missing token |
-| 500 | Internal server error |
+| Status | Description                             |
+| ------ | --------------------------------------- |
+| 401    | Unauthorized - invalid or missing token |
+| 500    | Internal server error                   |
 
 ## Future Endpoints (Not in Scope)
 

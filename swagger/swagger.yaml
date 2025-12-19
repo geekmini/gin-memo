@@ -38,6 +38,21 @@ definitions:
       user:
         $ref: '#/definitions/models.User'
     type: object
+  models.Pagination:
+    properties:
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      totalItems:
+        example: 42
+        type: integer
+      totalPages:
+        example: 5
+        type: integer
+    type: object
   models.UpdateUserRequest:
     properties:
       email:
@@ -65,6 +80,56 @@ definitions:
       updatedAt:
         example: "2024-01-15T09:30:00Z"
         type: string
+    type: object
+  models.VoiceMemo:
+    properties:
+      audioFileUrl:
+        description: Pre-signed URL, not stored in DB
+        example: https://bucket.s3.amazonaws.com/audio/123.mp3?X-Amz-Signature=...
+        type: string
+      audioFormat:
+        example: mp3
+        type: string
+      createdAt:
+        example: "2024-01-15T09:30:00Z"
+        type: string
+      duration:
+        example: 180
+        type: integer
+      fileSize:
+        example: 2890000
+        type: integer
+      id:
+        example: 507f1f77bcf86cd799439011
+        type: string
+      isFavorite:
+        example: false
+        type: boolean
+      tags:
+        example:
+        - work
+        - meeting
+        items:
+          type: string
+        type: array
+      title:
+        example: Meeting notes
+        type: string
+      transcription:
+        example: Today we discussed the Q4 roadmap...
+        type: string
+      userId:
+        example: 507f1f77bcf86cd799439012
+        type: string
+    type: object
+  models.VoiceMemoListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/models.VoiceMemo'
+        type: array
+      pagination:
+        $ref: '#/definitions/models.Pagination'
     type: object
   response.Response:
     properties:
@@ -304,6 +369,46 @@ paths:
       summary: Update user
       tags:
       - users
+  /voice-memos:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve paginated list of the authenticated user's voice memos,
+        sorted by newest first
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10, max: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.VoiceMemoListResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: List user's voice memos
+      tags:
+      - voice-memos
 securityDefinitions:
   BearerAuth:
     description: 'Enter your bearer token in the format: Bearer {token}'

@@ -376,6 +376,72 @@
                     }
                 }
             }
+        },
+        "/voice-memos": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve paginated list of the authenticated user's voice memos, sorted by newest first",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "voice-memos"
+                ],
+                "summary": "List user's voice memos",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default: 10, max: 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.VoiceMemoListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -432,6 +498,27 @@
                 }
             }
         },
+        "models.Pagination": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "totalItems": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "totalPages": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
         "models.UpdateUserRequest": {
             "type": "object",
             "properties": {
@@ -468,6 +555,76 @@
                 "updatedAt": {
                     "type": "string",
                     "example": "2024-01-15T09:30:00Z"
+                }
+            }
+        },
+        "models.VoiceMemo": {
+            "type": "object",
+            "properties": {
+                "audioFileUrl": {
+                    "description": "Pre-signed URL, not stored in DB",
+                    "type": "string",
+                    "example": "https://bucket.s3.amazonaws.com/audio/123.mp3?X-Amz-Signature=..."
+                },
+                "audioFormat": {
+                    "type": "string",
+                    "example": "mp3"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2024-01-15T09:30:00Z"
+                },
+                "duration": {
+                    "type": "integer",
+                    "example": 180
+                },
+                "fileSize": {
+                    "type": "integer",
+                    "example": 2890000
+                },
+                "id": {
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439011"
+                },
+                "isFavorite": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "work",
+                        "meeting"
+                    ]
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Meeting notes"
+                },
+                "transcription": {
+                    "type": "string",
+                    "example": "Today we discussed the Q4 roadmap..."
+                },
+                "userId": {
+                    "type": "string",
+                    "example": "507f1f77bcf86cd799439012"
+                }
+            }
+        },
+        "models.VoiceMemoListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.VoiceMemo"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/models.Pagination"
                 }
             }
         },

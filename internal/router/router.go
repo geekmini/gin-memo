@@ -16,7 +16,7 @@ import (
 )
 
 // Setup creates and configures the Gin router.
-func Setup(userHandler *handler.UserHandler, jwtManager *auth.JWTManager) *gin.Engine {
+func Setup(userHandler *handler.UserHandler, voiceMemoHandler *handler.VoiceMemoHandler, jwtManager *auth.JWTManager) *gin.Engine {
 	r := gin.Default()
 
 	// Global middleware
@@ -48,6 +48,13 @@ func Setup(userHandler *handler.UserHandler, jwtManager *auth.JWTManager) *gin.E
 			users.GET("/:id", userHandler.GetUser)
 			users.PUT("/:id", userHandler.UpdateUser)
 			users.DELETE("/:id", userHandler.DeleteUser)
+		}
+
+		// Voice memo routes (protected)
+		voiceMemos := v1.Group("/voice-memos")
+		voiceMemos.Use(middleware.Auth(jwtManager))
+		{
+			voiceMemos.GET("", voiceMemoHandler.ListVoiceMemos)
 		}
 	}
 

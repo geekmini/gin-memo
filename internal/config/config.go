@@ -18,6 +18,11 @@ type Config struct {
 	RedisURI      string
 	JWTSecret     string
 	JWTExpiry     time.Duration
+	S3Endpoint    string
+	S3AccessKey   string
+	S3SecretKey   string
+	S3Bucket      string
+	S3UseSSL      bool
 }
 
 // Load reads configuration from .env file and environment variables
@@ -33,6 +38,11 @@ func Load() *Config {
 		RedisURI:      getEnv("REDIS_URI", "localhost:6379"),
 		JWTSecret:     getEnvRequired("JWT_SECRET"),
 		JWTExpiry:     parseDuration(getEnv("JWT_EXPIRY", "24h")),
+		S3Endpoint:    getEnv("S3_ENDPOINT", "localhost:9000"),
+		S3AccessKey:   getEnv("S3_ACCESS_KEY", "minioadmin"),
+		S3SecretKey:   getEnv("S3_SECRET_KEY", "minioadmin"),
+		S3Bucket:      getEnv("S3_BUCKET", "voice-memos"),
+		S3UseSSL:      getEnv("S3_USE_SSL", "false") == "true",
 	}
 
 	return cfg
