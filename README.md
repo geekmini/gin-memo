@@ -13,11 +13,11 @@ A REST API for user management and voice memos built with Go, Gin, MongoDB, Redi
 
 ## Prerequisites
 
-- Go 1.21+
-- Docker & Docker Compose
-- [Task](https://taskfile.dev/) - `brew install go-task`
-- [lefthook](https://github.com/evilmartians/lefthook) - `brew install lefthook`
-- [golangci-lint](https://golangci-lint.run/) - `brew install golangci-lint`
+- Go 1.25+
+- [OrbStack](https://orbstack.dev/) or Docker
+- [Task](https://taskfile.dev/) - `go install github.com/go-task/task/v3/cmd/task@latest`
+- [lefthook](https://github.com/evilmartians/lefthook) - `go install github.com/evilmartians/lefthook@latest`
+- [golangci-lint](https://golangci-lint.run/) - `go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest`
 
 ## Quick Start
 
@@ -38,33 +38,33 @@ task run
 
 ## Available Commands
 
-| Command | Description |
-|---------|-------------|
-| `task setup` | Install git hooks (run once) |
-| `task dev` | Start services + hot reload |
-| `task run` | Run the server |
-| `task build` | Compile to binary |
-| `task test` | Run tests |
-| `task seed` | Seed database with test data |
-| `task sync` | Sync dependencies |
-| `task swagger` | Regenerate API docs |
-| `task fmt` | Format code |
-| `task lint` | Run linter |
-| `task docker:up` | Start MongoDB + Redis + MinIO |
-| `task docker:prod` | Start full stack in Docker |
-| `task docker:down` | Stop Docker services |
-| `task docker:logs` | View Docker logs |
+| Command            | Description                   |
+| ------------------ | ----------------------------- |
+| `task setup`       | Install git hooks (run once)  |
+| `task dev`         | Start services + hot reload   |
+| `task run`         | Run the server                |
+| `task build`       | Compile to binary             |
+| `task test`        | Run tests                     |
+| `task seed`        | Seed database with test data  |
+| `task sync`        | Sync dependencies             |
+| `task swagger`     | Regenerate API docs           |
+| `task fmt`         | Format code                   |
+| `task lint`        | Run linter                    |
+| `task docker:up`   | Start MongoDB + Redis + MinIO |
+| `task docker:prod` | Start full stack in Docker    |
+| `task docker:down` | Stop Docker services          |
+| `task docker:logs` | View Docker logs              |
 
 ## Local Services
 
-| Service | Port | URL |
-|---------|------|-----|
-| API | 8080 | http://localhost:8080 |
-| Swagger Docs | 8080 | http://localhost:8080/docs/index.html |
-| MongoDB | 27017 | mongodb://localhost:27017 |
-| Redis | 6379 | localhost:6379 |
-| MinIO API | 9000 | http://localhost:9000 |
-| MinIO Console | 9001 | http://localhost:9001 |
+| Service       | Port  | URL                                   |
+| ------------- | ----- | ------------------------------------- |
+| API           | 8080  | http://localhost:8080                 |
+| Swagger Docs  | 8080  | http://localhost:8080/docs/index.html |
+| MongoDB       | 27017 | mongodb://localhost:27017             |
+| Redis         | 6379  | localhost:6379                        |
+| MinIO API     | 9000  | http://localhost:9000                 |
+| MinIO Console | 9001  | http://localhost:9001                 |
 
 ## Project Structure
 
@@ -97,29 +97,29 @@ gin-sample/
 ## API Endpoints
 
 ### Auth (Public)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /api/v1/auth/register | Register new user |
-| POST | /api/v1/auth/login | Login, get JWT |
+| Method | Endpoint              | Description       |
+| ------ | --------------------- | ----------------- |
+| POST   | /api/v1/auth/register | Register new user |
+| POST   | /api/v1/auth/login    | Login, get JWT    |
 
 ### Users (Protected)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /api/v1/users | List all users |
-| GET | /api/v1/users/:id | Get user by ID |
-| PUT | /api/v1/users/:id | Update user |
-| DELETE | /api/v1/users/:id | Delete user |
+| Method | Endpoint          | Description    |
+| ------ | ----------------- | -------------- |
+| GET    | /api/v1/users     | List all users |
+| GET    | /api/v1/users/:id | Get user by ID |
+| PUT    | /api/v1/users/:id | Update user    |
+| DELETE | /api/v1/users/:id | Delete user    |
 
 ### Voice Memos (Protected)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /api/v1/voice-memos | List user's memos (paginated) |
+| Method | Endpoint            | Description                   |
+| ------ | ------------------- | ----------------------------- |
+| GET    | /api/v1/voice-memos | List user's memos (paginated) |
 
 ### Other
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /health | Health check |
-| GET | /docs/* | Swagger UI |
+| Method | Endpoint | Description  |
+| ------ | -------- | ------------ |
+| GET    | /health  | Health check |
+| GET    | /docs/*  | Swagger UI   |
 
 ## Environment Variables
 
