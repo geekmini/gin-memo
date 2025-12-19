@@ -1,5 +1,13 @@
 {
-  "go.lintOnSave": "off",
+  "files.exclude": {
+    "tmp": true
+  },
+  "go.lintOnSave": "workspace",
+  "go.formatTool": "goimports",
+  "editor.formatOnSave": true,
+  "[go]": {
+    "editor.defaultFormatter": "golang.go"
+  },
   "gopls": {
     "ui.diagnostic.staticcheck": true,
     "ui.diagnostic.analyses": {
@@ -8,14 +16,6 @@
       "unusedwrite": true,
       "useany": true,
       "unusedvariable": true
-    }
-  },
-  "go.formatTool": "goimports",
-  "editor.formatOnSave": true,
-  "[go]": {
-    "editor.defaultFormatter": "golang.go",
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit"
     }
   }
 }
