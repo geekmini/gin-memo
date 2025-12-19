@@ -2,17 +2,17 @@
 
 ## Quick Reference
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Package names | lowercase, single word | `errors`, `http`, `json` |
-| Import aliases | lowercase | `apperrors`, `testify` |
-| Variables | camelCase | `userName`, `isValid` |
-| Constants | camelCase or PascalCase | `maxRetries`, `MaxRetries` |
-| Functions (private) | camelCase | `parseInput()`, `validateUser()` |
-| Functions (public) | PascalCase | `ParseInput()`, `ValidateUser()` |
-| Structs | PascalCase | `User`, `HttpClient` |
-| Interfaces | PascalCase | `Reader`, `UserRepository` |
-| Acronyms | ALL CAPS | `userID`, `httpURL`, `APIKey` |
+| Type                | Convention              | Example                          |
+| ------------------- | ----------------------- | -------------------------------- |
+| Package names       | lowercase, single word  | `errors`, `http`, `json`         |
+| Import aliases      | lowercase               | `apperrors`, `testify`           |
+| Variables           | camelCase               | `userName`, `isValid`            |
+| Constants           | camelCase or PascalCase | `maxRetries`, `MaxRetries`       |
+| Functions (private) | camelCase               | `parseInput()`, `validateUser()` |
+| Functions (public)  | PascalCase              | `ParseInput()`, `ValidateUser()` |
+| Structs             | PascalCase              | `User`, `HttpClient`             |
+| Interfaces          | PascalCase              | `Reader`, `UserRepository`       |
+| Acronyms            | ALL CAPS                | `userID`, `httpURL`, `APIKey`    |
 
 ---
 
