@@ -22,7 +22,18 @@ func NewUserHandler(service *service.UserService) *UserHandler {
 	return &UserHandler{service: service}
 }
 
-// Register handles POST /api/v1/auth/register
+// Register godoc
+// @Summary      Register a new user
+// @Description  Create a new user account with email, password, and name
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      models.CreateUserRequest  true  "User registration details"
+// @Success      201      {object}  response.Response{data=models.User}
+// @Failure      400      {object}  response.Response
+// @Failure      409      {object}  response.Response
+// @Failure      500      {object}  response.Response
+// @Router       /auth/register [post]
 func (h *UserHandler) Register(c *gin.Context) {
 	var req models.CreateUserRequest
 
@@ -46,7 +57,18 @@ func (h *UserHandler) Register(c *gin.Context) {
 	response.Created(c, user)
 }
 
-// Login handles POST /api/v1/auth/login
+// Login godoc
+// @Summary      User login
+// @Description  Authenticate user and return JWT token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      models.LoginRequest  true  "User credentials"
+// @Success      200      {object}  response.Response{data=models.LoginResponse}
+// @Failure      400      {object}  response.Response
+// @Failure      401      {object}  response.Response
+// @Failure      500      {object}  response.Response
+// @Router       /auth/login [post]
 func (h *UserHandler) Login(c *gin.Context) {
 	var req models.LoginRequest
 
@@ -68,7 +90,18 @@ func (h *UserHandler) Login(c *gin.Context) {
 	response.Success(c, result)
 }
 
-// GetUser handles GET /api/v1/users/:id
+// GetUser godoc
+// @Summary      Get user by ID
+// @Description  Retrieve a single user by their ID
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "User ID"
+// @Success      200  {object}  response.Response{data=models.User}
+// @Failure      404  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Security     BearerAuth
+// @Router       /users/{id} [get]
 func (h *UserHandler) GetUser(c *gin.Context) {
 	id := c.Param("id")
 
@@ -85,7 +118,16 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	response.Success(c, user)
 }
 
-// GetAllUsers handles GET /api/v1/users
+// GetAllUsers godoc
+// @Summary      List all users
+// @Description  Retrieve a list of all users
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  response.Response{data=[]models.User}
+// @Failure      500  {object}  response.Response
+// @Security     BearerAuth
+// @Router       /users [get]
 func (h *UserHandler) GetAllUsers(c *gin.Context) {
 	users, err := h.service.GetAllUsers(c.Request.Context())
 	if err != nil {
@@ -96,7 +138,21 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 	response.Success(c, users)
 }
 
-// UpdateUser handles PUT /api/v1/users/:id
+// UpdateUser godoc
+// @Summary      Update user
+// @Description  Update a user's email and/or name
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        id       path      string                    true  "User ID"
+// @Param        request  body      models.UpdateUserRequest  true  "Fields to update"
+// @Success      200      {object}  response.Response{data=models.User}
+// @Failure      400      {object}  response.Response
+// @Failure      404      {object}  response.Response
+// @Failure      409      {object}  response.Response
+// @Failure      500      {object}  response.Response
+// @Security     BearerAuth
+// @Router       /users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	id := c.Param("id")
 
@@ -123,7 +179,18 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	response.Success(c, user)
 }
 
-// DeleteUser handles DELETE /api/v1/users/:id
+// DeleteUser godoc
+// @Summary      Delete user
+// @Description  Remove a user from the system
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "User ID"
+// @Success      200  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Security     BearerAuth
+// @Router       /users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 

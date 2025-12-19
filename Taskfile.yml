@@ -54,3 +54,7 @@ tasks:
   fmt:
     desc: Format code
     cmd: go fmt ./...
+
+  swagger:
+    desc: Generate swagger docs
+    cmd: swag init -g cmd/server/main.go -o docs

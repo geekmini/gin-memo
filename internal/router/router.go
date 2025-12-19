@@ -4,11 +4,15 @@ package router
 import (
 	"net/http"
 
+	_ "gin-sample/docs" // Import generated docs
+
 	"gin-sample/internal/handler"
 	"gin-sample/internal/middleware"
 	"gin-sample/pkg/auth"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // Setup creates and configures the Gin router.
@@ -17,6 +21,9 @@ func Setup(userHandler *handler.UserHandler, jwtManager *auth.JWTManager) *gin.E
 
 	// Global middleware
 	r.Use(middleware.CORS())
+
+	// Swagger docs at /docs
+	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Health check
 	r.GET("/health", func(c *gin.Context) {

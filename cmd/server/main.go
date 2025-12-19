@@ -16,6 +16,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// @title           Gin Sample API
+// @version         1.0
+// @description     A REST API for user management built with Gin, MongoDB, and Redis.
+
+// @contact.name    API Support
+// @contact.email   support@example.com
+
+// @host            localhost:8080
+// @BasePath        /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Enter your bearer token in the format: Bearer {token}
+
 func main() {
 	// Load configuration
 	cfg := config.Load()
