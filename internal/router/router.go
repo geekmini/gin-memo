@@ -1,0 +1,48 @@
+// Package router sets up HTTP routes for the API.
+package router
+
+import (
+	"net/http"
+
+	"gin-sample/internal/handler"
+	"gin-sample/internal/middleware"
+	"gin-sample/pkg/auth"
+
+	"github.com/gin-gonic/gin"
+)
+
+// Setup creates and configures the Gin router.
+func Setup(userHandler *handler.UserHandler, jwtManager *auth.JWTManager) *gin.Engine {
+	r := gin.Default()
+
+	// Global middleware
+	r.Use(middleware.CORS())
+
+	// Health check
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
+	// API v1
+	v1 := r.Group("/api/v1")
+	{
+		// Auth routes (public)
+		auth := v1.Group("/auth")
+		{
+			auth.POST("/register", userHandler.Register)
+			auth.POST("/login", userHandler.Login)
+		}
+
+		// User routes (protected)
+		users := v1.Group("/users")
+		users.Use(middleware.Auth(jwtManager))
+		{
+			users.GET("", userHandler.GetAllUsers)
+			users.GET("/:id", userHandler.GetUser)
+			users.PUT("/:id", userHandler.UpdateUser)
+			users.DELETE("/:id", userHandler.DeleteUser)
+		}
+	}
+
+	return r
+}

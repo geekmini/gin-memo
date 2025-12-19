@@ -2,36 +2,50 @@ package main
 
 import (
 	"fmt"
-	"net/http"
+	"log"
 
 	"gin-sample/internal/config"
 	"gin-sample/internal/database"
+	"gin-sample/internal/handler"
+	"gin-sample/internal/repository"
+	"gin-sample/internal/router"
+	"gin-sample/internal/service"
+	"gin-sample/pkg/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// Load configuration from .env
+	// Load configuration
 	cfg := config.Load()
+	log.Println("Configuration loaded")
 
-	// Connect to MongoDB
-	mongoDB := database.NewMongoDB(cfg.MongoURI, cfg.MongoDatabase)
-	defer mongoDB.Close() // Close connection when main() exits
-
-	// Set Gin mode (debug/release)
+	// Set Gin mode
 	gin.SetMode(cfg.GinMode)
 
-	// Create a new Gin router with default middleware (logger & recovery)
-	r := gin.Default()
+	// Database
+	mongoDB := database.NewMongoDB(cfg.MongoURI, cfg.MongoDatabase)
+	defer mongoDB.Close()
 
-	// Define a health check endpoint
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status": "ok",
-		})
-	})
+	// JWT Manager
+	jwtManager := auth.NewJWTManager(cfg.JWTSecret, cfg.JWTExpiry)
 
-	// Start the server on configured port
+	// Repository layer
+	userRepo := repository.NewUserRepository(mongoDB.Database)
+
+	// Service layer
+	userService := service.NewUserService(userRepo, jwtManager)
+
+	// Handler layer
+	userHandler := handler.NewUserHandler(userService)
+
+	// Router
+	r := router.Setup(userHandler, jwtManager)
+
+	// Start server
 	addr := fmt.Sprintf(":%s", cfg.ServerPort)
-	r.Run(addr)
+	log.Printf("Server starting on %s", addr)
+	if err := r.Run(addr); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
