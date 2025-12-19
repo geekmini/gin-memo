@@ -1,6 +1,27 @@
-version: '3.8'
-
 services:
+  # Go API Server
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gin-sample-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - GIN_MODE=release
+      - MONGO_URI=mongo:27017
+      - MONGO_DATABASE=gin_sample
+      - REDIS_URI=redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRY=24h
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
   # MongoDB - Document database
   mongo:
     image: mongo:7
