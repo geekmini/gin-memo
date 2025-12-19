@@ -5,17 +5,12 @@ import (
 	"errors"
 	"time"
 
+	apperrors "gin-sample/internal/errors"
 	"gin-sample/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-)
-
-// Common errors
-var (
-	ErrUserNotFound      = errors.New("user not found")
-	ErrUserAlreadyExists = errors.New("user with this email already exists")
 )
 
 // UserRepository defines the interface for user data operations
@@ -45,7 +40,7 @@ func (r *userRepository) Create(ctx context.Context, user *models.User) error {
 	// Check if user with email already exists
 	existing, _ := r.FindByEmail(ctx, user.Email)
 	if existing != nil {
-		return ErrUserAlreadyExists
+		return apperrors.ErrUserAlreadyExists
 	}
 
 	// Set timestamps
@@ -71,7 +66,7 @@ func (r *userRepository) FindByID(ctx context.Context, id primitive.ObjectID) (*
 	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrUserNotFound
+			return nil, apperrors.ErrUserNotFound
 		}
 		return nil, err
 	}
@@ -86,7 +81,7 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*models
 	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, ErrUserNotFound
+			return nil, apperrors.ErrUserNotFound
 		}
 		return nil, err
 	}
@@ -124,7 +119,7 @@ func (r *userRepository) Update(ctx context.Context, id primitive.ObjectID, upda
 		// Check if new email is already taken by another user
 		existing, _ := r.FindByEmail(ctx, *update.Email)
 		if existing != nil && existing.ID != id {
-			return nil, ErrUserAlreadyExists
+			return nil, apperrors.ErrUserAlreadyExists
 		}
 		updateDoc["email"] = *update.Email
 	}
@@ -143,7 +138,7 @@ func (r *userRepository) Update(ctx context.Context, id primitive.ObjectID, upda
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
-			return nil, ErrUserNotFound
+			return nil, apperrors.ErrUserNotFound
 		}
 		return nil, result.Err()
 	}
@@ -160,7 +155,7 @@ func (r *userRepository) Delete(ctx context.Context, id primitive.ObjectID) erro
 	}
 
 	if result.DeletedCount == 0 {
-		return ErrUserNotFound
+		return apperrors.ErrUserNotFound
 	}
 
 	return nil
