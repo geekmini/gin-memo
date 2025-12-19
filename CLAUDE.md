@@ -1,11 +1,11 @@
 # gin-sample
 
-A REST API for user management built with Go, Gin, MongoDB, and Redis.
+A REST API for user management and voice memos built with Go, Gin, MongoDB, Redis, and S3.
 
 ## Quick Commands
 
 ```bash
-task dev          # Start MongoDB + Redis, run app with hot reload
+task dev          # Start MongoDB + Redis + MinIO, run app with hot reload
 task run          # Run without hot reload
 task swagger      # Regenerate API docs after handler changes
 task docker:prod  # Run full stack in Docker
@@ -23,7 +23,7 @@ internal/router         # HTTP routes, middleware chain
     ↓
 internal/handler        # HTTP handlers (request/response)
     ↓
-internal/service        # Business logic, caching
+internal/service        # Business logic, caching, S3 URLs
     ↓
 internal/repository     # Database operations (MongoDB)
 ```
@@ -36,20 +36,42 @@ internal/repository     # Database operations (MongoDB)
 cmd/server/main.go       # Entry point
 internal/
   config/                # Environment config (godotenv)
-  models/                # Data structs (User, requests, responses)
+  models/                # Data structs (User, VoiceMemo, requests, responses)
   repository/            # MongoDB CRUD (interface-based)
-  service/               # Business logic + Redis caching
+  service/               # Business logic + Redis caching + S3 URLs
   handler/               # HTTP handlers with Swagger annotations
   middleware/            # Auth (JWT), CORS
   router/                # Route setup
   errors/                # Centralized app errors
   cache/                 # Redis client
+  storage/               # S3 client (pre-signed URLs)
 pkg/
   auth/                  # JWT + bcrypt utilities
   response/              # Standard API response format
 swagger/                 # Generated API docs (swag)
 docs/                    # Project documentation
+spec/                    # API specifications
 ```
+
+## Local Services (Docker Compose)
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| MongoDB | 27017 | Database |
+| Redis | 6379 | Cache |
+| MinIO | 9000 | S3-compatible storage (API) |
+| MinIO Console | 9001 | Web UI (minioadmin/minioadmin) |
+
+Start all services:
+```bash
+docker compose up -d
+```
+
+### MinIO Setup (Local S3)
+
+1. Open MinIO Console: http://localhost:9001
+2. Login: minioadmin / minioadmin
+3. Create bucket: `voice-memos`
 
 ## Coding Conventions
 
@@ -90,6 +112,12 @@ response.InternalError(c)      // 500
 - TTL: 15 minutes for user data
 - Invalidate on update/delete
 - Cache errors are non-fatal (best effort)
+
+### S3 Storage
+- Use `internal/storage/s3.go` for S3 operations
+- Generate pre-signed URLs for private files (1 hour expiry)
+- Store S3 key in database, generate URL on request
+- MinIO for local development, real S3 in production
 
 ## Adding New Features
 
@@ -134,13 +162,27 @@ var ErrSomething = errors.New("something went wrong")
 
 Required in `.env`:
 ```
+# Server
 SERVER_PORT=8080
 GIN_MODE=debug
+
+# MongoDB
 MONGO_URI=localhost:27017
 MONGO_DATABASE=gin_sample
+
+# Redis
 REDIS_URI=localhost:6379
+
+# JWT
 JWT_SECRET=your-secret-key
 JWT_EXPIRY=24h
+
+# S3 (MinIO for local)
+S3_ENDPOINT=localhost:9000
+S3_ACCESS_KEY=minioadmin
+S3_SECRET_KEY=minioadmin
+S3_BUCKET=voice-memos
+S3_USE_SSL=false
 ```
 
 ## Testing
@@ -154,3 +196,18 @@ go test ./...     # Same thing
 
 - Swagger UI: http://localhost:8080/docs/index.html
 - Regenerate after handler changes: `task swagger`
+
+## API Endpoints
+
+### Auth (Public)
+- `POST /api/v1/auth/register` - Register new user
+- `POST /api/v1/auth/login` - Login, get JWT
+
+### Users (Protected)
+- `GET /api/v1/users` - List all users
+- `GET /api/v1/users/:id` - Get user by ID
+- `PUT /api/v1/users/:id` - Update user
+- `DELETE /api/v1/users/:id` - Delete user
+
+### Voice Memos (Protected)
+- `GET /api/v1/voice-memos` - List user's voice memos (paginated)
