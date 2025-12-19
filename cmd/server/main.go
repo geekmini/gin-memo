@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"gin-sample/internal/cache"
 	"gin-sample/internal/config"
 	"gin-sample/internal/database"
 	"gin-sample/internal/handler"
@@ -27,6 +28,10 @@ func main() {
 	mongoDB := database.NewMongoDB(cfg.MongoURI, cfg.MongoDatabase)
 	defer mongoDB.Close()
 
+	// Redis Cache
+	redisCache := cache.NewRedis(cfg.RedisURI)
+	defer redisCache.Close()
+
 	// JWT Manager
 	jwtManager := auth.NewJWTManager(cfg.JWTSecret, cfg.JWTExpiry)
 
@@ -34,7 +39,7 @@ func main() {
 	userRepo := repository.NewUserRepository(mongoDB.Database)
 
 	// Service layer
-	userService := service.NewUserService(userRepo, jwtManager)
+	userService := service.NewUserService(userRepo, redisCache, jwtManager)
 
 	// Handler layer
 	userHandler := handler.NewUserHandler(userService)
