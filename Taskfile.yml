@@ -57,4 +57,4 @@ tasks:
 
   swagger:
     desc: Generate swagger docs
-    cmd: swag init -g cmd/server/main.go -o docs
+    cmd: swag init -g cmd/server/main.go -o swagger

@@ -4,7 +4,7 @@ package router
 import (
 	"net/http"
 
-	_ "gin-sample/docs" // Import generated docs
+	_ "gin-sample/swagger" // Import generated swagger docs
 
 	"gin-sample/internal/handler"
 	"gin-sample/internal/middleware"
