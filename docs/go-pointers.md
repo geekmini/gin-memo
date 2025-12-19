@@ -2,11 +2,11 @@
 
 ## Quick Reference
 
-| Symbol | Name | Meaning |
-|--------|------|---------|
-| `&` | Address-of | "Give me the memory address of this" |
-| `*` | Dereference | "Give me the value at this address" |
-| `*Type` | Pointer type | "A pointer to Type" |
+| Symbol  | Name         | Meaning                              |
+| ------- | ------------ | ------------------------------------ |
+| `&`     | Address-of   | "Give me the memory address of this" |
+| `*`     | Dereference  | "Give me the value at this address"  |
+| `*Type` | Pointer type | "A pointer to Type"                  |
 
 ---
 
@@ -122,12 +122,12 @@ fmt.Println(user.Name)
 
 ## When to Use Pointers
 
-| Use Pointer `*T` | Use Value `T` |
-|------------------|---------------|
-| Method needs to modify receiver | Method only reads data |
-| Struct is large (many fields) | Struct is small (1-3 fields) |
-| Need to represent "no value" (nil) | Always has a value |
-| Consistency (if one method needs pointer) | Small immutable types |
+| Use Pointer `*T`                          | Use Value `T`                |
+| ----------------------------------------- | ---------------------------- |
+| Method needs to modify receiver           | Method only reads data       |
+| Struct is large (many fields)             | Struct is small (1-3 fields) |
+| Need to represent "no value" (nil)        | Always has a value           |
+| Consistency (if one method needs pointer) | Small immutable types        |
 
 ---
 
@@ -210,9 +210,9 @@ userPtr.Read()  // Go converts to (*userPtr).Read()
 
 ## Summary
 
-| Concept | Syntax | Example |
-|---------|--------|---------|
-| Get address | `&value` | `ptr := &user` |
-| Get value | `*pointer` | `val := *ptr` |
-| Pointer type | `*Type` | `var ptr *User` |
-| Nil check | `ptr == nil` | `if user == nil { }` |
+| Concept      | Syntax       | Example              |
+| ------------ | ------------ | -------------------- |
+| Get address  | `&value`     | `ptr := &user`       |
+| Get value    | `*pointer`   | `val := *ptr`        |
+| Pointer type | `*Type`      | `var ptr *User`      |
+| Nil check    | `ptr == nil` | `if user == nil { }` |

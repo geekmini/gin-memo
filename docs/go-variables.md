@@ -2,10 +2,10 @@
 
 ## Quick Reference
 
-| Operator | Name | Purpose |
-|----------|------|---------|
-| `:=` | Short declaration | Declare AND assign (new variable) |
-| `=` | Assignment | Assign to existing variable |
+| Operator | Name              | Purpose                           |
+| -------- | ----------------- | --------------------------------- |
+| `:=`     | Short declaration | Declare AND assign (new variable) |
+| `=`      | Assignment        | Assign to existing variable       |
 
 ---
 
@@ -198,11 +198,11 @@ fmt.Println(name)       // "Jane" (outer variable changed)
 
 ## Comparison with Other Languages
 
-| Go | JavaScript | Python |
-|----|------------|--------|
-| `x := 10` | `let x = 10` | `x = 10` |
-| `x = 20` | `x = 20` | `x = 20` |
-| `var x int` | `let x` | N/A |
+| Go          | JavaScript   | Python   |
+| ----------- | ------------ | -------- |
+| `x := 10`   | `let x = 10` | `x = 10` |
+| `x = 20`    | `x = 20`     | `x = 20` |
+| `var x int` | `let x`      | N/A      |
 
 **Key difference:** Go requires explicit declaration (`:=` or `var`), catches typos at compile time.
 
@@ -220,10 +220,10 @@ user_nmae = "Jane"  # No error, creates new variable (bug!)
 
 ## Summary
 
-| Use | When |
-|-----|------|
-| `:=` | Creating a new variable inside a function |
-| `=` | Reassigning an existing variable |
+| Use   | When                                               |
+| ----- | -------------------------------------------------- |
+| `:=`  | Creating a new variable inside a function          |
+| `=`   | Reassigning an existing variable                   |
 | `var` | Package level, explicit type, or zero value needed |
 
 ```go
