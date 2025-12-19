@@ -8,6 +8,11 @@ vars:
 
 tasks:
   # Development
+  dev:
+    desc: Start dev environment (dependencies + hot reload)
+    deps: [docker:up]
+    cmd: air
+
   run:
     desc: Run the server
     cmd: go run cmd/server/main.go
@@ -26,12 +31,16 @@ tasks:
 
   # Docker
   docker:up:
-    desc: Start Docker services (MongoDB, Redis)
+    desc: Start dependencies only (MongoDB, Redis)
     cmd: docker compose up -d
+
+  docker:prod:
+    desc: Start full stack including app (production-like)
+    cmd: docker compose --profile prod up -d --build
 
   docker:down:
     desc: Stop Docker services
-    cmd: docker compose down
+    cmd: docker compose --profile prod down
 
   docker:logs:
     desc: View Docker logs

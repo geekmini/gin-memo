@@ -1,6 +1,7 @@
 services:
-  # Go API Server
+  # Go API Server (only starts with --profile prod)
   app:
+    profiles: ["prod"]
     build:
       context: .
       dockerfile: Dockerfile
