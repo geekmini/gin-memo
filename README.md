@@ -24,10 +24,8 @@ A REST API for user management and voice memos built with Go, Gin, MongoDB, Redi
 cp .env.example .env
 
 # Start all services (MongoDB, Redis, MinIO)
+# Bucket 'voice-memos' is created automatically
 docker compose up -d
-
-# Create voice-memos bucket in MinIO
-# Open http://localhost:9001, login: minioadmin/minioadmin
 
 # Run with hot reload
 task dev

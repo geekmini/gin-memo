@@ -55,23 +55,23 @@ spec/                    # API specifications
 
 ## Local Services (Docker Compose)
 
-| Service | Port | Purpose |
-|---------|------|---------|
-| MongoDB | 27017 | Database |
-| Redis | 6379 | Cache |
-| MinIO | 9000 | S3-compatible storage (API) |
-| MinIO Console | 9001 | Web UI (minioadmin/minioadmin) |
+| Service       | Port  | Purpose                        |
+| ------------- | ----- | ------------------------------ |
+| MongoDB       | 27017 | Database                       |
+| Redis         | 6379  | Cache                          |
+| MinIO         | 9000  | S3-compatible storage (API)    |
+| MinIO Console | 9001  | Web UI (minioadmin/minioadmin) |
 
 Start all services:
 ```bash
 docker compose up -d
 ```
 
-### MinIO Setup (Local S3)
+### MinIO (Local S3)
 
-1. Open MinIO Console: http://localhost:9001
-2. Login: minioadmin / minioadmin
-3. Create bucket: `voice-memos`
+Bucket `voice-memos` is created automatically by `minio-init` container on startup.
+
+Console: http://localhost:9001 (minioadmin / minioadmin)
 
 ## Coding Conventions
 
