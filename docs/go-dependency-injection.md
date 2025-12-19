@@ -32,14 +32,14 @@ func main() {
 
 ## Benefits
 
-| Benefit | Description |
-|---------|-------------|
-| Explicit | You see exactly how things connect |
-| Compile-time safe | Missing dependency = compile error |
-| No magic | Plain Go code, easy to understand |
-| Easy testing | Pass mocks directly in tests |
-| Fast startup | No reflection overhead |
-| No framework lock-in | Works with any Go project |
+| Benefit              | Description                        |
+| -------------------- | ---------------------------------- |
+| Explicit             | You see exactly how things connect |
+| Compile-time safe    | Missing dependency = compile error |
+| No magic             | Plain Go code, easy to understand  |
+| Easy testing         | Pass mocks directly in tests       |
+| Fast startup         | No reflection overhead             |
+| No framework lock-in | Works with any Go project          |
 
 ---
 

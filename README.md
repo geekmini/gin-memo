@@ -23,17 +23,17 @@ curl http://localhost:8080/health
 
 ## Available Commands
 
-| Command | Description |
-|---------|-------------|
-| `task run` | Run the server |
-| `task build` | Compile to binary |
-| `task test` | Run tests |
-| `task sync` | Sync dependencies |
-| `task fmt` | Format code |
-| `task lint` | Run linter |
-| `task docker:up` | Start MongoDB + Redis |
-| `task docker:down` | Stop Docker services |
-| `task docker:logs` | View Docker logs |
+| Command            | Description           |
+| ------------------ | --------------------- |
+| `task run`         | Run the server        |
+| `task build`       | Compile to binary     |
+| `task test`        | Run tests             |
+| `task sync`        | Sync dependencies     |
+| `task fmt`         | Format code           |
+| `task lint`        | Run linter            |
+| `task docker:up`   | Start MongoDB + Redis |
+| `task docker:down` | Stop Docker services  |
+| `task docker:logs` | View Docker logs      |
 
 ## Project Structure
 
@@ -63,12 +63,12 @@ gin-sample/
 
 ## API Endpoints
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | /health | Health check | No |
-| POST | /api/v1/auth/register | Register user | No |
-| POST | /api/v1/auth/login | Login | No |
-| GET | /api/v1/users | List users | Yes |
-| GET | /api/v1/users/:id | Get user | Yes |
-| PUT | /api/v1/users/:id | Update user | Yes |
-| DELETE | /api/v1/users/:id | Delete user | Yes |
+| Method | Endpoint              | Description   | Auth |
+| ------ | --------------------- | ------------- | ---- |
+| GET    | /health               | Health check  | No   |
+| POST   | /api/v1/auth/register | Register user | No   |
+| POST   | /api/v1/auth/login    | Login         | No   |
+| GET    | /api/v1/users         | List users    | Yes  |
+| GET    | /api/v1/users/:id     | Get user      | Yes  |
+| PUT    | /api/v1/users/:id     | Update user   | Yes  |
+| DELETE | /api/v1/users/:id     | Delete user   | Yes  |

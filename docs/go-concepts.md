@@ -154,11 +154,11 @@ defer cancel()
 
 ### defer vs finally (JavaScript):
 
-| JavaScript | Go |
-|------------|-----|
-| `try { ... } finally { cleanup() }` | `defer cleanup()` |
-| One finally block per try | Multiple defers allowed |
-| At the end of try block | Anywhere in function |
+| JavaScript                          | Go                      |
+| ----------------------------------- | ----------------------- |
+| `try { ... } finally { cleanup() }` | `defer cleanup()`       |
+| One finally block per try           | Multiple defers allowed |
+| At the end of try block             | Anywhere in function    |
 
 ---
 
@@ -253,20 +253,20 @@ func (c *Counter) Value() int {
 
 ### Comparison with other languages:
 
-| Language | Syntax |
-|----------|--------|
-| Go | `func (u *User) Save() {}` |
+| Language   | Syntax                     |
+| ---------- | -------------------------- |
+| Go         | `func (u *User) Save() {}` |
 | JavaScript | `class User { save() {} }` |
-| Python | `def save(self): ...` |
-| Java | `public void save() {}` |
+| Python     | `def save(self): ...`      |
+| Java       | `public void save() {}`    |
 
 ### When to use pointer vs value receiver:
 
-| Use Pointer `*T` | Use Value `T` |
-|------------------|---------------|
-| Method modifies the receiver | Method only reads data |
-| Struct is large | Struct is small (few fields) |
-| Consistency (if one method needs pointer) | Immutable types |
-| 90% of the time | Rare cases |
+| Use Pointer `*T`                          | Use Value `T`                |
+| ----------------------------------------- | ---------------------------- |
+| Method modifies the receiver              | Method only reads data       |
+| Struct is large                           | Struct is small (few fields) |
+| Consistency (if one method needs pointer) | Immutable types              |
+| 90% of the time                           | Rare cases                   |
 
 **Rule of thumb:** When in doubt, use a pointer receiver.
