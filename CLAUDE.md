@@ -64,7 +64,7 @@ spec/                    # API specifications
 
 Start all services:
 ```bash
-docker compose up -d
+task docker:up
 ```
 
 ## Coding Conventions

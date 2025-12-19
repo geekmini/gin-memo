@@ -24,8 +24,7 @@ A REST API for user management and voice memos built with Go, Gin, MongoDB, Redi
 cp .env.example .env
 
 # Start all services (MongoDB, Redis, MinIO)
-# Bucket 'voice-memos' is created automatically
-docker compose up -d
+task docker:up
 
 # Run with hot reload
 task dev
