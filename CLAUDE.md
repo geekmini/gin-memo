@@ -5,6 +5,7 @@ A REST API for user management and voice memos built with Go, Gin, MongoDB, Redi
 ## Quick Commands
 
 ```bash
+task setup        # Install git hooks (run once after clone)
 task dev          # Start MongoDB + Redis + MinIO, run app with hot reload
 task run          # Run without hot reload
 task swagger      # Regenerate API docs after handler changes
@@ -65,6 +66,32 @@ spec/                    # API specifications
 Start all services:
 ```bash
 task docker:up
+```
+
+## Git Commits
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/). Pre-commit hooks enforce this.
+
+**Format:** `<type>[optional scope]: <description>`
+
+**Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style (formatting, semicolons)
+- `refactor`: Code change (no feature/fix)
+- `perf`: Performance improvement
+- `test`: Adding/updating tests
+- `build`: Build system or dependencies
+- `ci`: CI configuration
+- `chore`: Other changes
+
+**Examples:**
+```
+feat: add user authentication
+fix(api): handle null response
+docs: update README
+feat!: breaking change to API
 ```
 
 ## Coding Conventions

@@ -16,12 +16,15 @@ A REST API for user management and voice memos built with Go, Gin, MongoDB, Redi
 - Go 1.21+
 - Docker & Docker Compose
 - [Task](https://taskfile.dev/) - `brew install go-task`
+- [lefthook](https://github.com/evilmartians/lefthook) - `brew install lefthook`
+- [golangci-lint](https://golangci-lint.run/) - `brew install golangci-lint`
 
 ## Quick Start
 
 ```bash
 # Clone and setup
 cp .env.example .env
+task setup        # Install git hooks (run once)
 
 # Start all services (MongoDB, Redis, MinIO)
 task docker:up
@@ -37,10 +40,12 @@ task run
 
 | Command | Description |
 |---------|-------------|
+| `task setup` | Install git hooks (run once) |
 | `task dev` | Start services + hot reload |
 | `task run` | Run the server |
 | `task build` | Compile to binary |
 | `task test` | Run tests |
+| `task seed` | Seed database with test data |
 | `task sync` | Sync dependencies |
 | `task swagger` | Regenerate API docs |
 | `task fmt` | Format code |

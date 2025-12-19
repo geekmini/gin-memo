@@ -1,0 +1,17 @@
+# Lefthook configuration
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      glob: "*.go"
+      run: golangci-lint run --new-from-rev=HEAD~1
+    format:
+      glob: "*.go"
+      run: test -z "$(gofmt -l .)" || (echo "Files not formatted:" && gofmt -l . && exit 1)
+
+commit-msg:
+  commands:
+    conventional-commit:
+      run: .hooks/commit-msg {1}

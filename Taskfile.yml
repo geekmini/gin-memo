@@ -51,6 +51,11 @@ tasks:
     desc: View Docker logs
     cmd: docker compose logs -f
 
+  # Setup
+  setup:
+    desc: Install git hooks (run once after clone)
+    cmd: lefthook install
+
   # Utilities
   lint:
     desc: Run linter (requires golangci-lint)
