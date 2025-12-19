@@ -1,3 +1,4 @@
+// Package config handles application configuration from environment variables.
 package config
 
 import (

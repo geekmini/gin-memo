@@ -1,3 +1,4 @@
+// Package errors provides custom error types for the application.
 package errors
 
 import "errors"
