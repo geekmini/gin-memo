@@ -3,6 +3,7 @@ package storage
 
 import (
 	"context"
+	"io"
 	"log"
 	"time"
 
@@ -70,4 +71,15 @@ func (s *S3Client) GetPresignedURL(ctx context.Context, key string, expiry time.
 	}
 
 	return request.URL, nil
+}
+
+// PutObject uploads an object to S3.
+func (s *S3Client) PutObject(ctx context.Context, key string, body io.Reader, contentType string) error {
+	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(s.bucket),
+		Key:         aws.String(key),
+		Body:        body,
+		ContentType: aws.String(contentType),
+	})
+	return err
 }

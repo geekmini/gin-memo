@@ -29,9 +29,14 @@ tasks:
     desc: Sync dependencies
     cmd: go mod tidy
 
+  seed:
+    desc: Seed database with test data
+    deps: [docker:up]
+    cmd: go run cmd/seed/main.go
+
   # Docker
   docker:up:
-    desc: Start dependencies only (MongoDB, Redis)
+    desc: Start dependencies (MongoDB, Redis, MinIO)
     cmd: docker compose up -d
 
   docker:prod:
