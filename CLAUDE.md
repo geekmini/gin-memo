@@ -67,12 +67,6 @@ Start all services:
 docker compose up -d
 ```
 
-### MinIO (Local S3)
-
-Bucket `voice-memos` is created automatically by `minio-init` container on startup.
-
-Console: http://localhost:9001 (minioadmin / minioadmin)
-
 ## Coding Conventions
 
 ### Naming
