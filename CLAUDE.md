@@ -100,6 +100,7 @@ response.Success(c, data)      // 200
 response.Created(c, data)      // 201
 response.BadRequest(c, msg)    // 400
 response.Unauthorized(c, msg)  // 401
+response.Forbidden(c, msg)     // 403
 response.NotFound(c, msg)      // 404
 response.Conflict(c, msg)      // 409
 response.InternalError(c)      // 500

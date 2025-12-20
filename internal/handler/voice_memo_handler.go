@@ -66,7 +66,7 @@ func (h *VoiceMemoHandler) ListVoiceMemos(c *gin.Context) {
 // @Param        id   path      string  true  "Voice Memo ID"
 // @Success      200  {object}  response.Response
 // @Failure      400  {object}  response.Response
-// @Failure      401  {object}  response.Response
+// @Failure      403  {object}  response.Response
 // @Failure      404  {object}  response.Response
 // @Failure      500  {object}  response.Response
 // @Security     BearerAuth
@@ -101,7 +101,7 @@ func (h *VoiceMemoHandler) DeleteVoiceMemo(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, apperrors.ErrVoiceMemoUnauthorized) {
-			response.Unauthorized(c, err.Error())
+			response.Forbidden(c, err.Error())
 			return
 		}
 		response.InternalError(c)

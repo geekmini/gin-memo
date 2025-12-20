@@ -74,7 +74,7 @@ func (s *Service) DeleteMemo(ctx context.Context, memoID, userID primitive.Objec
         return err
     }
     if memo.UserID != userID {
-        return apperrors.ErrUnauthorized
+        return apperrors.ErrVoiceMemoUnauthorized  // Handler maps to 403 Forbidden
     }
     return s.repo.SoftDelete(ctx, memoID)
 }
@@ -156,6 +156,11 @@ Handler                          Service                         Repository
    |                                |                                |
    |-- map to 404 Not Found ------->|                                |
 ```
+
+**HTTP Status Code Guidelines:**
+- **401 Unauthorized**: Not authenticated (missing/invalid JWT token)
+- **403 Forbidden**: Authenticated but not authorized (e.g., accessing another user's resource)
+- **404 Not Found**: Resource doesn't exist
 
 ## Migration Status
 

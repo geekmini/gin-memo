@@ -14,7 +14,7 @@ A protected endpoint that allows users to soft-delete their own voice memos by s
 **Chosen Approach**: Service-Level Ownership Check
 
 **Rationale**:
-- Explicit error handling: 401 for unauthorized, 404 for not found
+- Explicit error handling: 403 for unauthorized access, 404 for not found
 - Business logic clearly separated in service layer
 - Easier to extend with future permission systems (admin override, shared memos)
 - Clearer audit trail for ownership violations
@@ -73,7 +73,7 @@ No request body required.
 }
 ```
 
-**Unauthorized (401)**
+**Forbidden (403)**
 ```json
 {
   "success": false,
@@ -103,7 +103,7 @@ No request body required.
 | ------ | ---------------------------------------- | ------------------------------------- |
 | 400    | invalid voice memo id format             | ID is not a valid ObjectID hex string |
 | 401    | user not authenticated                   | Missing or invalid JWT token          |
-| 401    | you can only delete your own voice memos | User doesn't own the memo             |
+| 403    | you can only delete your own voice memos | User doesn't own the memo             |
 | 404    | voice memo not found                     | Memo doesn't exist or already deleted |
 | 500    | internal server error                    | Database or server error              |
 
@@ -123,12 +123,12 @@ None
 
 ### Files to Modify
 
-1. [ ] `internal/models/voice_memo.go` - Add `DeletedAt` field
-2. [ ] `internal/errors/errors.go` - Add `ErrVoiceMemoNotFound`, `ErrVoiceMemoUnauthorized`
-3. [ ] `internal/repository/voice_memo_repository.go` - Add `FindByID`, `SoftDelete` methods; update `FindByUserID` filter
-4. [ ] `internal/service/voice_memo_service.go` - Add `DeleteVoiceMemo` method with ownership check
-5. [ ] `internal/handler/voice_memo_handler.go` - Add `DeleteVoiceMemo` handler with Swagger annotations
-6. [ ] `internal/router/router.go` - Add DELETE route
+1. [x] `internal/models/voice_memo.go` - Add `DeletedAt` field
+2. [x] `internal/errors/errors.go` - Add `ErrVoiceMemoNotFound`, `ErrVoiceMemoUnauthorized`
+3. [x] `internal/repository/voice_memo_repository.go` - Add `FindByID`, `SoftDelete` methods; update `FindByUserID` filter
+4. [x] `internal/service/voice_memo_service.go` - Add `DeleteVoiceMemo` method with ownership check
+5. [x] `internal/handler/voice_memo_handler.go` - Add `DeleteVoiceMemo` handler with Swagger annotations
+6. [x] `internal/router/router.go` - Add DELETE route
 
 ### Implementation Details
 
@@ -180,7 +180,7 @@ func (s *VoiceMemoService) DeleteVoiceMemo(ctx context.Context, memoID, userID s
 - Call service.DeleteVoiceMemo with typed ObjectIDs
 - Map errors to HTTP responses:
   - `ErrVoiceMemoNotFound` → 404
-  - `ErrVoiceMemoUnauthorized` → 401
+  - `ErrVoiceMemoUnauthorized` → 403
   - Other errors → 500
 
 **Note:** Input validation (ID format) happens at handler layer. Service receives typed `primitive.ObjectID` values.
@@ -220,7 +220,7 @@ sequenceDiagram
         H-->>C: 404 Not Found
     else Ownership check fails
         S-->>H: ErrVoiceMemoUnauthorized
-        H-->>C: 401 Unauthorized
+        H-->>C: 403 Forbidden
     else Success
         S->>Repo: SoftDelete(memoID)
         Repo->>DB: updateOne({_id}, {$set: {deletedAt: now}})
@@ -265,7 +265,7 @@ If undelete is needed:
 ## Testing Checklist
 
 - [ ] Delete own memo → 200 OK, memo excluded from list
-- [ ] Delete other user's memo → 401 Unauthorized
+- [ ] Delete other user's memo → 403 Forbidden
 - [ ] Delete non-existent memo → 404 Not Found
 - [ ] Delete already-deleted memo → 404 Not Found
 - [ ] List memos excludes soft-deleted records
