@@ -1,6 +1,6 @@
 # Code Review Guide
 
-Based on [Google Engineering Practices](https://google.github.io/eng-practices/).
+Based on Google Engineering Practices.
 
 ## Core Principle
 
@@ -166,9 +166,3 @@ Structure automated reviews as:
 [Approve / Request Changes] - [Brief reasoning]
 ```
 
-## References
-
-- [Google Engineering Practices](https://google.github.io/eng-practices/)
-- [The Standard of Code Review](https://google.github.io/eng-practices/review/reviewer/standard.html)
-- [What to Look For](https://google.github.io/eng-practices/review/reviewer/looking-for.html)
-- [How to Write Comments](https://google.github.io/eng-practices/review/reviewer/comments.html)
