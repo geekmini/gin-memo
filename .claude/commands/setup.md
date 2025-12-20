@@ -9,7 +9,7 @@ Help a new engineer set up the gin-sample project for local development.
    - `go version` (need 1.25+)
    - `docker --version` or check OrbStack is running
    - `task --version`
-   - `lefthook --version`
+   - `lefthook version`
    - `golangci-lint --version`
    - `air -v`
    - `swag --version`
@@ -34,15 +34,19 @@ Help a new engineer set up the gin-sample project for local development.
    - Run `task docker:up` to start MongoDB, Redis, MinIO
    - Wait for services to be healthy
 
-5. **Seed Test Data** (optional)
+5. **Create Database Indexes**
+   - Run `task index` to create MongoDB indexes
+   - This is required for optimal query performance
+
+6. **Seed Test Data** (optional)
    - Ask if user wants to seed test data
    - If yes, run `task seed`
 
-6. **Verify Setup**
+7. **Verify Setup**
    - Verify Docker services are running: `docker compose ps`
    - Confirm MongoDB, Redis, and MinIO are healthy
 
-7. **Summary**
+8. **Summary**
    Print a summary of:
    - All tools installed
    - Services running

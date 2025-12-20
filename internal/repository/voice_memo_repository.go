@@ -17,8 +17,10 @@ import (
 // VoiceMemoRepository defines the interface for voice memo data operations.
 type VoiceMemoRepository interface {
 	FindByUserID(ctx context.Context, userID primitive.ObjectID, page, limit int) ([]models.VoiceMemo, int, error)
+	FindByTeamID(ctx context.Context, teamID primitive.ObjectID, page, limit int) ([]models.VoiceMemo, int, error)
 	FindByID(ctx context.Context, id primitive.ObjectID) (*models.VoiceMemo, error)
 	SoftDelete(ctx context.Context, id primitive.ObjectID) error
+	SoftDeleteByTeamID(ctx context.Context, teamID primitive.ObjectID) error
 }
 
 // voiceMemoRepository implements VoiceMemoRepository using MongoDB.
@@ -33,11 +35,12 @@ func NewVoiceMemoRepository(db *mongo.Database) VoiceMemoRepository {
 	}
 }
 
-// FindByUserID returns paginated voice memos for a user, sorted by createdAt descending.
-// Excludes soft-deleted records.
+// FindByUserID returns paginated private voice memos for a user, sorted by createdAt descending.
+// Excludes soft-deleted records and team memos.
 func (r *voiceMemoRepository) FindByUserID(ctx context.Context, userID primitive.ObjectID, page, limit int) ([]models.VoiceMemo, int, error) {
 	filter := bson.M{
 		"userId":    userID,
+		"teamId":    bson.M{"$exists": false}, // Only private memos
 		"deletedAt": bson.M{"$exists": false},
 	}
 
@@ -117,4 +120,63 @@ func (r *voiceMemoRepository) SoftDelete(ctx context.Context, id primitive.Objec
 	}
 
 	return nil
+}
+
+// FindByTeamID returns paginated voice memos for a team, sorted by createdAt descending.
+// Excludes soft-deleted records.
+func (r *voiceMemoRepository) FindByTeamID(ctx context.Context, teamID primitive.ObjectID, page, limit int) ([]models.VoiceMemo, int, error) {
+	filter := bson.M{
+		"teamId":    teamID,
+		"deletedAt": bson.M{"$exists": false},
+	}
+
+	// Count total documents
+	total, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Calculate skip
+	skip := (page - 1) * limit
+
+	// Find with pagination and sorting (newest first)
+	opts := options.Find().
+		SetSort(bson.D{{Key: "createdAt", Value: -1}}).
+		SetSkip(int64(skip)).
+		SetLimit(int64(limit))
+
+	cursor, err := r.collection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer cursor.Close(ctx)
+
+	var memos []models.VoiceMemo
+	if err := cursor.All(ctx, &memos); err != nil {
+		return nil, 0, err
+	}
+
+	// Return empty slice instead of nil
+	if memos == nil {
+		memos = []models.VoiceMemo{}
+	}
+
+	return memos, int(total), nil
+}
+
+// SoftDeleteByTeamID soft deletes all voice memos for a team.
+func (r *voiceMemoRepository) SoftDeleteByTeamID(ctx context.Context, teamID primitive.ObjectID) error {
+	filter := bson.M{
+		"teamId":    teamID,
+		"deletedAt": bson.M{"$exists": false},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"deletedAt": time.Now(),
+		},
+	}
+
+	_, err := r.collection.UpdateMany(ctx, filter, update)
+	return err
 }

@@ -1,5 +1,14 @@
 basePath: /api/v1
 definitions:
+  models.AcceptInvitationResponse:
+    properties:
+      message:
+        example: invitation accepted
+        type: string
+      teamId:
+        example: 507f1f77bcf86cd799439012
+        type: string
+    type: object
   models.AuthResponse:
     properties:
       accessToken:
@@ -13,6 +22,44 @@ definitions:
         type: string
       user:
         $ref: '#/definitions/models.User'
+    type: object
+  models.CreateInvitationRequest:
+    properties:
+      email:
+        example: newuser@example.com
+        type: string
+      role:
+        enum:
+        - admin
+        - member
+        example: member
+        type: string
+    required:
+    - email
+    - role
+    type: object
+  models.CreateTeamRequest:
+    properties:
+      description:
+        example: Our engineering team workspace
+        maxLength: 500
+        type: string
+      logoUrl:
+        example: https://example.com/logo.png
+        type: string
+      name:
+        example: Engineering Team
+        maxLength: 100
+        minLength: 2
+        type: string
+      slug:
+        example: engineering
+        maxLength: 50
+        minLength: 2
+        type: string
+    required:
+    - name
+    - slug
     type: object
   models.CreateUserRequest:
     properties:
@@ -31,6 +78,13 @@ definitions:
     - email
     - name
     - password
+    type: object
+  models.InvitationListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/models.TeamInvitation'
+        type: array
     type: object
   models.LoginRequest:
     properties:
@@ -51,6 +105,13 @@ definitions:
         type: string
     required:
     - refreshToken
+    type: object
+  models.MyInvitationListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/models.TeamInvitationWithDetails'
+        type: array
     type: object
   models.Pagination:
     properties:
@@ -84,6 +145,171 @@ definitions:
         example: 900
         type: integer
     type: object
+  models.Team:
+    properties:
+      createdAt:
+        example: "2024-01-15T09:30:00Z"
+        type: string
+      deletedAt:
+        type: string
+      description:
+        example: Our engineering team workspace
+        type: string
+      id:
+        example: 507f1f77bcf86cd799439011
+        type: string
+      logoUrl:
+        example: https://example.com/logo.png
+        type: string
+      name:
+        example: Engineering Team
+        type: string
+      ownerId:
+        example: 507f1f77bcf86cd799439012
+        type: string
+      retentionDays:
+        example: 30
+        type: integer
+      seats:
+        example: 10
+        type: integer
+      slug:
+        example: engineering
+        type: string
+      updatedAt:
+        example: "2024-01-15T09:30:00Z"
+        type: string
+    type: object
+  models.TeamInvitation:
+    properties:
+      createdAt:
+        example: "2024-01-15T09:30:00Z"
+        type: string
+      email:
+        example: newuser@example.com
+        type: string
+      expiresAt:
+        example: "2024-01-22T09:30:00Z"
+        type: string
+      id:
+        example: 507f1f77bcf86cd799439011
+        type: string
+      invitedBy:
+        example: 507f1f77bcf86cd799439013
+        type: string
+      role:
+        example: member
+        type: string
+      teamId:
+        example: 507f1f77bcf86cd799439012
+        type: string
+    type: object
+  models.TeamInvitationWithDetails:
+    properties:
+      createdAt:
+        example: "2024-01-15T09:30:00Z"
+        type: string
+      expiresAt:
+        example: "2024-01-22T09:30:00Z"
+        type: string
+      id:
+        example: 507f1f77bcf86cd799439011
+        type: string
+      invitedBy:
+        $ref: '#/definitions/models.UserSummary'
+      role:
+        example: member
+        type: string
+      team:
+        $ref: '#/definitions/models.TeamSummary'
+    type: object
+  models.TeamListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/models.Team'
+        type: array
+      pagination:
+        $ref: '#/definitions/models.Pagination'
+    type: object
+  models.TeamMemberListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/models.TeamMemberWithUser'
+        type: array
+    type: object
+  models.TeamMemberWithUser:
+    properties:
+      id:
+        example: 507f1f77bcf86cd799439011
+        type: string
+      joinedAt:
+        example: "2024-01-15T09:30:00Z"
+        type: string
+      role:
+        example: member
+        type: string
+      teamId:
+        example: 507f1f77bcf86cd799439012
+        type: string
+      user:
+        $ref: '#/definitions/models.UserSummary'
+      userId:
+        example: 507f1f77bcf86cd799439013
+        type: string
+    type: object
+  models.TeamSummary:
+    properties:
+      id:
+        example: 507f1f77bcf86cd799439012
+        type: string
+      name:
+        example: Engineering Team
+        type: string
+      slug:
+        example: engineering
+        type: string
+    type: object
+  models.TransferOwnershipRequest:
+    properties:
+      newOwnerId:
+        example: 507f1f77bcf86cd799439013
+        type: string
+    required:
+    - newOwnerId
+    type: object
+  models.UpdateRoleRequest:
+    properties:
+      role:
+        enum:
+        - admin
+        - member
+        example: admin
+        type: string
+    required:
+    - role
+    type: object
+  models.UpdateTeamRequest:
+    properties:
+      description:
+        example: Updated description
+        maxLength: 500
+        type: string
+      logoUrl:
+        example: https://example.com/new-logo.png
+        type: string
+      name:
+        example: Updated Team Name
+        maxLength: 100
+        minLength: 2
+        type: string
+      slug:
+        example: updated-slug
+        maxLength: 50
+        minLength: 2
+        type: string
+    type: object
   models.UpdateUserRequest:
     properties:
       email:
@@ -110,6 +336,18 @@ definitions:
         type: string
       updatedAt:
         example: "2024-01-15T09:30:00Z"
+        type: string
+    type: object
+  models.UserSummary:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      id:
+        example: 507f1f77bcf86cd799439013
+        type: string
+      name:
+        example: John Doe
         type: string
     type: object
   models.VoiceMemo:
@@ -145,6 +383,10 @@ definitions:
         items:
           type: string
         type: array
+      teamId:
+        description: nil = private memo, set = team memo
+        example: 507f1f77bcf86cd799439013
+        type: string
       title:
         example: Meeting notes
         type: string
@@ -332,6 +574,899 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /invitations:
+    get:
+      consumes:
+      - application/json
+      description: List all pending invitations for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.MyInvitationListResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: List my invitations
+      tags:
+      - invitations
+  /invitations/{id}/accept:
+    post:
+      consumes:
+      - application/json
+      description: Accept an invitation to join a team
+      parameters:
+      - description: Invitation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.AcceptInvitationResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Accept invitation
+      tags:
+      - invitations
+  /invitations/{id}/decline:
+    post:
+      consumes:
+      - application/json
+      description: Decline an invitation to join a team
+      parameters:
+      - description: Invitation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Decline invitation
+      tags:
+      - invitations
+  /teams:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve paginated list of teams the authenticated user belongs
+        to
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10, max: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.TeamListResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: List user's teams
+      tags:
+      - teams
+    post:
+      consumes:
+      - application/json
+      description: Create a new team. The authenticated user becomes the owner.
+      parameters:
+      - description: Team details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateTeamRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Team'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new team
+      tags:
+      - teams
+  /teams/{teamId}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete a team and all its data. Requires owner role.
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete team
+      tags:
+      - teams
+    get:
+      consumes:
+      - application/json
+      description: Retrieve details of a specific team
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Team'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get team details
+      tags:
+      - teams
+    put:
+      consumes:
+      - application/json
+      description: Update team details. Requires owner or admin role.
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      - description: Team update details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateTeamRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.Team'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update team
+      tags:
+      - teams
+  /teams/{teamId}/invitations:
+    get:
+      consumes:
+      - application/json
+      description: List all pending invitations for a team. Requires owner or admin
+        role.
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.InvitationListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: List team invitations
+      tags:
+      - team-invitations
+    post:
+      consumes:
+      - application/json
+      description: Invite a user to join a team. Requires owner or admin role.
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      - description: Invitation details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateInvitationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.TeamInvitation'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Create team invitation
+      tags:
+      - team-invitations
+  /teams/{teamId}/invitations/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Cancel a pending invitation. Requires owner or admin role.
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      - description: Invitation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Cancel team invitation
+      tags:
+      - team-invitations
+  /teams/{teamId}/leave:
+    post:
+      consumes:
+      - application/json
+      description: Leave a team. Owner cannot leave without transferring ownership.
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Leave team
+      tags:
+      - team-members
+  /teams/{teamId}/members:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all members of a team with their details
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.TeamMemberListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: List team members
+      tags:
+      - team-members
+  /teams/{teamId}/members/{userId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a member from the team. Requires owner or admin role.
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      - description: User ID to remove
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Remove team member
+      tags:
+      - team-members
+  /teams/{teamId}/members/{userId}/role:
+    put:
+      consumes:
+      - application/json
+      description: Update a member's role in the team. Requires owner or admin role.
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: New role
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update member role
+      tags:
+      - team-members
+  /teams/{teamId}/transfer:
+    post:
+      consumes:
+      - application/json
+      description: Transfer team ownership to another member. Requires owner role.
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      - description: New owner details
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.TransferOwnershipRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Transfer team ownership
+      tags:
+      - teams
+  /teams/{teamId}/voice-memos:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve paginated list of a team's voice memos, sorted by newest
+        first
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10, max: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.VoiceMemoListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: List team voice memos
+      tags:
+      - team-voice-memos
+  /teams/{teamId}/voice-memos/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete a voice memo from a team
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      - description: Voice Memo ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete team voice memo
+      tags:
+      - team-voice-memos
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific voice memo from a team
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      - description: Voice Memo ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.VoiceMemo'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get team voice memo
+      tags:
+      - team-voice-memos
   /users:
     get:
       consumes:

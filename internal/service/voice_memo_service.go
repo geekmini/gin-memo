@@ -95,3 +95,83 @@ func (s *VoiceMemoService) DeleteVoiceMemo(ctx context.Context, memoID, userID p
 	// Perform soft delete
 	return s.repo.SoftDelete(ctx, memoID)
 }
+
+// ListByTeamID retrieves paginated voice memos for a team with pre-signed URLs.
+func (s *VoiceMemoService) ListByTeamID(ctx context.Context, teamID string, page, limit int) (*models.VoiceMemoListResponse, error) {
+	objectID, err := primitive.ObjectIDFromHex(teamID)
+	if err != nil {
+		return nil, err
+	}
+
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 10 {
+		limit = 10
+	}
+
+	memos, total, err := s.repo.FindByTeamID(ctx, objectID, page, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate pre-signed URLs for each memo
+	for i := range memos {
+		if memos[i].AudioFileKey != "" {
+			url, err := s.s3Client.GetPresignedURL(ctx, memos[i].AudioFileKey, presignedURLExpiry)
+			if err != nil {
+				continue
+			}
+			memos[i].AudioFileURL = url
+		}
+	}
+
+	totalPages := total / limit
+	if total%limit > 0 {
+		totalPages++
+	}
+
+	return &models.VoiceMemoListResponse{
+		Items: memos,
+		Pagination: models.Pagination{
+			Page:       page,
+			Limit:      limit,
+			TotalItems: total,
+			TotalPages: totalPages,
+		},
+	}, nil
+}
+
+// GetVoiceMemo retrieves a voice memo by ID with pre-signed URL.
+func (s *VoiceMemoService) GetVoiceMemo(ctx context.Context, memoID primitive.ObjectID) (*models.VoiceMemo, error) {
+	memo, err := s.repo.FindByID(ctx, memoID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate pre-signed URL
+	if memo.AudioFileKey != "" {
+		url, err := s.s3Client.GetPresignedURL(ctx, memo.AudioFileKey, presignedURLExpiry)
+		if err == nil {
+			memo.AudioFileURL = url
+		}
+	}
+
+	return memo, nil
+}
+
+// DeleteTeamVoiceMemo soft deletes a team voice memo (no ownership check - authz handles permissions).
+func (s *VoiceMemoService) DeleteTeamVoiceMemo(ctx context.Context, memoID, teamID primitive.ObjectID) error {
+	// Fetch memo to verify it exists and belongs to the team
+	memo, err := s.repo.FindByID(ctx, memoID)
+	if err != nil {
+		return err
+	}
+
+	// Verify it belongs to the team
+	if memo.TeamID == nil || *memo.TeamID != teamID {
+		return apperrors.ErrVoiceMemoNotFound
+	}
+
+	return s.repo.SoftDelete(ctx, memoID)
+}

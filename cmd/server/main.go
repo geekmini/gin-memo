@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"gin-sample/internal/authz"
 	"gin-sample/internal/cache"
 	"gin-sample/internal/config"
 	"gin-sample/internal/database"
@@ -58,19 +59,40 @@ func main() {
 	userRepo := repository.NewUserRepository(mongoDB.Database)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(mongoDB.Database)
 	voiceMemoRepo := repository.NewVoiceMemoRepository(mongoDB.Database)
+	teamRepo := repository.NewTeamRepository(mongoDB.Database)
+	teamMemberRepo := repository.NewTeamMemberRepository(mongoDB.Database)
+	teamInvitationRepo := repository.NewTeamInvitationRepository(mongoDB.Database)
+
+	// Authorization
+	authorizer := authz.NewLocalAuthorizer(teamMemberRepo)
 
 	// Service layer
 	authService := service.NewAuthService(userRepo, refreshTokenRepo, redisCache, jwtManager, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
 	userService := service.NewUserService(userRepo, redisCache)
 	voiceMemoService := service.NewVoiceMemoService(voiceMemoRepo, s3Client)
+	teamService := service.NewTeamService(teamRepo, teamMemberRepo, teamInvitationRepo, voiceMemoRepo)
+	teamMemberService := service.NewTeamMemberService(teamMemberRepo, userRepo, teamRepo)
+	teamInvitationService := service.NewTeamInvitationService(teamInvitationRepo, teamMemberRepo, teamRepo, userRepo)
 
 	// Handler layer
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
 	voiceMemoHandler := handler.NewVoiceMemoHandler(voiceMemoService)
+	teamHandler := handler.NewTeamHandler(teamService)
+	teamMemberHandler := handler.NewTeamMemberHandler(teamMemberService)
+	invitationHandler := handler.NewTeamInvitationHandler(teamInvitationService, userService)
 
 	// Router
-	r := router.Setup(authHandler, userHandler, voiceMemoHandler, jwtManager)
+	r := router.Setup(&router.Config{
+		AuthHandler:       authHandler,
+		UserHandler:       userHandler,
+		VoiceMemoHandler:  voiceMemoHandler,
+		TeamHandler:       teamHandler,
+		TeamMemberHandler: teamMemberHandler,
+		InvitationHandler: invitationHandler,
+		JWTManager:        jwtManager,
+		Authorizer:        authorizer,
+	})
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.ServerPort)

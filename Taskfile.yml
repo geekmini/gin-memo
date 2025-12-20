@@ -34,6 +34,11 @@ tasks:
     deps: [docker:up]
     cmd: go run cmd/seed/main.go
 
+  index:
+    desc: Create MongoDB indexes
+    deps: [docker:up]
+    cmd: go run cmd/index/main.go
+
   # Docker
   docker:up:
     desc: Start dependencies (MongoDB, Redis, MinIO)
