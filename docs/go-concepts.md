@@ -51,10 +51,15 @@ default:
 
 ### The context hierarchy:
 
-```
-context.Background()          <-- Root context (never cancels)
-    └── context.WithTimeout() <-- Child: cancels after duration
-        └── context.WithValue() <-- Child: carries a value
+```mermaid
+graph TD
+    A[context.Background] -->|never cancels| B[context.WithTimeout]
+    B -->|cancels after duration| C[context.WithValue]
+    C -->|carries a value| D[...]
+
+    style A fill:#e1f5fe
+    style B fill:#fff3e0
+    style C fill:#f3e5f5
 ```
 
 When a parent context is cancelled, all children are cancelled too.

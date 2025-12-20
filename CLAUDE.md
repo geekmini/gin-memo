@@ -94,6 +94,24 @@ docs: update README
 feat!: breaking change to API
 ```
 
+## Documentation
+
+### Diagrams
+- Always use **Mermaid** for diagrams in markdown files
+- Supported diagram types: `flowchart`, `sequenceDiagram`, `graph`, `gantt`, `classDiagram`
+- Example:
+  ```mermaid
+  flowchart TD
+      A[Start] --> B{Decision}
+      B -->|Yes| C[Action]
+      B -->|No| D[End]
+  ```
+
+### Documentation Files
+- Place in `docs/` directory
+- Use descriptive filenames with kebab-case (`logout-strategies.md`)
+- API specifications go in `spec/` directory
+
 ## Coding Conventions
 
 ### Naming

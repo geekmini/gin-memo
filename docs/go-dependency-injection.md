@@ -47,23 +47,18 @@ func main() {
 
 ### Architecture
 
-```
-main.go (wiring)
-    │
-    ├── config.Load()
-    │
-    ├── database.NewMongoDB()
-    │
-    ├── repository.NewUserRepository(db)
-    │       │
-    │       ▼
-    ├── service.NewUserService(repo, cfg)
-    │       │
-    │       ▼
-    └── handler.NewUserHandler(service)
-            │
-            ▼
-        router.Setup(handler)
+```mermaid
+flowchart TD
+    A[main.go - wiring] --> B[config.Load]
+    A --> C[database.NewMongoDB]
+    A --> D[repository.NewUserRepository]
+    D -->|inject db| E[service.NewUserService]
+    E -->|inject repo, cfg| F[handler.NewUserHandler]
+    F -->|inject service| G[router.Setup]
+
+    subgraph "Dependency Flow"
+        D --> E --> F --> G
+    end
 ```
 
 ### Example: main.go

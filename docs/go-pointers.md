@@ -22,11 +22,19 @@ name := (*ptr).Name          // Go to address, get the value
                              // name = "John"
 ```
 
-```
-Variable        Memory
---------        ------
-user    →      [Name: "John"]  @ address 0x1234
-ptr     →      0x1234          (stores the address)
+```mermaid
+flowchart LR
+    subgraph Variables
+        user[user]
+        ptr[ptr = 0x1234]
+    end
+
+    subgraph Memory["Memory @ 0x1234"]
+        data["{ Name: 'John' }"]
+    end
+
+    user --> data
+    ptr --> data
 ```
 
 ---
