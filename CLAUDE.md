@@ -255,3 +255,16 @@ go test ./...     # Same thing
 
 ### Voice Memos (Protected)
 - `GET /api/v1/voice-memos` - List user's voice memos (paginated)
+
+## Postman
+
+This project uses Postman for API testing and documentation.
+
+**Default workspace and collection for MCP operations:**
+
+| Resource | Name | ID |
+|----------|------|-----|
+| Workspace | golang | `1ee078be-5479-45b9-9d5a-883cd4c6ef50` |
+| Collection | go-sample | `25403495-bb644262-dce4-42ac-8cc4-810d8a328fc9` |
+
+When using Postman MCP tools, always use these IDs unless otherwise specified.
