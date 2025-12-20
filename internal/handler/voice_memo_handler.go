@@ -1,12 +1,15 @@
 package handler
 
 import (
+	"errors"
 	"strconv"
 
+	apperrors "gin-sample/internal/errors"
 	"gin-sample/internal/service"
 	"gin-sample/pkg/response"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // VoiceMemoHandler handles HTTP requests for voice memo operations.
@@ -52,4 +55,58 @@ func (h *VoiceMemoHandler) ListVoiceMemos(c *gin.Context) {
 	}
 
 	response.Success(c, result)
+}
+
+// DeleteVoiceMemo godoc
+// @Summary      Soft delete voice memo
+// @Description  Mark a voice memo as deleted. User can only delete their own memos.
+// @Tags         voice-memos
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Voice Memo ID"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      403  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Security     BearerAuth
+// @Router       /voice-memos/{id} [delete]
+func (h *VoiceMemoHandler) DeleteVoiceMemo(c *gin.Context) {
+	// Validate and parse memo ID from path
+	memoID, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		response.BadRequest(c, "invalid voice memo id format")
+		return
+	}
+
+	// Get user ID from context (set by auth middleware)
+	userIDStr, exists := c.Get("userID")
+	if !exists {
+		response.Unauthorized(c, "user not authenticated")
+		return
+	}
+
+	// Validate and parse user ID
+	userID, err := primitive.ObjectIDFromHex(userIDStr.(string))
+	if err != nil {
+		response.Unauthorized(c, "invalid user id format")
+		return
+	}
+
+	// Call service to delete
+	err = h.service.DeleteVoiceMemo(c.Request.Context(), memoID, userID)
+	if err != nil {
+		if errors.Is(err, apperrors.ErrVoiceMemoNotFound) {
+			response.NotFound(c, err.Error())
+			return
+		}
+		if errors.Is(err, apperrors.ErrVoiceMemoUnauthorized) {
+			response.Forbidden(c, err.Error())
+			return
+		}
+		response.InternalError(c)
+		return
+	}
+
+	response.Success(c, gin.H{"message": "voice memo deleted"})
 }

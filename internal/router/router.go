@@ -63,6 +63,7 @@ func Setup(authHandler *handler.AuthHandler, userHandler *handler.UserHandler, v
 		voiceMemos.Use(middleware.Auth(jwtManager))
 		{
 			voiceMemos.GET("", voiceMemoHandler.ListVoiceMemos)
+			voiceMemos.DELETE("/:id", voiceMemoHandler.DeleteVoiceMemo)
 		}
 	}
 

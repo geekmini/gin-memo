@@ -20,6 +20,7 @@ type VoiceMemo struct {
 	Tags          []string           `json:"tags" bson:"tags" example:"work,meeting"`
 	IsFavorite    bool               `json:"isFavorite" bson:"isFavorite" example:"false"`
 	CreatedAt     time.Time          `json:"createdAt" bson:"createdAt" example:"2024-01-15T09:30:00Z"`
+	DeletedAt     *time.Time         `json:"deletedAt,omitempty" bson:"deletedAt,omitempty"`
 }
 
 // VoiceMemoListResponse is the response for listing voice memos.

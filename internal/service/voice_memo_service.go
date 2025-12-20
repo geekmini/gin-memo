@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	apperrors "gin-sample/internal/errors"
 	"gin-sample/internal/models"
 	"gin-sample/internal/repository"
 	"gin-sample/internal/storage"
@@ -76,4 +77,21 @@ func (s *VoiceMemoService) ListByUserID(ctx context.Context, userID string, page
 			TotalPages: totalPages,
 		},
 	}, nil
+}
+
+// DeleteVoiceMemo soft deletes a voice memo after verifying ownership.
+func (s *VoiceMemoService) DeleteVoiceMemo(ctx context.Context, memoID, userID primitive.ObjectID) error {
+	// Fetch memo to verify it exists and check ownership
+	memo, err := s.repo.FindByID(ctx, memoID)
+	if err != nil {
+		return err
+	}
+
+	// Verify ownership
+	if memo.UserID != userID {
+		return apperrors.ErrVoiceMemoUnauthorized
+	}
+
+	// Perform soft delete
+	return s.repo.SoftDelete(ctx, memoID)
 }

@@ -17,3 +17,9 @@ var (
 	ErrTokenExpired        = errors.New("token expired")
 	ErrInvalidRefreshToken = errors.New("invalid or expired refresh token")
 )
+
+// Voice memo errors
+var (
+	ErrVoiceMemoNotFound     = errors.New("voice memo not found")
+	ErrVoiceMemoUnauthorized = errors.New("you can only delete your own voice memos")
+)

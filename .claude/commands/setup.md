@@ -16,8 +16,8 @@ Help a new engineer set up the gin-sample project for local development.
 
 2. **Install Missing Tools**
    For any missing tools, provide the installation command:
-   - Go: Direct user to https://go.dev/dl/
-   - OrbStack: Direct user to https://orbstack.dev/
+   - Go: `brew install go`
+   - OrbStack: `brew install --cask orbstack`
    - Task: `go install github.com/go-task/task/v3/cmd/task@latest`
    - lefthook: `go install github.com/evilmartians/lefthook@latest`
    - golangci-lint: `go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest`
@@ -39,9 +39,8 @@ Help a new engineer set up the gin-sample project for local development.
    - If yes, run `task seed`
 
 6. **Verify Setup**
-   - Run `task run` or `task dev`
-   - Check health endpoint: `curl http://localhost:8080/health`
-   - Confirm Swagger UI is accessible at http://localhost:8080/docs/index.html
+   - Verify Docker services are running: `docker compose ps`
+   - Confirm MongoDB, Redis, and MinIO are healthy
 
 7. **Summary**
    Print a summary of:
