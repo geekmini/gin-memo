@@ -45,5 +45,7 @@ jobs:
             - `docs/code-review-guide.md` for review guidelines and output format
             - `CLAUDE.md` for project-specific conventions
 
+            Use `gh pr comment` to leave comment.
+
           # Use Claude Opus 4.5 model with allowed tools for PR review
-          claude_args: '--model claude-opus-4-5 --allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
+          claude_args: '--model claude-opus-4-5 --allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
