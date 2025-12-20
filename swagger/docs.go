@@ -566,6 +566,67 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/voice-memos/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Mark a voice memo as deleted. User can only delete their own memos.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "voice-memos"
+                ],
+                "summary": "Soft delete voice memo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Voice Memo ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -742,6 +803,9 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string",
                     "example": "2024-01-15T09:30:00Z"
+                },
+                "deletedAt": {
+                    "type": "string"
                 },
                 "duration": {
                     "type": "integer",

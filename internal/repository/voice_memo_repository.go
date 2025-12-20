@@ -2,7 +2,10 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"time"
 
+	apperrors "gin-sample/internal/errors"
 	"gin-sample/internal/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -14,6 +17,8 @@ import (
 // VoiceMemoRepository defines the interface for voice memo data operations.
 type VoiceMemoRepository interface {
 	FindByUserID(ctx context.Context, userID primitive.ObjectID, page, limit int) ([]models.VoiceMemo, int, error)
+	FindByID(ctx context.Context, id primitive.ObjectID) (*models.VoiceMemo, error)
+	SoftDelete(ctx context.Context, id primitive.ObjectID) error
 }
 
 // voiceMemoRepository implements VoiceMemoRepository using MongoDB.
@@ -29,8 +34,12 @@ func NewVoiceMemoRepository(db *mongo.Database) VoiceMemoRepository {
 }
 
 // FindByUserID returns paginated voice memos for a user, sorted by createdAt descending.
+// Excludes soft-deleted records.
 func (r *voiceMemoRepository) FindByUserID(ctx context.Context, userID primitive.ObjectID, page, limit int) ([]models.VoiceMemo, int, error) {
-	filter := bson.M{"userId": userID}
+	filter := bson.M{
+		"userId":    userID,
+		"deletedAt": bson.M{"$exists": false},
+	}
 
 	// Count total documents
 	total, err := r.collection.CountDocuments(ctx, filter)
@@ -64,4 +73,48 @@ func (r *voiceMemoRepository) FindByUserID(ctx context.Context, userID primitive
 	}
 
 	return memos, int(total), nil
+}
+
+// FindByID retrieves a voice memo by ID. Excludes soft-deleted records.
+func (r *voiceMemoRepository) FindByID(ctx context.Context, id primitive.ObjectID) (*models.VoiceMemo, error) {
+	filter := bson.M{
+		"_id":       id,
+		"deletedAt": bson.M{"$exists": false},
+	}
+
+	var memo models.VoiceMemo
+	err := r.collection.FindOne(ctx, filter).Decode(&memo)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, apperrors.ErrVoiceMemoNotFound
+		}
+		return nil, err
+	}
+
+	return &memo, nil
+}
+
+// SoftDelete marks a voice memo as deleted by setting deletedAt timestamp.
+func (r *voiceMemoRepository) SoftDelete(ctx context.Context, id primitive.ObjectID) error {
+	filter := bson.M{
+		"_id":       id,
+		"deletedAt": bson.M{"$exists": false},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"deletedAt": time.Now(),
+		},
+	}
+
+	result, err := r.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return apperrors.ErrVoiceMemoNotFound
+	}
+
+	return nil
 }

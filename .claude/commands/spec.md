@@ -12,9 +12,9 @@ A comprehensive workflow that combines structured requirements gathering, codeba
 5. Architecture Design → Propose 2-3 approaches (agents)
 6. Generate Spec      → Create spec document
 7. Add to Postman     → Add endpoints to collection (optional)
-8. Implementation     → Build the feature (optional)
+8. Implementation     → Build the feature + regenerate Swagger (optional)
 9. Quality Review     → Review code quality (agents)
-10. Completion        → Summary and next steps
+10. Documentation     → Update CLAUDE.md if needed, final summary
 ```
 
 ---
@@ -234,14 +234,24 @@ After architecture approval, create a spec document at `spec/[feature-name].md`:
 
 ## Phase 7: Add Endpoints to Postman (Optional)
 
-**Skip this phase if:**
+### Source of Truth
+
+| Source | Purpose |
+|--------|---------|
+| **Swagger** | API contract (endpoints, params, schemas) - regenerated via `task swagger` |
+| **Postman** | Team workflow (tests, examples, env configs) - managed via MCP |
+
+**Note:** Postman's OpenAPI sync has limitations (doesn't delete removed endpoints, can overwrite team customizations). Use Postman MCP for incremental updates rather than full collection sync.
+
+### When to Skip
+
 - The feature doesn't involve new API endpoints
 - The endpoints already exist in Postman
 - The user prefers to add them manually later
 
 **Ask the user**: "This feature includes [N] new endpoint(s). Would you like me to add them to Postman?"
 
-If yes, add the new API endpoints using MCP tools:
+### If Yes, Add Endpoints
 
 1. Use the Postman MCP tools to add each new endpoint to the collection
 2. Use the workspace and collection IDs from CLAUDE.md:
@@ -270,6 +280,7 @@ If yes, proceed with implementation:
 4. Create/modify files as specified
 5. Run tests if available
 6. Run linters/formatters
+7. **Run `task swagger`** to regenerate API documentation
 
 If no, skip to Phase 10.
 
@@ -308,7 +319,46 @@ Fix any critical issues before proceeding.
 
 ---
 
-## Phase 10: Completion
+## Phase 10: Documentation & Completion
+
+### Documentation Update Check
+
+**Automatically check if `CLAUDE.md` + related `docs/` files need updates based on the feature implemented.**
+
+#### CLAUDE.md Updates
+
+| Change Type | Section to Update |
+|-------------|-------------------|
+| Change project structure | "Project Structure" section |
+
+#### Source of Truth Files
+
+| Change Type | File to Update |
+|-------------|----------------|
+| Add/modify/delete API endpoint | `swagger/swagger.yaml` (via `task swagger`) |
+| Add/modify/delete environment variable | `.env.example` |
+| Add/modify local services | `docker-compose.yml` |
+| Add/modify task commands | `Taskfile.yml` |
+
+#### Related docs/ Updates
+
+| Change Type | Document | Section to Update |
+|-------------|----------|-------------------|
+| Add/modify layer convention | `docs/architecture.md` | Relevant layer section |
+| Add/modify DTO pattern | `docs/architecture.md` | "Request/Response DTOs" section |
+| Complete handler validation migration | `docs/architecture.md` | "Migration Status" table |
+| Add/modify design pattern | `docs/design-patterns.md` | Relevant pattern section |
+| Add/modify caching strategy | `docs/design-patterns.md` | "Cache Key Pattern" section |
+| Add/modify token flow | `docs/design-patterns.md` | "Token Pattern" section |
+
+**If updates are needed:**
+1. Read `CLAUDE.md` and relevant `docs/` files
+2. Propose the specific updates to the user
+3. Apply updates after user approval
+
+**If no updates needed**, note this in the completion summary.
+
+### Final Summary
 
 Present final summary:
 
@@ -318,10 +368,24 @@ Present final summary:
 ### Spec Document
 - Created: `spec/[feature-name].md`
 
+### Swagger Documentation
+- [Updated via `task swagger`] / [Skipped - no implementation]
+
 ### Postman Endpoints (if added)
 - [Endpoint 1]: [METHOD] [URL]
 - [Endpoint 2]: [METHOD] [URL]
 - Or: "Skipped - no new endpoints" / "Skipped - user preference"
+
+### Documentation Updates
+- `CLAUDE.md`: [Updated: section] / [No updates needed]
+- `docs/architecture.md`: [Updated: section] / [No updates needed]
+- `docs/design-patterns.md`: [No updates needed]
+
+### Source of Truth Files
+- `swagger/swagger.yaml`: [Regenerated via `task swagger`] / [No changes]
+- `.env.example`: [Updated] / [No updates needed]
+- `docker-compose.yml`: [No updates needed]
+- `Taskfile.yml`: [No updates needed]
 
 ### Implementation Status
 - [Completed / Skipped / Pending]
