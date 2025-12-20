@@ -16,7 +16,7 @@ import (
 )
 
 // Setup creates and configures the Gin router.
-func Setup(userHandler *handler.UserHandler, voiceMemoHandler *handler.VoiceMemoHandler, jwtManager *auth.JWTManager) *gin.Engine {
+func Setup(authHandler *handler.AuthHandler, userHandler *handler.UserHandler, voiceMemoHandler *handler.VoiceMemoHandler, jwtManager *auth.JWTManager) *gin.Engine {
 	r := gin.Default()
 
 	// Global middleware
@@ -34,10 +34,18 @@ func Setup(userHandler *handler.UserHandler, voiceMemoHandler *handler.VoiceMemo
 	v1 := r.Group("/api/v1")
 	{
 		// Auth routes (public)
-		auth := v1.Group("/auth")
+		authRoutes := v1.Group("/auth")
 		{
-			auth.POST("/register", userHandler.Register)
-			auth.POST("/login", userHandler.Login)
+			authRoutes.POST("/register", authHandler.Register)
+			authRoutes.POST("/login", authHandler.Login)
+			authRoutes.POST("/refresh", authHandler.Refresh)
+		}
+
+		// Auth routes (protected)
+		authProtected := v1.Group("/auth")
+		authProtected.Use(middleware.Auth(jwtManager))
+		{
+			authProtected.POST("/logout", authHandler.Logout)
 		}
 
 		// User routes (protected)

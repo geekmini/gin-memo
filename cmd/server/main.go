@@ -52,22 +52,25 @@ func main() {
 	s3Client := storage.NewS3Client(cfg.S3Endpoint, cfg.S3AccessKey, cfg.S3SecretKey, cfg.S3Bucket, cfg.S3UseSSL)
 
 	// JWT Manager
-	jwtManager := auth.NewJWTManager(cfg.JWTSecret, cfg.JWTExpiry)
+	jwtManager := auth.NewJWTManager(cfg.AccessTokenSecret, cfg.AccessTokenExpiry)
 
 	// Repository layer
 	userRepo := repository.NewUserRepository(mongoDB.Database)
+	refreshTokenRepo := repository.NewRefreshTokenRepository(mongoDB.Database)
 	voiceMemoRepo := repository.NewVoiceMemoRepository(mongoDB.Database)
 
 	// Service layer
-	userService := service.NewUserService(userRepo, redisCache, jwtManager)
+	authService := service.NewAuthService(userRepo, refreshTokenRepo, redisCache, jwtManager, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
+	userService := service.NewUserService(userRepo, redisCache)
 	voiceMemoService := service.NewVoiceMemoService(voiceMemoRepo, s3Client)
 
 	// Handler layer
+	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
 	voiceMemoHandler := handler.NewVoiceMemoHandler(voiceMemoService)
 
 	// Router
-	r := router.Setup(userHandler, voiceMemoHandler, jwtManager)
+	r := router.Setup(authHandler, userHandler, voiceMemoHandler, jwtManager)
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.ServerPort)

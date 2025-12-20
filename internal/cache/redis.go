@@ -83,3 +83,31 @@ func (r *Redis) Delete(ctx context.Context, key string) error {
 func UserCacheKey(userID string) string {
 	return fmt.Sprintf("user:%s", userID)
 }
+
+// RefreshTokenCacheKey generates a cache key for a refresh token.
+func RefreshTokenCacheKey(token string) string {
+	return fmt.Sprintf("refresh:%s", token)
+}
+
+// SetRefreshToken stores a refresh token in cache.
+func (r *Redis) SetRefreshToken(ctx context.Context, token string, userID string, ttl time.Duration) error {
+	return r.client.Set(ctx, RefreshTokenCacheKey(token), userID, ttl).Err()
+}
+
+// GetRefreshToken retrieves a user ID from a refresh token.
+// Returns empty string if token doesn't exist.
+func (r *Redis) GetRefreshToken(ctx context.Context, token string) (string, error) {
+	userID, err := r.client.Get(ctx, RefreshTokenCacheKey(token)).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return "", nil // Key doesn't exist
+		}
+		return "", err
+	}
+	return userID, nil
+}
+
+// DeleteRefreshToken removes a refresh token from cache.
+func (r *Redis) DeleteRefreshToken(ctx context.Context, token string) error {
+	return r.client.Del(ctx, RefreshTokenCacheKey(token)).Err()
+}

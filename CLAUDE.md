@@ -212,9 +212,10 @@ MONGO_DATABASE=gin_sample
 # Redis
 REDIS_URI=localhost:6379
 
-# JWT
-JWT_SECRET=your-secret-key
-JWT_EXPIRY=24h
+# Auth Tokens
+ACCESS_TOKEN_SECRET=your-secret-key
+ACCESS_TOKEN_EXPIRY=15m
+REFRESH_TOKEN_EXPIRY=168h
 
 # S3 (MinIO for local)
 S3_ENDPOINT=localhost:9000
@@ -239,8 +240,12 @@ go test ./...     # Same thing
 ## API Endpoints
 
 ### Auth (Public)
-- `POST /api/v1/auth/register` - Register new user
-- `POST /api/v1/auth/login` - Login, get JWT
+- `POST /api/v1/auth/register` - Register new user, returns access + refresh tokens
+- `POST /api/v1/auth/login` - Login, returns access + refresh tokens
+- `POST /api/v1/auth/refresh` - Exchange refresh token for new access token
+
+### Auth (Protected)
+- `POST /api/v1/auth/logout` - Invalidate refresh token
 
 ### Users (Protected)
 - `GET /api/v1/users` - List all users

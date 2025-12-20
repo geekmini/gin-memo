@@ -1,5 +1,19 @@
 basePath: /api/v1
 definitions:
+  models.AuthResponse:
+    properties:
+      accessToken:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      expiresIn:
+        example: 900
+        type: integer
+      refreshToken:
+        example: rf_8a7b3c9d...
+        type: string
+      user:
+        $ref: '#/definitions/models.User'
+    type: object
   models.CreateUserRequest:
     properties:
       email:
@@ -30,13 +44,13 @@ definitions:
     - email
     - password
     type: object
-  models.LoginResponse:
+  models.LogoutRequest:
     properties:
-      token:
-        example: eyJhbGciOiJIUzI1NiIs...
+      refreshToken:
+        example: rf_8a7b3c9d...
         type: string
-      user:
-        $ref: '#/definitions/models.User'
+    required:
+    - refreshToken
     type: object
   models.Pagination:
     properties:
@@ -51,6 +65,23 @@ definitions:
         type: integer
       totalPages:
         example: 5
+        type: integer
+    type: object
+  models.RefreshRequest:
+    properties:
+      refreshToken:
+        example: rf_8a7b3c9d...
+        type: string
+    required:
+    - refreshToken
+    type: object
+  models.RefreshResponse:
+    properties:
+      accessToken:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      expiresIn:
+        example: 900
         type: integer
     type: object
   models.UpdateUserRequest:
@@ -152,7 +183,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Authenticate user and return JWT token
+      description: Authenticate user and return access token and refresh token
       parameters:
       - description: User credentials
         in: body
@@ -170,7 +201,7 @@ paths:
             - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/models.LoginResponse'
+                  $ref: '#/definitions/models.AuthResponse'
               type: object
         "400":
           description: Bad Request
@@ -185,6 +216,79 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
       summary: User login
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Invalidate the refresh token
+      parameters:
+      - description: Refresh token to invalidate
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.LogoutRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: User logout
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Exchange a refresh token for a new access token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.RefreshResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Refresh access token
       tags:
       - auth
   /auth/register:
@@ -209,7 +313,7 @@ paths:
             - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/models.User'
+                  $ref: '#/definitions/models.AuthResponse'
               type: object
         "400":
           description: Bad Request
