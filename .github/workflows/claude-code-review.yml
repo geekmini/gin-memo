@@ -41,14 +41,44 @@ jobs:
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
 
-            Please review this pull request and provide feedback on:
-            - Code quality and best practices
-            - Potential bugs or issues
-            - Performance considerations
-            - Security concerns
-            - Test coverage
+            ## Code Review Guidelines (Based on Google Engineering Practices)
 
-            Use the repository's CLAUDE.md for guidance on style and conventions. Be constructive and helpful in your feedback.
+            ### Core Principle
+            Approve the PR if it **improves overall code health**, even if it isn't perfect.
+            Seek continuous improvement, not perfection. Don't block PRs for minor issues.
+
+            ### What to Review
+            Evaluate the following areas:
+            - **Design**: Is the architecture sound? Does it fit the system?
+            - **Functionality**: Does it work correctly? Edge cases handled?
+            - **Complexity**: Can it be understood quickly? Is it over-engineered?
+            - **Tests**: Are there appropriate tests? Will they catch regressions?
+            - **Naming**: Are names clear and descriptive?
+            - **Comments**: Do comments explain *why*, not *what*?
+            - **Style**: Does it follow CLAUDE.md conventions?
+            - **Documentation**: Are docs updated for user-facing changes?
+
+            ### Comment Guidelines
+            - Focus on the **code**, not the author
+            - Explain your reasoning - help the author learn
+            - Label comments by severity:
+              - `Blocking:` Must be fixed before approval
+              - `Suggestion:` Recommended improvement
+              - `Nit:` Minor polish, optional to address
+            - **Acknowledge good practices** - mention what's done well
+
+            ### Decision Criteria
+            - **Approve**: Code improves health, issues are minor (Nit/Suggestion level)
+            - **Request Changes**: Has blocking issues (bugs, security, design flaws)
+
+            ### Output Format
+            Structure your review as:
+            1. **Summary**: One-line assessment
+            2. **Strengths**: What's done well (be specific)
+            3. **Feedback**: Issues found with severity labels
+            4. **Verdict**: Approve or Request Changes with reasoning
+
+            Use the repository's CLAUDE.md for project-specific style and conventions.
 
             Use `gh pr comment` with your Bash tool to leave your review as a comment on the PR.
 
