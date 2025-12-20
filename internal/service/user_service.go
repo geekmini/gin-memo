@@ -9,7 +9,6 @@ import (
 	apperrors "gin-sample/internal/errors"
 	"gin-sample/internal/models"
 	"gin-sample/internal/repository"
-	"gin-sample/pkg/auth"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -18,66 +17,16 @@ const userCacheTTL = 15 * time.Minute
 
 // UserService handles business logic for user operations.
 type UserService struct {
-	repo       repository.UserRepository
-	cache      *cache.Redis
-	jwtManager *auth.JWTManager
+	repo  repository.UserRepository
+	cache *cache.Redis
 }
 
 // NewUserService creates a new UserService.
-func NewUserService(repo repository.UserRepository, cache *cache.Redis, jwtManager *auth.JWTManager) *UserService {
+func NewUserService(repo repository.UserRepository, cache *cache.Redis) *UserService {
 	return &UserService{
-		repo:       repo,
-		cache:      cache,
-		jwtManager: jwtManager,
+		repo:  repo,
+		cache: cache,
 	}
-}
-
-// Register creates a new user account.
-func (s *UserService) Register(ctx context.Context, req *models.CreateUserRequest) (*models.User, error) {
-	// Hash the password
-	hashedPassword, err := auth.HashPassword(req.Password)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create user model
-	user := &models.User{
-		Email:    req.Email,
-		Password: hashedPassword,
-		Name:     req.Name,
-	}
-
-	// Save to database
-	if err := s.repo.Create(ctx, user); err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-// Login authenticates a user and returns a JWT token.
-func (s *UserService) Login(ctx context.Context, req *models.LoginRequest) (*models.LoginResponse, error) {
-	// Find user by email
-	user, err := s.repo.FindByEmail(ctx, req.Email)
-	if err != nil {
-		return nil, apperrors.ErrInvalidCredentials
-	}
-
-	// Check password
-	if err := auth.CheckPassword(req.Password, user.Password); err != nil {
-		return nil, apperrors.ErrInvalidCredentials
-	}
-
-	// Generate JWT token
-	token, err := s.jwtManager.GenerateToken(user.ID.Hex())
-	if err != nil {
-		return nil, err
-	}
-
-	return &models.LoginResponse{
-		Token: token,
-		User:  *user,
-	}, nil
 }
 
 // GetUser retrieves a user by ID (with caching).

@@ -11,18 +11,19 @@ import (
 
 // Config holds all configuration for the application
 type Config struct {
-	ServerPort    string
-	GinMode       string
-	MongoURI      string
-	MongoDatabase string
-	RedisURI      string
-	JWTSecret     string
-	JWTExpiry     time.Duration
-	S3Endpoint    string
-	S3AccessKey   string
-	S3SecretKey   string
-	S3Bucket      string
-	S3UseSSL      bool
+	ServerPort         string
+	GinMode            string
+	MongoURI           string
+	MongoDatabase      string
+	RedisURI           string
+	AccessTokenSecret  string
+	AccessTokenExpiry  time.Duration
+	RefreshTokenExpiry time.Duration
+	S3Endpoint         string
+	S3AccessKey        string
+	S3SecretKey        string
+	S3Bucket           string
+	S3UseSSL           bool
 }
 
 // Load reads configuration from .env file and environment variables
@@ -31,18 +32,19 @@ func Load() *Config {
 	_ = godotenv.Load()
 
 	cfg := &Config{
-		ServerPort:    getEnv("SERVER_PORT", "8080"),
-		GinMode:       getEnv("GIN_MODE", "debug"),
-		MongoURI:      getEnvRequired("MONGO_URI"),
-		MongoDatabase: getEnvRequired("MONGO_DATABASE"),
-		RedisURI:      getEnv("REDIS_URI", "localhost:6379"),
-		JWTSecret:     getEnvRequired("JWT_SECRET"),
-		JWTExpiry:     parseDuration(getEnv("JWT_EXPIRY", "24h")),
-		S3Endpoint:    getEnv("S3_ENDPOINT", "localhost:9000"),
-		S3AccessKey:   getEnv("S3_ACCESS_KEY", "minioadmin"),
-		S3SecretKey:   getEnv("S3_SECRET_KEY", "minioadmin"),
-		S3Bucket:      getEnv("S3_BUCKET", "voice-memos"),
-		S3UseSSL:      getEnv("S3_USE_SSL", "false") == "true",
+		ServerPort:         getEnv("SERVER_PORT", "8080"),
+		GinMode:            getEnv("GIN_MODE", "debug"),
+		MongoURI:           getEnvRequired("MONGO_URI"),
+		MongoDatabase:      getEnvRequired("MONGO_DATABASE"),
+		RedisURI:           getEnv("REDIS_URI", "localhost:6379"),
+		AccessTokenSecret:  getEnvRequired("ACCESS_TOKEN_SECRET"),
+		AccessTokenExpiry:  parseDuration(getEnv("ACCESS_TOKEN_EXPIRY", "15m")),
+		RefreshTokenExpiry: parseDuration(getEnv("REFRESH_TOKEN_EXPIRY", "168h")),
+		S3Endpoint:         getEnv("S3_ENDPOINT", "localhost:9000"),
+		S3AccessKey:        getEnv("S3_ACCESS_KEY", "minioadmin"),
+		S3SecretKey:        getEnv("S3_SECRET_KEY", "minioadmin"),
+		S3Bucket:           getEnv("S3_BUCKET", "voice-memos"),
+		S3UseSSL:           getEnv("S3_USE_SSL", "false") == "true",
 	}
 
 	return cfg

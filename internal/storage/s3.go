@@ -15,9 +15,9 @@ import (
 
 // S3Client wraps the S3 client for generating pre-signed URLs.
 type S3Client struct {
-	client       *s3.Client
+	client        *s3.Client
 	presignClient *s3.PresignClient
-	bucket       string
+	bucket        string
 }
 
 // NewS3Client creates a new S3 client configured for the given endpoint.
@@ -54,9 +54,9 @@ func NewS3Client(endpoint, accessKey, secretKey, bucket string, useSSL bool) *S3
 	log.Printf("Connected to S3 at %s", endpointURL)
 
 	return &S3Client{
-		client:       client,
+		client:        client,
 		presignClient: s3.NewPresignClient(client),
-		bucket:       bucket,
+		bucket:        bucket,
 	}
 }
 

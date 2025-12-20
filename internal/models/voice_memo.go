@@ -12,7 +12,7 @@ type VoiceMemo struct {
 	UserID        primitive.ObjectID `json:"userId" bson:"userId" example:"507f1f77bcf86cd799439012"`
 	Title         string             `json:"title" bson:"title" example:"Meeting notes"`
 	Transcription string             `json:"transcription" bson:"transcription" example:"Today we discussed the Q4 roadmap..."`
-	AudioFileKey  string             `json:"-" bson:"audioFileKey"` // S3 key, not exposed in JSON
+	AudioFileKey  string             `json:"-" bson:"audioFileKey"`                                                                             // S3 key, not exposed in JSON
 	AudioFileURL  string             `json:"audioFileUrl" bson:"-" example:"https://bucket.s3.amazonaws.com/audio/123.mp3?X-Amz-Signature=..."` // Pre-signed URL, not stored in DB
 	Duration      int                `json:"duration" bson:"duration" example:"180"`
 	FileSize      int64              `json:"fileSize" bson:"fileSize" example:"2890000"`
