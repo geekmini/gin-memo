@@ -46,41 +46,17 @@ Seek continuous improvement, not perfection. There is no "perfect" code—only b
 - Are docs updated for user-facing changes?
 - Are API changes reflected in relevant documentation?
 
-## Comment Guidelines
+## Feedback Guidelines
 
-### Focus on Code, Not the Author
+When writing feedback in your review comment:
 
-```
-# Bad
-"Why did you use a global variable here?"
-
-# Good
-"Using a global variable here could cause issues in concurrent scenarios.
-Consider passing the state explicitly."
-```
-
-### Explain Your Reasoning
-
-```
-# Bad
-"Use a map instead of a slice."
-
-# Good
-"A map would give O(1) lookup here instead of O(n), which matters
-since this runs in a hot path during request handling."
-```
-
-### Label Comments by Severity
-
-| Label | Meaning |
-|-------|---------|
-| `Blocking:` | Must be fixed - bugs, security issues, design flaws |
-| `Suggestion:` | Recommended improvement |
-| `Nit:` | Minor polish, optional |
-
-### Acknowledge Good Practices
-
-Call out what's done well: clean abstractions, good test coverage, clear naming.
+- **Focus on code, not the author** - say "this could cause issues" not "why did you do this"
+- **Explain your reasoning** - help the author understand *why*
+- **Acknowledge good practices** - mention what's done well
+- **Label by severity:**
+  - `Blocking:` Must fix - bugs, security issues, design flaws
+  - `Suggestion:` Recommended improvement
+  - `Nit:` Minor polish, optional
 
 ## Output Format
 
