@@ -99,6 +99,10 @@ Uses [Conventional Commits](https://www.conventionalcommits.org/). Pre-commit ho
 - Use `errors.Is()` for comparison
 - Return errors up the stack, handle at handler level
 
+### Dependencies
+- Run `go mod tidy` after adding new imports or generating code
+- This ensures indirect dependencies are correctly marked as direct when imported
+
 ### API Responses
 Use `pkg/response` helpers:
 ```go
