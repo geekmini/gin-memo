@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	apperrors "gin-sample/internal/errors"
 	"gin-sample/internal/models"
 	"gin-sample/internal/repository"
 	"gin-sample/internal/storage"
@@ -79,21 +78,10 @@ func (s *VoiceMemoService) ListByUserID(ctx context.Context, userID string, page
 	}, nil
 }
 
-// DeleteVoiceMemo soft deletes a voice memo after verifying ownership.
+// DeleteVoiceMemo soft deletes a voice memo with atomic ownership check.
+// Idempotent - returns nil if memo is already deleted.
 func (s *VoiceMemoService) DeleteVoiceMemo(ctx context.Context, memoID, userID primitive.ObjectID) error {
-	// Fetch memo to verify it exists and check ownership
-	memo, err := s.repo.FindByID(ctx, memoID)
-	if err != nil {
-		return err
-	}
-
-	// Verify ownership
-	if memo.UserID != userID {
-		return apperrors.ErrVoiceMemoUnauthorized
-	}
-
-	// Perform soft delete
-	return s.repo.SoftDelete(ctx, memoID)
+	return s.repo.SoftDeleteWithOwnership(ctx, memoID, userID)
 }
 
 // ListByTeamID retrieves paginated voice memos for a team with pre-signed URLs.
@@ -160,18 +148,8 @@ func (s *VoiceMemoService) GetVoiceMemo(ctx context.Context, memoID primitive.Ob
 	return memo, nil
 }
 
-// DeleteTeamVoiceMemo soft deletes a team voice memo (no ownership check - authz handles permissions).
+// DeleteTeamVoiceMemo soft deletes a team voice memo with atomic team check.
+// Idempotent - returns nil if memo is already deleted.
 func (s *VoiceMemoService) DeleteTeamVoiceMemo(ctx context.Context, memoID, teamID primitive.ObjectID) error {
-	// Fetch memo to verify it exists and belongs to the team
-	memo, err := s.repo.FindByID(ctx, memoID)
-	if err != nil {
-		return err
-	}
-
-	// Verify it belongs to the team
-	if memo.TeamID == nil || *memo.TeamID != teamID {
-		return apperrors.ErrVoiceMemoNotFound
-	}
-
-	return s.repo.SoftDelete(ctx, memoID)
+	return s.repo.SoftDeleteWithTeam(ctx, memoID, teamID)
 }

@@ -60,13 +60,12 @@ func (h *VoiceMemoHandler) ListVoiceMemos(c *gin.Context) {
 
 // DeleteVoiceMemo godoc
 // @Summary      Soft delete voice memo
-// @Description  Mark a voice memo as deleted. User can only delete their own memos.
+// @Description  Mark a voice memo as deleted. User can only delete their own memos. Idempotent - returns 204 even if already deleted.
 // @Tags         voice-memos
-// @Accept       json
-// @Produce      json
 // @Param        id   path      string  true  "Voice Memo ID"
-// @Success      200  {object}  response.Response
+// @Success      204  "No Content"
 // @Failure      400  {object}  response.Response
+// @Failure      401  {object}  response.Response
 // @Failure      403  {object}  response.Response
 // @Failure      404  {object}  response.Response
 // @Failure      500  {object}  response.Response
@@ -94,7 +93,7 @@ func (h *VoiceMemoHandler) DeleteVoiceMemo(c *gin.Context) {
 		return
 	}
 
-	// Call service to delete
+	// Call service to delete (atomic operation with ownership check)
 	err = h.service.DeleteVoiceMemo(c.Request.Context(), memoID, userID)
 	if err != nil {
 		if errors.Is(err, apperrors.ErrVoiceMemoNotFound) {
@@ -109,7 +108,7 @@ func (h *VoiceMemoHandler) DeleteVoiceMemo(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, gin.H{"message": "voice memo deleted"})
+	response.NoContent(c)
 }
 
 // ListTeamVoiceMemos godoc
@@ -197,13 +196,11 @@ func (h *VoiceMemoHandler) GetTeamVoiceMemo(c *gin.Context) {
 
 // DeleteTeamVoiceMemo godoc
 // @Summary      Delete team voice memo
-// @Description  Soft delete a voice memo from a team
+// @Description  Soft delete a voice memo from a team. Idempotent - returns 204 even if already deleted.
 // @Tags         team-voice-memos
-// @Accept       json
-// @Produce      json
 // @Param        teamId path      string  true  "Team ID"
 // @Param        id     path      string  true  "Voice Memo ID"
-// @Success      200    {object}  response.Response
+// @Success      204    "No Content"
 // @Failure      400    {object}  response.Response
 // @Failure      401    {object}  response.Response
 // @Failure      403    {object}  response.Response
@@ -224,6 +221,7 @@ func (h *VoiceMemoHandler) DeleteTeamVoiceMemo(c *gin.Context) {
 		return
 	}
 
+	// Call service to delete (atomic operation with team check)
 	if err := h.service.DeleteTeamVoiceMemo(c.Request.Context(), memoID, teamID); err != nil {
 		if errors.Is(err, apperrors.ErrVoiceMemoNotFound) {
 			response.NotFound(c, err.Error())
@@ -233,5 +231,5 @@ func (h *VoiceMemoHandler) DeleteTeamVoiceMemo(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, gin.H{"message": "voice memo deleted"})
+	response.NoContent(c)
 }

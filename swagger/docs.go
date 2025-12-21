@@ -1625,13 +1625,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Soft delete a voice memo from a team",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
+                "description": "Soft delete a voice memo from a team. Idempotent - returns 204 even if already deleted.",
                 "tags": [
                     "team-voice-memos"
                 ],
@@ -1653,11 +1647,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -2002,13 +1993,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Mark a voice memo as deleted. User can only delete their own memos.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
+                "description": "Mark a voice memo as deleted. User can only delete their own memos. Idempotent - returns 204 even if already deleted.",
                 "tags": [
                     "voice-memos"
                 ],
@@ -2023,14 +2008,17 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2138,7 +2126,7 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 50,
                     "minLength": 2,
-                    "example": "engineering"
+                    "example": "engineering-team"
                 }
             }
         },
@@ -2609,9 +2597,17 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Today we discussed the Q4 roadmap..."
                 },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2024-01-15T10:00:00Z"
+                },
                 "userId": {
                     "type": "string",
                     "example": "507f1f77bcf86cd799439012"
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },

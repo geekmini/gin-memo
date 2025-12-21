@@ -53,7 +53,7 @@ definitions:
         minLength: 2
         type: string
       slug:
-        example: engineering
+        example: engineering-team
         maxLength: 50
         minLength: 2
         type: string
@@ -393,9 +393,15 @@ definitions:
       transcription:
         example: Today we discussed the Q4 roadmap...
         type: string
+      updatedAt:
+        example: "2024-01-15T10:00:00Z"
+        type: string
       userId:
         example: 507f1f77bcf86cd799439012
         type: string
+      version:
+        example: 1
+        type: integer
     type: object
   models.VoiceMemoListResponse:
     properties:
@@ -1369,9 +1375,8 @@ paths:
       - team-voice-memos
   /teams/{teamId}/voice-memos/{id}:
     delete:
-      consumes:
-      - application/json
-      description: Soft delete a voice memo from a team
+      description: Soft delete a voice memo from a team. Idempotent - returns 204
+        even if already deleted.
       parameters:
       - description: Team ID
         in: path
@@ -1383,13 +1388,9 @@ paths:
         name: id
         required: true
         type: string
-      produces:
-      - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.Response'
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -1652,24 +1653,23 @@ paths:
       - voice-memos
   /voice-memos/{id}:
     delete:
-      consumes:
-      - application/json
       description: Mark a voice memo as deleted. User can only delete their own memos.
+        Idempotent - returns 204 even if already deleted.
       parameters:
       - description: Voice Memo ID
         in: path
         name: id
         required: true
         type: string
-      produces:
-      - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.Response'
+        "204":
+          description: No Content
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/response.Response'
         "403":
