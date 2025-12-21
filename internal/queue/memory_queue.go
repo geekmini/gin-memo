@@ -32,13 +32,14 @@ func NewMemoryQueue(capacity int) *MemoryQueue {
 }
 
 // Enqueue adds a job to the queue. Returns error if queue is full or closed.
+// Lock is held during the entire operation to prevent race condition with Close().
 func (q *MemoryQueue) Enqueue(job TranscriptionJob) error {
 	q.mu.RLock()
+	defer q.mu.RUnlock()
+
 	if q.closed {
-		q.mu.RUnlock()
 		return ErrQueueClosed
 	}
-	q.mu.RUnlock()
 
 	select {
 	case q.jobs <- job:

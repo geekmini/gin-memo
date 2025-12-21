@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"gin-sample/internal/authz"
 	"gin-sample/internal/cache"
@@ -117,21 +119,44 @@ func main() {
 
 	// Start transcription processor
 	transcriptionProcessor.Start(ctx)
-	defer transcriptionProcessor.Stop()
 
-	// Handle graceful shutdown
+	// Create HTTP server for graceful shutdown support
+	addr := fmt.Sprintf(":%s", cfg.ServerPort)
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: r,
+	}
+
+	// Start server in goroutine
 	go func() {
-		sigCh := make(chan os.Signal, 1)
-		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-		<-sigCh
-		log.Println("Shutdown signal received")
-		cancel()
+		log.Printf("Server starting on %s", addr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to start server: %v", err)
+		}
 	}()
 
-	// Start server
-	addr := fmt.Sprintf(":%s", cfg.ServerPort)
-	log.Printf("Server starting on %s", addr)
-	if err := r.Run(addr); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	// Wait for shutdown signal
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	<-sigCh
+	log.Println("Shutdown signal received")
+
+	// Graceful shutdown with timeout
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
+
+	// Shutdown HTTP server first (drain connections)
+	log.Println("Shutting down HTTP server...")
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Printf("HTTP server shutdown error: %v", err)
 	}
+
+	// Cancel context to signal processor shutdown
+	cancel()
+
+	// Stop transcription processor (waits for workers)
+	log.Println("Stopping transcription processor...")
+	transcriptionProcessor.Stop()
+
+	log.Println("Server shutdown complete")
 }

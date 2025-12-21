@@ -21,8 +21,9 @@ type VoiceMemoRepository interface {
 	FindByTeamID(ctx context.Context, teamID primitive.ObjectID, page, limit int) ([]models.VoiceMemo, int, error)
 	FindByID(ctx context.Context, id primitive.ObjectID) (*models.VoiceMemo, error)
 	UpdateStatus(ctx context.Context, id primitive.ObjectID, status models.VoiceMemoStatus) error
-	UpdateStatusWithOwnership(ctx context.Context, id, userID primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) error
-	UpdateStatusWithTeam(ctx context.Context, id, teamID primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) error
+	UpdateStatusConditional(ctx context.Context, id primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) error
+	UpdateStatusWithOwnership(ctx context.Context, id, userID primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) (*models.VoiceMemo, error)
+	UpdateStatusWithTeam(ctx context.Context, id, teamID primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) (*models.VoiceMemo, error)
 	UpdateTranscriptionAndStatus(ctx context.Context, id primitive.ObjectID, transcription string, status models.VoiceMemoStatus) error
 	SoftDeleteByID(ctx context.Context, id primitive.ObjectID) error
 	SoftDeleteWithOwnership(ctx context.Context, id, userID primitive.ObjectID) error
@@ -81,11 +82,35 @@ func (r *voiceMemoRepository) UpdateStatus(ctx context.Context, id primitive.Obj
 	return nil
 }
 
+// UpdateStatusConditional atomically updates status only if the memo is in the expected state.
+// Silently succeeds if status has already changed (for safe revert operations).
+func (r *voiceMemoRepository) UpdateStatusConditional(ctx context.Context, id primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) error {
+	now := time.Now()
+	filter := bson.M{
+		"_id":       id,
+		"status":    fromStatus,
+		"deletedAt": bson.M{"$exists": false},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":    toStatus,
+			"updatedAt": now,
+		},
+		"$inc": bson.M{"version": 1},
+	}
+
+	// Use UpdateOne - we don't care if no match (status already changed)
+	_, err := r.collection.UpdateOne(ctx, filter, update)
+	return err
+}
+
 // UpdateStatusWithOwnership atomically updates status if the user owns the memo and it's in the expected state.
+// Returns the updated memo on success to avoid a separate FindByID call.
 // Returns ErrVoiceMemoNotFound if memo doesn't exist.
 // Returns ErrVoiceMemoUnauthorized if memo exists but user doesn't own it.
 // Returns ErrVoiceMemoInvalidStatus if memo is not in the expected fromStatus.
-func (r *voiceMemoRepository) UpdateStatusWithOwnership(ctx context.Context, id, userID primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) error {
+func (r *voiceMemoRepository) UpdateStatusWithOwnership(ctx context.Context, id, userID primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) (*models.VoiceMemo, error) {
 	now := time.Now()
 	filter := bson.M{
 		"_id":       id,
@@ -102,7 +127,8 @@ func (r *voiceMemoRepository) UpdateStatusWithOwnership(ctx context.Context, id,
 		"$inc": bson.M{"version": 1},
 	}
 
-	result := r.collection.FindOneAndUpdate(ctx, filter, update)
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	result := r.collection.FindOneAndUpdate(ctx, filter, update, opts)
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
@@ -112,31 +138,37 @@ func (r *voiceMemoRepository) UpdateStatusWithOwnership(ctx context.Context, id,
 
 			if checkErr != nil {
 				if errors.Is(checkErr, mongo.ErrNoDocuments) {
-					return apperrors.ErrVoiceMemoNotFound
+					return nil, apperrors.ErrVoiceMemoNotFound
 				}
-				return checkErr
+				return nil, checkErr
 			}
 
 			if existingMemo.UserID != userID {
-				return apperrors.ErrVoiceMemoUnauthorized
+				return nil, apperrors.ErrVoiceMemoUnauthorized
 			}
 
 			if existingMemo.Status != fromStatus {
-				return apperrors.ErrVoiceMemoInvalidStatus
+				return nil, apperrors.ErrVoiceMemoInvalidStatus
 			}
 
-			return apperrors.ErrVoiceMemoNotFound
+			return nil, apperrors.ErrVoiceMemoNotFound
 		}
-		return result.Err()
+		return nil, result.Err()
 	}
 
-	return nil
+	var memo models.VoiceMemo
+	if err := result.Decode(&memo); err != nil {
+		return nil, err
+	}
+
+	return &memo, nil
 }
 
 // UpdateStatusWithTeam atomically updates status if the memo belongs to the team and is in the expected state.
+// Returns the updated memo on success to avoid a separate FindByID call.
 // Returns ErrVoiceMemoNotFound if memo doesn't exist or doesn't belong to team.
 // Returns ErrVoiceMemoInvalidStatus if memo is not in the expected fromStatus.
-func (r *voiceMemoRepository) UpdateStatusWithTeam(ctx context.Context, id, teamID primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) error {
+func (r *voiceMemoRepository) UpdateStatusWithTeam(ctx context.Context, id, teamID primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) (*models.VoiceMemo, error) {
 	now := time.Now()
 	filter := bson.M{
 		"_id":       id,
@@ -153,7 +185,8 @@ func (r *voiceMemoRepository) UpdateStatusWithTeam(ctx context.Context, id, team
 		"$inc": bson.M{"version": 1},
 	}
 
-	result := r.collection.FindOneAndUpdate(ctx, filter, update)
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	result := r.collection.FindOneAndUpdate(ctx, filter, update, opts)
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
@@ -163,25 +196,30 @@ func (r *voiceMemoRepository) UpdateStatusWithTeam(ctx context.Context, id, team
 
 			if checkErr != nil {
 				if errors.Is(checkErr, mongo.ErrNoDocuments) {
-					return apperrors.ErrVoiceMemoNotFound
+					return nil, apperrors.ErrVoiceMemoNotFound
 				}
-				return checkErr
+				return nil, checkErr
 			}
 
 			if existingMemo.TeamID == nil || *existingMemo.TeamID != teamID {
-				return apperrors.ErrVoiceMemoNotFound
+				return nil, apperrors.ErrVoiceMemoNotFound
 			}
 
 			if existingMemo.Status != fromStatus {
-				return apperrors.ErrVoiceMemoInvalidStatus
+				return nil, apperrors.ErrVoiceMemoInvalidStatus
 			}
 
-			return apperrors.ErrVoiceMemoNotFound
+			return nil, apperrors.ErrVoiceMemoNotFound
 		}
-		return result.Err()
+		return nil, result.Err()
 	}
 
-	return nil
+	var memo models.VoiceMemo
+	if err := result.Decode(&memo); err != nil {
+		return nil, err
+	}
+
+	return &memo, nil
 }
 
 // UpdateTranscriptionAndStatus updates both transcription text and status atomically.

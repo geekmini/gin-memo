@@ -253,13 +253,8 @@ func (s *VoiceMemoService) CreateTeamVoiceMemo(ctx context.Context, userID, team
 // ConfirmUpload confirms audio upload and triggers transcription for a private memo.
 func (s *VoiceMemoService) ConfirmUpload(ctx context.Context, memoID, userID primitive.ObjectID) error {
 	// Atomically update status from pending_upload to transcribing with ownership check
-	err := s.repo.UpdateStatusWithOwnership(ctx, memoID, userID, models.StatusPendingUpload, models.StatusTranscribing)
-	if err != nil {
-		return err
-	}
-
-	// Get memo to retrieve audio key
-	memo, err := s.repo.FindByID(ctx, memoID)
+	// Returns the updated memo to avoid a separate FindByID call
+	memo, err := s.repo.UpdateStatusWithOwnership(ctx, memoID, userID, models.StatusPendingUpload, models.StatusTranscribing)
 	if err != nil {
 		return err
 	}
@@ -273,8 +268,8 @@ func (s *VoiceMemoService) ConfirmUpload(ctx context.Context, memoID, userID pri
 
 	if err := s.queue.Enqueue(job); err != nil {
 		if errors.Is(err, queue.ErrQueueFull) {
-			// Revert status back to pending_upload if queue is full
-			_ = s.repo.UpdateStatus(ctx, memoID, models.StatusPendingUpload)
+			// Revert status back to pending_upload if queue is full (only if still transcribing)
+			_ = s.repo.UpdateStatusConditional(ctx, memoID, models.StatusTranscribing, models.StatusPendingUpload)
 			return apperrors.ErrTranscriptionQueueFull
 		}
 		return err
@@ -286,13 +281,8 @@ func (s *VoiceMemoService) ConfirmUpload(ctx context.Context, memoID, userID pri
 // ConfirmTeamUpload confirms audio upload and triggers transcription for a team memo.
 func (s *VoiceMemoService) ConfirmTeamUpload(ctx context.Context, memoID, teamID primitive.ObjectID) error {
 	// Atomically update status from pending_upload to transcribing with team check
-	err := s.repo.UpdateStatusWithTeam(ctx, memoID, teamID, models.StatusPendingUpload, models.StatusTranscribing)
-	if err != nil {
-		return err
-	}
-
-	// Get memo to retrieve audio key
-	memo, err := s.repo.FindByID(ctx, memoID)
+	// Returns the updated memo to avoid a separate FindByID call
+	memo, err := s.repo.UpdateStatusWithTeam(ctx, memoID, teamID, models.StatusPendingUpload, models.StatusTranscribing)
 	if err != nil {
 		return err
 	}
@@ -306,8 +296,8 @@ func (s *VoiceMemoService) ConfirmTeamUpload(ctx context.Context, memoID, teamID
 
 	if err := s.queue.Enqueue(job); err != nil {
 		if errors.Is(err, queue.ErrQueueFull) {
-			// Revert status back to pending_upload if queue is full
-			_ = s.repo.UpdateStatus(ctx, memoID, models.StatusPendingUpload)
+			// Revert status back to pending_upload if queue is full (only if still transcribing)
+			_ = s.repo.UpdateStatusConditional(ctx, memoID, models.StatusTranscribing, models.StatusPendingUpload)
 			return apperrors.ErrTranscriptionQueueFull
 		}
 		return err
@@ -319,13 +309,8 @@ func (s *VoiceMemoService) ConfirmTeamUpload(ctx context.Context, memoID, teamID
 // RetryTranscription retries transcription for a failed private memo.
 func (s *VoiceMemoService) RetryTranscription(ctx context.Context, memoID, userID primitive.ObjectID) error {
 	// Atomically update status from failed to transcribing with ownership check
-	err := s.repo.UpdateStatusWithOwnership(ctx, memoID, userID, models.StatusFailed, models.StatusTranscribing)
-	if err != nil {
-		return err
-	}
-
-	// Get memo to retrieve audio key
-	memo, err := s.repo.FindByID(ctx, memoID)
+	// Returns the updated memo to avoid a separate FindByID call
+	memo, err := s.repo.UpdateStatusWithOwnership(ctx, memoID, userID, models.StatusFailed, models.StatusTranscribing)
 	if err != nil {
 		return err
 	}
@@ -339,8 +324,8 @@ func (s *VoiceMemoService) RetryTranscription(ctx context.Context, memoID, userI
 
 	if err := s.queue.Enqueue(job); err != nil {
 		if errors.Is(err, queue.ErrQueueFull) {
-			// Revert status back to failed if queue is full
-			_ = s.repo.UpdateStatus(ctx, memoID, models.StatusFailed)
+			// Revert status back to failed if queue is full (only if still transcribing)
+			_ = s.repo.UpdateStatusConditional(ctx, memoID, models.StatusTranscribing, models.StatusFailed)
 			return apperrors.ErrTranscriptionQueueFull
 		}
 		return err
@@ -352,13 +337,8 @@ func (s *VoiceMemoService) RetryTranscription(ctx context.Context, memoID, userI
 // RetryTeamTranscription retries transcription for a failed team memo.
 func (s *VoiceMemoService) RetryTeamTranscription(ctx context.Context, memoID, teamID primitive.ObjectID) error {
 	// Atomically update status from failed to transcribing with team check
-	err := s.repo.UpdateStatusWithTeam(ctx, memoID, teamID, models.StatusFailed, models.StatusTranscribing)
-	if err != nil {
-		return err
-	}
-
-	// Get memo to retrieve audio key
-	memo, err := s.repo.FindByID(ctx, memoID)
+	// Returns the updated memo to avoid a separate FindByID call
+	memo, err := s.repo.UpdateStatusWithTeam(ctx, memoID, teamID, models.StatusFailed, models.StatusTranscribing)
 	if err != nil {
 		return err
 	}
@@ -372,8 +352,8 @@ func (s *VoiceMemoService) RetryTeamTranscription(ctx context.Context, memoID, t
 
 	if err := s.queue.Enqueue(job); err != nil {
 		if errors.Is(err, queue.ErrQueueFull) {
-			// Revert status back to failed if queue is full
-			_ = s.repo.UpdateStatus(ctx, memoID, models.StatusFailed)
+			// Revert status back to failed if queue is full (only if still transcribing)
+			_ = s.repo.UpdateStatusConditional(ctx, memoID, models.StatusTranscribing, models.StatusFailed)
 			return apperrors.ErrTranscriptionQueueFull
 		}
 		return err

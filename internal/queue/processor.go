@@ -17,6 +17,8 @@ const (
 	MaxRetries = 3
 	// RetryDelay is the base delay between retries (exponential backoff).
 	RetryDelay = 5 * time.Second
+	// StatusUpdateTimeout is the timeout for status updates during error handling.
+	StatusUpdateTimeout = 5 * time.Second
 )
 
 // TranscriptionUpdater defines the interface for updating transcription results.
@@ -129,16 +131,26 @@ func (p *Processor) handleFailure(ctx context.Context, job TranscriptionJob) {
 	delay := RetryDelay * time.Duration(1<<uint(job.RetryCount-1))
 	log.Printf("Retrying memo %s in %v (attempt %d/%d)", job.MemoID.Hex(), delay, job.RetryCount+1, MaxRetries)
 
-	// Schedule retry with delay
+	// Schedule retry with delay. Uses shutdownCh instead of ctx to allow
+	// in-flight retries to complete during graceful shutdown.
 	go func() {
 		select {
-		case <-ctx.Done():
+		case <-p.shutdownCh:
+			// Shutdown initiated - mark as failed since we can't retry
+			log.Printf("Shutdown during retry delay for memo %s, marking as failed", job.MemoID.Hex())
+			updateCtx, cancel := context.WithTimeout(context.Background(), StatusUpdateTimeout)
+			defer cancel()
+			if updateErr := p.updater.UpdateStatus(updateCtx, job.MemoID, models.StatusFailed); updateErr != nil {
+				log.Printf("Failed to update status to failed: %v", updateErr)
+			}
 			return
 		case <-time.After(delay):
 			if err := p.queue.Enqueue(job); err != nil {
 				log.Printf("Failed to re-enqueue job for memo %s: %v", job.MemoID.Hex(), err)
 				// Mark as failed if we can't re-enqueue
-				if updateErr := p.updater.UpdateStatus(context.Background(), job.MemoID, models.StatusFailed); updateErr != nil {
+				updateCtx, cancel := context.WithTimeout(context.Background(), StatusUpdateTimeout)
+				defer cancel()
+				if updateErr := p.updater.UpdateStatus(updateCtx, job.MemoID, models.StatusFailed); updateErr != nil {
 					log.Printf("Failed to update status to failed: %v", updateErr)
 				}
 			}
