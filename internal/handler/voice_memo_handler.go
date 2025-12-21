@@ -16,11 +16,11 @@ import (
 
 // VoiceMemoHandler handles HTTP requests for voice memo operations.
 type VoiceMemoHandler struct {
-	service *service.VoiceMemoService
+	service service.VoiceMemoServicer
 }
 
 // NewVoiceMemoHandler creates a new VoiceMemoHandler.
-func NewVoiceMemoHandler(service *service.VoiceMemoService) *VoiceMemoHandler {
+func NewVoiceMemoHandler(service service.VoiceMemoServicer) *VoiceMemoHandler {
 	return &VoiceMemoHandler{service: service}
 }
 

@@ -24,12 +24,12 @@ const (
 // VoiceMemoService handles business logic for voice memo operations.
 type VoiceMemoService struct {
 	repo     repository.VoiceMemoRepository
-	s3Client *storage.S3Client
-	queue    *queue.MemoryQueue
+	s3Client storage.Storage
+	queue    queue.Queue
 }
 
 // NewVoiceMemoService creates a new VoiceMemoService.
-func NewVoiceMemoService(repo repository.VoiceMemoRepository, s3Client *storage.S3Client, queue *queue.MemoryQueue) *VoiceMemoService {
+func NewVoiceMemoService(repo repository.VoiceMemoRepository, s3Client storage.Storage, queue queue.Queue) *VoiceMemoService {
 	return &VoiceMemoService{
 		repo:     repo,
 		s3Client: s3Client,

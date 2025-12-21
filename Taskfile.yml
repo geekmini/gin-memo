@@ -22,8 +22,34 @@ tasks:
     cmd: go build -o {{.BINARY_NAME}} cmd/server/main.go
 
   test:
-    desc: Run tests
-    cmd: go test -v ./...
+    desc: Run unit tests
+    cmd: go test -v -short ./...
+
+  test:unit:
+    desc: Run unit tests with coverage
+    cmd: go test -v -short -coverprofile=coverage.out -covermode=atomic ./...
+
+  test:integration:
+    desc: Run integration tests (requires Docker)
+    cmd: go test -v -tags=integration ./test/integration/...
+
+  test:all:
+    desc: Run all tests (unit + integration)
+    cmd: go test -v -tags=integration -coverprofile=coverage.out -covermode=atomic ./...
+
+  test:coverage:
+    desc: View test coverage in browser
+    deps: [test:unit]
+    cmd: go tool cover -html=coverage.out
+
+  test:report:
+    desc: Show coverage summary
+    deps: [test:unit]
+    cmd: go tool cover -func=coverage.out
+
+  mocks:
+    desc: Generate all mocks
+    cmd: go generate ./...
 
   sync:
     desc: Sync dependencies

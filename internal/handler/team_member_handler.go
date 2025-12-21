@@ -15,11 +15,11 @@ import (
 
 // TeamMemberHandler handles HTTP requests for team member operations.
 type TeamMemberHandler struct {
-	service *service.TeamMemberService
+	service service.TeamMemberServicer
 }
 
 // NewTeamMemberHandler creates a new TeamMemberHandler.
-func NewTeamMemberHandler(service *service.TeamMemberService) *TeamMemberHandler {
+func NewTeamMemberHandler(service service.TeamMemberServicer) *TeamMemberHandler {
 	return &TeamMemberHandler{service: service}
 }
 
