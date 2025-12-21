@@ -234,3 +234,134 @@ type UserService struct {
     cache *cache.Redis
 }
 ```
+
+## Background Job Processing Pattern
+
+Worker pool with in-memory queue for async tasks:
+
+```go
+// Queue with bounded capacity
+type MemoryQueue struct {
+    jobs     chan TranscriptionJob
+    capacity int
+    mu       sync.RWMutex
+    closed   bool
+}
+
+// Processor with multiple workers
+type Processor struct {
+    queue       *MemoryQueue
+    transcriber transcription.Service
+    updater     TranscriptionUpdater
+    workerCount int
+    wg          sync.WaitGroup
+    shutdownCh  chan struct{}
+}
+
+// Start workers
+func (p *Processor) Start(ctx context.Context) {
+    for i := 0; i < p.workerCount; i++ {
+        p.wg.Add(1)
+        go p.worker(ctx, i)
+    }
+}
+
+// Graceful stop - wait for workers
+func (p *Processor) Stop() {
+    close(p.shutdownCh)
+    p.queue.Close()
+    p.wg.Wait()
+}
+```
+
+**Features:**
+- Bounded queue prevents memory exhaustion
+- Multiple workers for parallelism
+- Exponential backoff retry (5s, 10s, 20s)
+- Max retries before marking as failed
+- Graceful shutdown waits for in-flight jobs
+
+## Graceful Shutdown Pattern
+
+Proper shutdown sequence for HTTP server and background workers:
+
+```go
+// Create HTTP server (not r.Run())
+srv := &http.Server{
+    Addr:    ":8080",
+    Handler: router,
+}
+
+// Start in goroutine
+go func() {
+    if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+        log.Fatal(err)
+    }
+}()
+
+// Wait for signal
+sigCh := make(chan os.Signal, 1)
+signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+<-sigCh
+
+// Shutdown sequence
+ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+defer cancel()
+
+// 1. Stop accepting new HTTP requests, drain existing
+srv.Shutdown(ctx)
+
+// 2. Cancel context to signal workers
+cancel()
+
+// 3. Stop background processor (waits for workers)
+processor.Stop()
+```
+
+**Order matters:**
+1. HTTP server first (drain connections)
+2. Cancel context (signal workers)
+3. Stop processor (wait for completion)
+
+## Status-Driven Workflow Pattern
+
+State machine for multi-step async processes:
+
+```go
+type VoiceMemoStatus string
+
+const (
+    StatusPendingUpload VoiceMemoStatus = "pending_upload"
+    StatusTranscribing  VoiceMemoStatus = "transcribing"
+    StatusReady         VoiceMemoStatus = "ready"
+    StatusFailed        VoiceMemoStatus = "failed"
+)
+```
+
+**State transitions:**
+```
+pending_upload → transcribing → ready
+                      ↓
+                   failed → transcribing (retry)
+```
+
+**Atomic status updates with conditions:**
+```go
+// Only update if in expected state (prevents race conditions)
+func UpdateStatusConditional(ctx, id, fromStatus, toStatus) error {
+    filter := bson.M{
+        "_id":    id,
+        "status": fromStatus,  // Condition
+    }
+    update := bson.M{"$set": bson.M{"status": toStatus}}
+    // Silently succeeds if status already changed
+    _, err := collection.UpdateOne(ctx, filter, update)
+    return err
+}
+```
+
+**Benefits:**
+- Clear visibility into process state
+- Safe concurrent operations
+- Idempotent retries
+- Easy failure recovery

@@ -53,6 +53,8 @@ internal/
   cache/                 # Redis client
   storage/               # S3 client (pre-signed URLs)
   authz/                 # Authorization (team permissions)
+  queue/                 # In-memory job queue + processor (transcription)
+  transcription/         # Transcription service interface + mock
 pkg/
   auth/                  # JWT + bcrypt utilities
   response/              # Standard API response format
