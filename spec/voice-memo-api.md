@@ -1,5 +1,7 @@
 # Voice Memo API Specification
 
+**Author**: Team
+**Created**: 2025-12-20
 **Status**: Implemented
 
 ## Overview
