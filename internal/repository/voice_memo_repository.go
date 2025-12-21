@@ -19,7 +19,7 @@ type VoiceMemoRepository interface {
 	FindByUserID(ctx context.Context, userID primitive.ObjectID, page, limit int) ([]models.VoiceMemo, int, error)
 	FindByTeamID(ctx context.Context, teamID primitive.ObjectID, page, limit int) ([]models.VoiceMemo, int, error)
 	FindByID(ctx context.Context, id primitive.ObjectID) (*models.VoiceMemo, error)
-	SoftDelete(ctx context.Context, id primitive.ObjectID) error
+	SoftDeleteByID(ctx context.Context, id primitive.ObjectID) error
 	SoftDeleteWithOwnership(ctx context.Context, id, userID primitive.ObjectID) error
 	SoftDeleteWithTeam(ctx context.Context, id, teamID primitive.ObjectID) error
 	SoftDeleteByTeamID(ctx context.Context, teamID primitive.ObjectID) error
@@ -99,10 +99,10 @@ func (r *voiceMemoRepository) FindByID(ctx context.Context, id primitive.ObjectI
 	return &memo, nil
 }
 
-// SoftDelete marks a voice memo as deleted by setting deletedAt timestamp.
-// Deprecated: Use SoftDeleteWithOwnership or SoftDeleteWithTeam instead for atomic
-// ownership/team checks. This method is kept for internal batch operations only.
-func (r *voiceMemoRepository) SoftDelete(ctx context.Context, id primitive.ObjectID) error {
+// SoftDeleteByID marks a voice memo as deleted by setting deletedAt timestamp.
+// Note: Use SoftDeleteWithOwnership or SoftDeleteWithTeam instead for atomic ownership/team
+// checks. This method is intended for batch operations where authorization is handled separately.
+func (r *voiceMemoRepository) SoftDeleteByID(ctx context.Context, id primitive.ObjectID) error {
 	now := time.Now()
 	filter := bson.M{
 		"_id":       id,

@@ -200,6 +200,8 @@ func (r *voiceMemoRepository) SoftDeleteWithTeam(ctx context.Context, id, teamID
 
 ## Testing Checklist
 
+> Source of truth for testing requirements.
+
 - [ ] Delete existing private memo returns 204
 - [ ] Delete already-deleted private memo returns 204 (idempotent)
 - [ ] Delete non-existent private memo returns 404
