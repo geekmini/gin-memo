@@ -34,10 +34,12 @@ Implement idempotent soft delete operations for voice memos and add version/time
 
 | Field | Type | Required | Description |
 | ----- | ---- | -------- | ----------- |
-| version | int | Yes | Optimistic locking version, starts at 1, increments on each modification |
+| version | int | Yes | Optimistic locking version, increments on each modification |
 | updatedAt | time.Time | Yes | Timestamp of last modification |
 
 **Note**: These fields are added to the existing VoiceMemo model. All other fields remain unchanged.
+
+**Version field behavior**: Existing documents without a version field will default to 0 (MongoDB's default for missing int fields). After the first modification (e.g., soft delete), version becomes 1. New documents should initialize version to 1 when create endpoints are implemented.
 
 ### Complete Model Structure
 

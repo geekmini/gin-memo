@@ -100,7 +100,8 @@ func (r *voiceMemoRepository) FindByID(ctx context.Context, id primitive.ObjectI
 }
 
 // SoftDelete marks a voice memo as deleted by setting deletedAt timestamp.
-// Note: Prefer SoftDeleteWithOwnership or SoftDeleteWithTeam for atomic ownership checks.
+// Deprecated: Use SoftDeleteWithOwnership or SoftDeleteWithTeam instead for atomic
+// ownership/team checks. This method is kept for internal batch operations only.
 func (r *voiceMemoRepository) SoftDelete(ctx context.Context, id primitive.ObjectID) error {
 	now := time.Now()
 	filter := bson.M{
@@ -152,8 +153,9 @@ func (r *voiceMemoRepository) SoftDeleteWithOwnership(ctx context.Context, id, u
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
-			// Either doesn't exist, already deleted, or wrong user
-			// Check if document exists at all to return appropriate error
+			// Atomic update failed - need to determine why for proper error response.
+			// Trade-off: This extra query only runs on failure path (not found, unauthorized,
+			// or already deleted). The happy path remains a single atomic operation.
 			var existingMemo models.VoiceMemo
 			checkErr := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&existingMemo)
 
@@ -200,7 +202,9 @@ func (r *voiceMemoRepository) SoftDeleteWithTeam(ctx context.Context, id, teamID
 
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
-			// Check if exists and why update failed
+			// Atomic update failed - need to determine why for proper error response.
+			// Trade-off: This extra query only runs on failure path (not found, wrong team,
+			// or already deleted). The happy path remains a single atomic operation.
 			var existingMemo models.VoiceMemo
 			checkErr := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&existingMemo)
 
