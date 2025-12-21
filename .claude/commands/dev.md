@@ -1,6 +1,6 @@
-# Spec-Driven Development
+# Feature Development Workflow
 
-A comprehensive workflow that combines structured requirements gathering, codebase exploration, architecture design, spec documentation, Postman integration, and optional implementation with quality review.
+A comprehensive workflow that combines structured requirements gathering, codebase exploration, architecture design, spec documentation, Postman integration, implementation, and quality review.
 
 ## Workflow Overview
 
@@ -12,9 +12,9 @@ A comprehensive workflow that combines structured requirements gathering, codeba
 5. Architecture Design → Propose 2-3 approaches (agents)
 6. Generate Spec      → Create spec document (skill)
 7. Add to Postman     → Add endpoints to collection (skill, optional)
-8. Implementation     → Build the feature + regenerate Swagger (skill, optional)
-9. Quality Review     → Review code quality (agents)
-10. Documentation     → Update CLAUDE.md if needed (skill), final summary
+8. Implementation     → Build the feature + regenerate Swagger
+9. Quality Review & Fix → Review + fix issues (agents + skill)
+10. Documentation & PR → Update docs (skill), commit/push/PR (skill)
 ```
 
 ---
@@ -198,28 +198,47 @@ If no or no endpoints to add, skip to Phase 8.
 
 ---
 
-## Phase 8: Implementation (Optional)
+## Phase 8: Implementation
 
-**Ask the user**: "Would you like me to implement this feature now?"
+Implement the feature using the spec document and architecture decisions from previous phases.
 
-If yes, **use the `/feature-dev` skill** for guided implementation:
+### Step 1: Follow the Spec
 
-1. The skill will use the spec document as the implementation guide
-2. It follows the chosen architecture approach from Phase 5
-3. Uses existing patterns discovered in Phase 2
-4. Creates/modifies files as specified in the spec
-5. Runs tests and linters
-6. **Runs `task swagger`** to regenerate API documentation
+Use the spec document (`spec/[feature-name].md`) as the implementation guide:
+- Create files listed in "Files to Create"
+- Modify files listed in "Files to Modify"
+- Implement each endpoint from the API section
+- Apply business rules as specified
 
-**Note**: The `/feature-dev` skill provides guided feature development with codebase understanding and architecture focus.
+### Step 2: Use Existing Patterns
 
-If no, skip to Phase 10.
+Reference patterns discovered in Phase 2:
+- Follow existing handler/service/repository structure
+- Use established error handling conventions
+- Match existing code style and naming
+
+### Step 3: Implementation Order
+
+Follow the layered architecture (bottom-up):
+1. **Models** - Add/update data structures in `internal/models/`
+2. **Repository** - Add database operations in `internal/repository/`
+3. **Service** - Add business logic in `internal/service/`
+4. **Handler** - Add HTTP handlers with Swagger annotations in `internal/handler/`
+5. **Router** - Register routes in `internal/router/router.go`
+
+### Step 4: Verify
+
+After implementation:
+1. Run tests: `task test`
+2. Run linter: `task lint` (if available)
+3. **Run `task swagger`** to regenerate API documentation
+4. Verify the feature works as expected
 
 ---
 
-## Phase 9: Quality Review
+## Phase 9: Quality Review & Fix
 
-**Only run if implementation was done in Phase 8.**
+### Step 1: Code Review
 
 **Use the Task tool with `subagent_type: "feature-dev:code-reviewer"`** to review the implementation.
 
@@ -230,7 +249,7 @@ The code reviewer checks for:
 - Adherence to project conventions (CLAUDE.md)
 - Proper error handling
 
-Present findings:
+Review output format:
 ```markdown
 ## Code Review Results
 
@@ -246,7 +265,28 @@ Present findings:
 [Pass/Needs Changes] - [summary]
 ```
 
-Fix any critical issues before proceeding.
+### Step 2: Fix Review Issues
+
+If issues are found (especially Critical/High severity):
+
+**The Review Comments Fixer skill** will activate in Local mode to address issues one by one:
+
+1. Present each issue with context and severity
+2. User decides: Fix / Skip / Need more context
+3. Apply fixes after approval
+4. Track all changes made
+
+See `.claude/skills/pr-fix/SKILL.md` for the full process.
+
+### Step 3: Re-review if Needed
+
+If critical fixes were made:
+- Re-run code reviewer to verify fixes
+- Ensure no new issues introduced
+
+Proceed to Phase 10 when:
+- All critical/high severity issues are resolved
+- Or user explicitly approves to proceed with remaining issues
 
 ---
 
@@ -271,6 +311,25 @@ The skill will:
 - `swagger/swagger.yaml` - API docs (via `task swagger`)
 
 See `.claude/skills/docs/SKILL.md` for the full decision matrix and update process.
+
+### Commit, Push & Create PR
+
+**Ask the user**: "Would you like me to commit, push, and create a PR?"
+
+If yes, **use the `/commit-commands:commit-push-pr` skill**:
+
+1. Stage all changes
+2. Create commit with conventional commit message
+3. Push to remote branch
+4. Create PR with summary from this workflow
+
+The PR description will include:
+- Feature summary from Phase 4
+- Implementation details
+- Files changed
+- Test plan
+
+**Note**: After the PR is created, GitHub Actions will run automated code review. When review comments arrive, use the Review Comments Fixer skill manually to address them.
 
 ### Final Summary
 
@@ -307,9 +366,15 @@ Present final summary:
 ### Files Changed (if implemented)
 - `path/to/file.go` - [created/modified]
 
+### PR Status (if created)
+- PR: #[number] - [title]
+- URL: [link]
+- Status: Awaiting review
+
 ### Next Steps
 - [ ] Review and update spec status to "Approved"
-- [ ] [Additional follow-up items]
+- [ ] Wait for GitHub Action code review
+- [ ] Use "fix PR comments" to address review feedback when ready
 ```
 
 Ask if the user wants to make any changes.

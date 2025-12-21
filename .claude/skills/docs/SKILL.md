@@ -1,6 +1,6 @@
 ---
 name: Documentation Updater
-description: Use this skill when the user asks to "update documentation", "sync docs", "update CLAUDE.md", "check documentation", or after code implementation is complete. Also use after the implementation phase in the /spec workflow.
+description: Use this skill when the user asks to "update documentation", "sync docs", "update CLAUDE.md", "check documentation", or after code implementation is complete. Also use after the implementation phase in the /dev workflow.
 version: 1.0.0
 ---
 
@@ -13,7 +13,7 @@ Analyze code changes and update project documentation accordingly.
 - User says "update documentation" or "sync docs"
 - After code implementation is complete
 - When user asks to check if docs are in sync
-- During Phase 10 of the /spec workflow
+- During Phase 10 of the /dev workflow
 
 ---
 
@@ -36,7 +36,7 @@ Analyze code changes and update project documentation accordingly.
 ### Step 1: Identify Changes
 
 Determine what changed by either:
-- **From /spec workflow**: Review the spec document and implementation
+- **From /dev workflow**: Review the spec document and implementation
 - **Standalone**: Ask user what was changed, or analyze git diff
 
 ```bash

@@ -13,7 +13,7 @@ Manage Postman collection endpoints using MCP tools.
 - User says "add to postman" or "update postman"
 - After a spec document is created with new endpoints
 - When user wants to manage API collection
-- During Phase 7 of the /spec workflow
+- During Phase 7 of the /dev workflow
 
 ---
 

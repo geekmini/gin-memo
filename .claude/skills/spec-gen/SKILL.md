@@ -1,6 +1,6 @@
 ---
 name: Spec Generator
-description: Use this skill when the user asks to "generate a spec", "create specification document", "write API spec", "create spec file", or when architecture decisions have been made and requirements are gathered. Also use after the architecture phase in the /spec workflow.
+description: Use this skill when the user asks to "generate a spec", "create specification document", "write API spec", "create spec file", or when architecture decisions have been made and requirements are gathered. Also use after the architecture phase in the /dev workflow.
 version: 1.0.0
 ---
 
@@ -13,7 +13,7 @@ Generate a structured API specification document from requirements.
 - User says "generate a spec" or "create specification"
 - After architecture decisions are made
 - When requirements and data models are defined
-- During Phase 6 of the /spec workflow
+- During Phase 6 of the /dev workflow
 
 ---
 
@@ -164,7 +164,7 @@ Would you like to review or modify the spec?
 
 ## Standalone Usage
 
-When invoked directly (not from /spec workflow):
+When invoked directly (not from /dev workflow):
 
 1. Ask for feature name and description
 2. Ask clarifying questions about data model and endpoints
@@ -174,13 +174,13 @@ When invoked directly (not from /spec workflow):
 
 ---
 
-## Integration with /spec Workflow
+## Integration with /dev Workflow
 
-When called from Phase 6 of /spec:
+When called from Phase 6 of /dev:
 - All inputs should already be gathered from previous phases
 - Skip to Step 2 (Determine File Path)
 - Generate and write the spec
-- Return control to /spec for Phase 7
+- Return control to /dev for Phase 7
 
 ---
 
