@@ -236,10 +236,10 @@ After architecture approval, create a spec document at `spec/[feature-name].md`:
 
 ### Source of Truth
 
-| Source | Purpose |
-|--------|---------|
+| Source      | Purpose                                                                    |
+| ----------- | -------------------------------------------------------------------------- |
 | **Swagger** | API contract (endpoints, params, schemas) - regenerated via `task swagger` |
-| **Postman** | Team workflow (tests, examples, env configs) - managed via MCP |
+| **Postman** | Team workflow (tests, examples, env configs) - managed via MCP             |
 
 **Note:** Postman's OpenAPI sync has limitations (doesn't delete removed endpoints, can overwrite team customizations). Use Postman MCP for incremental updates rather than full collection sync.
 
@@ -327,29 +327,29 @@ Fix any critical issues before proceeding.
 
 #### CLAUDE.md Updates
 
-| Change Type | Section to Update |
-|-------------|-------------------|
+| Change Type              | Section to Update           |
+| ------------------------ | --------------------------- |
 | Change project structure | "Project Structure" section |
 
 #### Source of Truth Files
 
-| Change Type | File to Update |
-|-------------|----------------|
-| Add/modify/delete API endpoint | `swagger/swagger.yaml` (via `task swagger`) |
-| Add/modify/delete environment variable | `.env.example` |
-| Add/modify local services | `docker-compose.yml` |
-| Add/modify task commands | `Taskfile.yml` |
+| Change Type                            | File to Update                              |
+| -------------------------------------- | ------------------------------------------- |
+| Add/modify/delete API endpoint         | `swagger/swagger.yaml` (via `task swagger`) |
+| Add/modify/delete environment variable | `.env.example`                              |
+| Add/modify local services              | `docker-compose.yml`                        |
+| Add/modify task commands               | `Taskfile.yml`                              |
 
 #### Related docs/ Updates
 
-| Change Type | Document | Section to Update |
-|-------------|----------|-------------------|
-| Add/modify layer convention | `docs/architecture.md` | Relevant layer section |
-| Add/modify DTO pattern | `docs/architecture.md` | "Request/Response DTOs" section |
-| Complete handler validation migration | `docs/architecture.md` | "Migration Status" table |
-| Add/modify design pattern | `docs/design-patterns.md` | Relevant pattern section |
-| Add/modify caching strategy | `docs/design-patterns.md` | "Cache Key Pattern" section |
-| Add/modify token flow | `docs/design-patterns.md` | "Token Pattern" section |
+| Change Type                           | Document                  | Section to Update               |
+| ------------------------------------- | ------------------------- | ------------------------------- |
+| Add/modify layer convention           | `docs/architecture.md`    | Relevant layer section          |
+| Add/modify DTO pattern                | `docs/architecture.md`    | "Request/Response DTOs" section |
+| Complete handler validation migration | `docs/architecture.md`    | "Migration Status" table        |
+| Add/modify design pattern             | `docs/design-patterns.md` | Relevant pattern section        |
+| Add/modify caching strategy           | `docs/design-patterns.md` | "Cache Key Pattern" section     |
+| Add/modify token flow                 | `docs/design-patterns.md` | "Token Pattern" section         |
 
 **If updates are needed:**
 1. Read `CLAUDE.md` and relevant `docs/` files

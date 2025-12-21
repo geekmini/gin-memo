@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	apperrors "gin-sample/internal/errors"
+	"gin-sample/internal/middleware"
 	"gin-sample/internal/service"
 	"gin-sample/pkg/response"
 
@@ -102,6 +103,130 @@ func (h *VoiceMemoHandler) DeleteVoiceMemo(c *gin.Context) {
 		}
 		if errors.Is(err, apperrors.ErrVoiceMemoUnauthorized) {
 			response.Forbidden(c, err.Error())
+			return
+		}
+		response.InternalError(c)
+		return
+	}
+
+	response.Success(c, gin.H{"message": "voice memo deleted"})
+}
+
+// ListTeamVoiceMemos godoc
+// @Summary      List team voice memos
+// @Description  Retrieve paginated list of a team's voice memos, sorted by newest first
+// @Tags         team-voice-memos
+// @Accept       json
+// @Produce      json
+// @Param        teamId path      string  true   "Team ID"
+// @Param        page   query     int     false  "Page number (default: 1)"
+// @Param        limit  query     int     false  "Items per page (default: 10, max: 10)"
+// @Success      200    {object}  response.Response{data=models.VoiceMemoListResponse}
+// @Failure      400    {object}  response.Response
+// @Failure      401    {object}  response.Response
+// @Failure      403    {object}  response.Response
+// @Failure      500    {object}  response.Response
+// @Security     BearerAuth
+// @Router       /teams/{teamId}/voice-memos [get]
+func (h *VoiceMemoHandler) ListTeamVoiceMemos(c *gin.Context) {
+	teamID, exists := middleware.GetTeamID(c)
+	if !exists {
+		response.BadRequest(c, "team id not found in context")
+		return
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	result, err := h.service.ListByTeamID(c.Request.Context(), teamID.Hex(), page, limit)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.Success(c, result)
+}
+
+// GetTeamVoiceMemo godoc
+// @Summary      Get team voice memo
+// @Description  Retrieve a specific voice memo from a team
+// @Tags         team-voice-memos
+// @Accept       json
+// @Produce      json
+// @Param        teamId path      string  true  "Team ID"
+// @Param        id     path      string  true  "Voice Memo ID"
+// @Success      200    {object}  response.Response{data=models.VoiceMemo}
+// @Failure      400    {object}  response.Response
+// @Failure      401    {object}  response.Response
+// @Failure      403    {object}  response.Response
+// @Failure      404    {object}  response.Response
+// @Failure      500    {object}  response.Response
+// @Security     BearerAuth
+// @Router       /teams/{teamId}/voice-memos/{id} [get]
+func (h *VoiceMemoHandler) GetTeamVoiceMemo(c *gin.Context) {
+	teamID, exists := middleware.GetTeamID(c)
+	if !exists {
+		response.BadRequest(c, "team id not found in context")
+		return
+	}
+
+	memoID, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		response.BadRequest(c, "invalid voice memo id format")
+		return
+	}
+
+	memo, err := h.service.GetVoiceMemo(c.Request.Context(), memoID)
+	if err != nil {
+		if errors.Is(err, apperrors.ErrVoiceMemoNotFound) {
+			response.NotFound(c, err.Error())
+			return
+		}
+		response.InternalError(c)
+		return
+	}
+
+	// Verify memo belongs to this team
+	if memo.TeamID == nil || *memo.TeamID != teamID {
+		response.NotFound(c, "voice memo not found")
+		return
+	}
+
+	response.Success(c, memo)
+}
+
+// DeleteTeamVoiceMemo godoc
+// @Summary      Delete team voice memo
+// @Description  Soft delete a voice memo from a team
+// @Tags         team-voice-memos
+// @Accept       json
+// @Produce      json
+// @Param        teamId path      string  true  "Team ID"
+// @Param        id     path      string  true  "Voice Memo ID"
+// @Success      200    {object}  response.Response
+// @Failure      400    {object}  response.Response
+// @Failure      401    {object}  response.Response
+// @Failure      403    {object}  response.Response
+// @Failure      404    {object}  response.Response
+// @Failure      500    {object}  response.Response
+// @Security     BearerAuth
+// @Router       /teams/{teamId}/voice-memos/{id} [delete]
+func (h *VoiceMemoHandler) DeleteTeamVoiceMemo(c *gin.Context) {
+	teamID, exists := middleware.GetTeamID(c)
+	if !exists {
+		response.BadRequest(c, "team id not found in context")
+		return
+	}
+
+	memoID, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		response.BadRequest(c, "invalid voice memo id format")
+		return
+	}
+
+	if err := h.service.DeleteTeamVoiceMemo(c.Request.Context(), memoID, teamID); err != nil {
+		if errors.Is(err, apperrors.ErrVoiceMemoNotFound) {
+			response.NotFound(c, err.Error())
 			return
 		}
 		response.InternalError(c)

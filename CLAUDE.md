@@ -10,6 +10,7 @@ See `Taskfile.yml` for all available tasks. Common ones:
 task --list       # Show all tasks
 task dev          # Start services + hot reload
 task swagger      # Regenerate API docs
+task index        # Create MongoDB indexes
 ```
 
 ## Architecture
@@ -37,10 +38,12 @@ internal/repository     # Database operations (MongoDB)
 ## Project Structure
 
 ```
-cmd/server/main.go       # Entry point
+cmd/
+  server/main.go         # Entry point
+  index/main.go          # MongoDB index creation script
 internal/
   config/                # Environment config (godotenv)
-  models/                # Data structs (User, VoiceMemo, requests, responses)
+  models/                # Data structs (User, VoiceMemo, Team, requests, responses)
   repository/            # MongoDB CRUD (interface-based)
   service/               # Business logic + Redis caching + S3 URLs
   handler/               # HTTP handlers with Swagger annotations
@@ -49,6 +52,7 @@ internal/
   errors/                # Centralized app errors
   cache/                 # Redis client
   storage/               # S3 client (pre-signed URLs)
+  authz/                 # Authorization (team permissions)
 pkg/
   auth/                  # JWT + bcrypt utilities
   response/              # Standard API response format
@@ -162,7 +166,7 @@ See Swagger for complete API documentation:
 - **Swagger YAML:** `swagger/swagger.yaml`
 - **Regenerate:** `task swagger`
 
-**Route groups:** `/api/v1/auth/*`, `/api/v1/users/*`, `/api/v1/voice-memos/*`
+**Route groups:** `/api/v1/auth/*`, `/api/v1/users/*`, `/api/v1/voice-memos/*`, `/api/v1/teams/*`, `/api/v1/invitations/*`
 
 ## Postman
 
