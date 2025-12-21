@@ -222,8 +222,6 @@ Update the spec document status:
 
 **Note**: Do not proceed to Phase 8 until user explicitly approves.
 
-**Proceed to Phase 8.**
-
 ---
 
 ## Phase 8: Implementation
