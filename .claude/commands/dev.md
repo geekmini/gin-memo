@@ -316,12 +316,18 @@ See `.claude/skills/docs/SKILL.md` for the full decision matrix and update proce
 
 **Ask the user**: "Would you like me to commit, push, and create a PR?"
 
-If yes, **use the `/commit-commands:commit-push-pr` skill**:
+If yes, use the `/commit-commands:commit-push-pr` plugin skill (if available) or perform manually:
 
-1. Stage all changes
-2. Create commit with conventional commit message
-3. Push to remote branch
-4. Create PR with summary from this workflow
+**Using plugin skill:**
+```
+/commit-commands:commit-push-pr
+```
+
+**Manual process (if plugin not available):**
+1. Stage all changes: `git add .`
+2. Create commit with conventional commit message: `git commit -m "feat: [description]"`
+3. Push to remote branch: `git push -u origin [branch-name]`
+4. Create PR: `gh pr create --title "[title]" --body "[description]"`
 
 The PR description will include:
 - Feature summary from Phase 4

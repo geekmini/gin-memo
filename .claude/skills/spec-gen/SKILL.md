@@ -145,7 +145,7 @@ Use the following template structure:
 
 ### Step 4: Write File
 
-Use the Write tool to create the spec file at `spec/[feature-name].md`.
+Use the Write tool to create the spec file at `spec/[feature-name-kebab-case].md`.
 
 ### Step 5: Confirm
 
@@ -153,7 +153,7 @@ Present summary to user:
 ```
 ## Spec Generated
 
-**File**: spec/[feature-name].md
+**File**: spec/[feature-name-kebab-case].md
 **Endpoints**: [N] endpoints defined
 **Data Models**: [N] models defined
 

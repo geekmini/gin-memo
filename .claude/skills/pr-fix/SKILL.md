@@ -17,6 +17,39 @@ Address review comments from local code review (agents) or remote PR review (Git
 
 ---
 
+## Critical Rules
+
+**This skill MUST be interactive.** The user may have different opinions on each issue.
+
+1. **NEVER batch fix** - Do not fix multiple issues at once without user confirmation
+2. **Present one issue at a time** - Show each issue with full context before asking for action
+3. **Wait for user decision** - After presenting an issue, STOP and wait for user to choose:
+   - Fix this issue
+   - Skip (won't fix)
+   - Need more context
+4. **Apply fix only after approval** - Only make changes when user confirms "fix"
+5. **Proceed sequentially** - After handling one issue, present the next one
+
+**Anti-pattern (DO NOT DO THIS):**
+```
+❌ "I found 3 issues. Let me fix all of them..."
+❌ [Fixes all issues without asking]
+❌ "Done! All 3 issues fixed."
+```
+
+**Correct pattern:**
+```
+✅ "I found 3 issues. Let me present them one by one."
+✅ [Shows Issue 1 with context and options]
+✅ [STOPS and waits for user response]
+✅ [User says "fix" → applies fix]
+✅ [Shows Issue 2 with context and options]
+✅ [STOPS and waits for user response]
+... and so on
+```
+
+---
+
 ## Modes
 
 | Mode       | Source                                   | Trigger                                 |

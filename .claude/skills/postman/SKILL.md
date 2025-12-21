@@ -17,6 +17,20 @@ Manage Postman collection endpoints using MCP tools.
 
 ---
 
+## Prerequisites
+
+This skill requires the **Postman MCP server** to be configured. The MCP tools (`mcp__postman__*`) must be available in the environment.
+
+**To verify MCP availability:**
+- Check if `mcp__postman__getCollection` tool is accessible
+- If MCP tools are unavailable, the user should configure the Postman MCP server in their Claude Code settings
+
+**Fallback behavior:**
+- If MCP tools are not available, inform the user that manual Postman collection updates are required
+- Provide the endpoint details in a format that can be manually imported into Postman
+
+---
+
 ## Configuration
 
 Use the workspace and collection IDs from CLAUDE.md:
