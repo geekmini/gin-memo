@@ -30,6 +30,11 @@ func Created(c *gin.Context, data interface{}) {
 	})
 }
 
+// NoContent sends a 204 No Content response.
+func NoContent(c *gin.Context) {
+	c.Status(http.StatusNoContent)
+}
+
 // Error sends an error response with the given status code.
 func Error(c *gin.Context, status int, message string) {
 	c.JSON(status, Response{

@@ -20,6 +20,8 @@ type VoiceMemoRepository interface {
 	FindByTeamID(ctx context.Context, teamID primitive.ObjectID, page, limit int) ([]models.VoiceMemo, int, error)
 	FindByID(ctx context.Context, id primitive.ObjectID) (*models.VoiceMemo, error)
 	SoftDelete(ctx context.Context, id primitive.ObjectID) error
+	SoftDeleteWithOwnership(ctx context.Context, id, userID primitive.ObjectID) error
+	SoftDeleteWithTeam(ctx context.Context, id, teamID primitive.ObjectID) error
 	SoftDeleteByTeamID(ctx context.Context, teamID primitive.ObjectID) error
 }
 
@@ -98,7 +100,9 @@ func (r *voiceMemoRepository) FindByID(ctx context.Context, id primitive.ObjectI
 }
 
 // SoftDelete marks a voice memo as deleted by setting deletedAt timestamp.
+// Note: Prefer SoftDeleteWithOwnership or SoftDeleteWithTeam for atomic ownership checks.
 func (r *voiceMemoRepository) SoftDelete(ctx context.Context, id primitive.ObjectID) error {
+	now := time.Now()
 	filter := bson.M{
 		"_id":       id,
 		"deletedAt": bson.M{"$exists": false},
@@ -106,8 +110,10 @@ func (r *voiceMemoRepository) SoftDelete(ctx context.Context, id primitive.Objec
 
 	update := bson.M{
 		"$set": bson.M{
-			"deletedAt": time.Now(),
+			"deletedAt": now,
+			"updatedAt": now,
 		},
+		"$inc": bson.M{"version": 1},
 	}
 
 	result, err := r.collection.UpdateOne(ctx, filter, update)
@@ -117,6 +123,102 @@ func (r *voiceMemoRepository) SoftDelete(ctx context.Context, id primitive.Objec
 
 	if result.MatchedCount == 0 {
 		return apperrors.ErrVoiceMemoNotFound
+	}
+
+	return nil
+}
+
+// SoftDeleteWithOwnership atomically soft-deletes a voice memo if the user owns it.
+// Returns nil if memo is already deleted (idempotent).
+// Returns ErrVoiceMemoNotFound if memo doesn't exist.
+// Returns ErrVoiceMemoUnauthorized if memo exists but user doesn't own it.
+func (r *voiceMemoRepository) SoftDeleteWithOwnership(ctx context.Context, id, userID primitive.ObjectID) error {
+	now := time.Now()
+	filter := bson.M{
+		"_id":       id,
+		"userId":    userID,
+		"deletedAt": bson.M{"$exists": false},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"deletedAt": now,
+			"updatedAt": now,
+		},
+		"$inc": bson.M{"version": 1},
+	}
+
+	result := r.collection.FindOneAndUpdate(ctx, filter, update)
+
+	if result.Err() != nil {
+		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+			// Either doesn't exist, already deleted, or wrong user
+			// Check if document exists at all to return appropriate error
+			var existingMemo models.VoiceMemo
+			checkErr := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&existingMemo)
+
+			if checkErr != nil {
+				if errors.Is(checkErr, mongo.ErrNoDocuments) {
+					return apperrors.ErrVoiceMemoNotFound // Doesn't exist
+				}
+				return checkErr
+			}
+
+			// Document exists - check why update failed
+			if existingMemo.UserID != userID {
+				return apperrors.ErrVoiceMemoUnauthorized // Wrong owner
+			}
+			// Must be already deleted - idempotent success
+			return nil
+		}
+		return result.Err()
+	}
+
+	return nil
+}
+
+// SoftDeleteWithTeam atomically soft-deletes a voice memo if it belongs to the team.
+// Returns nil if memo is already deleted (idempotent).
+// Returns ErrVoiceMemoNotFound if memo doesn't exist or doesn't belong to team.
+func (r *voiceMemoRepository) SoftDeleteWithTeam(ctx context.Context, id, teamID primitive.ObjectID) error {
+	now := time.Now()
+	filter := bson.M{
+		"_id":       id,
+		"teamId":    teamID,
+		"deletedAt": bson.M{"$exists": false},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"deletedAt": now,
+			"updatedAt": now,
+		},
+		"$inc": bson.M{"version": 1},
+	}
+
+	result := r.collection.FindOneAndUpdate(ctx, filter, update)
+
+	if result.Err() != nil {
+		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+			// Check if exists and why update failed
+			var existingMemo models.VoiceMemo
+			checkErr := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&existingMemo)
+
+			if checkErr != nil {
+				if errors.Is(checkErr, mongo.ErrNoDocuments) {
+					return apperrors.ErrVoiceMemoNotFound
+				}
+				return checkErr
+			}
+
+			// Check team membership
+			if existingMemo.TeamID == nil || *existingMemo.TeamID != teamID {
+				return apperrors.ErrVoiceMemoNotFound // Wrong team
+			}
+			// Already deleted - idempotent
+			return nil
+		}
+		return result.Err()
 	}
 
 	return nil
@@ -166,6 +268,7 @@ func (r *voiceMemoRepository) FindByTeamID(ctx context.Context, teamID primitive
 
 // SoftDeleteByTeamID soft deletes all voice memos for a team.
 func (r *voiceMemoRepository) SoftDeleteByTeamID(ctx context.Context, teamID primitive.ObjectID) error {
+	now := time.Now()
 	filter := bson.M{
 		"teamId":    teamID,
 		"deletedAt": bson.M{"$exists": false},
@@ -173,8 +276,10 @@ func (r *voiceMemoRepository) SoftDeleteByTeamID(ctx context.Context, teamID pri
 
 	update := bson.M{
 		"$set": bson.M{
-			"deletedAt": time.Now(),
+			"deletedAt": now,
+			"updatedAt": now,
 		},
+		"$inc": bson.M{"version": 1},
 	}
 
 	_, err := r.collection.UpdateMany(ctx, filter, update)

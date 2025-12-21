@@ -20,7 +20,9 @@ type VoiceMemo struct {
 	AudioFormat   string              `json:"audioFormat" bson:"audioFormat" example:"mp3"`
 	Tags          []string            `json:"tags" bson:"tags" example:"work,meeting"`
 	IsFavorite    bool                `json:"isFavorite" bson:"isFavorite" example:"false"`
+	Version       int                 `json:"version" bson:"version" example:"1"`
 	CreatedAt     time.Time           `json:"createdAt" bson:"createdAt" example:"2024-01-15T09:30:00Z"`
+	UpdatedAt     time.Time           `json:"updatedAt" bson:"updatedAt" example:"2024-01-15T10:00:00Z"`
 	DeletedAt     *time.Time          `json:"deletedAt,omitempty" bson:"deletedAt,omitempty"`
 }
 
