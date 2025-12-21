@@ -3,8 +3,13 @@ package transcription
 
 import (
 	"context"
+	"errors"
+	"math/rand"
 	"time"
 )
+
+// ErrTranscriptionFailed is returned when transcription fails (simulated in mock).
+var ErrTranscriptionFailed = errors.New("transcription failed")
 
 // Service defines the interface for audio transcription.
 type Service interface {
@@ -35,6 +40,11 @@ func (s *MockService) Transcribe(ctx context.Context, audioKey string) (string, 
 	case <-ctx.Done():
 		return "", ctx.Err()
 	case <-time.After(s.SimulatedDelay):
+	}
+
+	// Simulate random failures based on FailureRate
+	if s.FailureRate > 0 && rand.Float64() < s.FailureRate {
+		return "", ErrTranscriptionFailed
 	}
 
 	// Return mock transcription

@@ -44,8 +44,11 @@ func NewVoiceMemoRepository(db *mongo.Database) VoiceMemoRepository {
 }
 
 // Create inserts a new voice memo into the database.
+// If memo.ID is already set (non-zero), it preserves the existing ID.
 func (r *voiceMemoRepository) Create(ctx context.Context, memo *models.VoiceMemo) error {
-	memo.ID = primitive.NewObjectID()
+	if memo.ID.IsZero() {
+		memo.ID = primitive.NewObjectID()
+	}
 	memo.CreatedAt = time.Now()
 	memo.UpdatedAt = memo.CreatedAt
 	memo.Version = 0

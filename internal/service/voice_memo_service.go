@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	apperrors "gin-sample/internal/errors"
@@ -269,7 +270,9 @@ func (s *VoiceMemoService) ConfirmUpload(ctx context.Context, memoID, userID pri
 	if err := s.queue.Enqueue(job); err != nil {
 		if errors.Is(err, queue.ErrQueueFull) {
 			// Revert status back to pending_upload if queue is full (only if still transcribing)
-			_ = s.repo.UpdateStatusConditional(ctx, memoID, models.StatusTranscribing, models.StatusPendingUpload)
+			if revertErr := s.repo.UpdateStatusConditional(ctx, memoID, models.StatusTranscribing, models.StatusPendingUpload); revertErr != nil {
+				log.Printf("Failed to revert status for memo %s: %v", memoID.Hex(), revertErr)
+			}
 			return apperrors.ErrTranscriptionQueueFull
 		}
 		return err
@@ -297,7 +300,9 @@ func (s *VoiceMemoService) ConfirmTeamUpload(ctx context.Context, memoID, teamID
 	if err := s.queue.Enqueue(job); err != nil {
 		if errors.Is(err, queue.ErrQueueFull) {
 			// Revert status back to pending_upload if queue is full (only if still transcribing)
-			_ = s.repo.UpdateStatusConditional(ctx, memoID, models.StatusTranscribing, models.StatusPendingUpload)
+			if revertErr := s.repo.UpdateStatusConditional(ctx, memoID, models.StatusTranscribing, models.StatusPendingUpload); revertErr != nil {
+				log.Printf("Failed to revert status for memo %s: %v", memoID.Hex(), revertErr)
+			}
 			return apperrors.ErrTranscriptionQueueFull
 		}
 		return err
@@ -325,7 +330,9 @@ func (s *VoiceMemoService) RetryTranscription(ctx context.Context, memoID, userI
 	if err := s.queue.Enqueue(job); err != nil {
 		if errors.Is(err, queue.ErrQueueFull) {
 			// Revert status back to failed if queue is full (only if still transcribing)
-			_ = s.repo.UpdateStatusConditional(ctx, memoID, models.StatusTranscribing, models.StatusFailed)
+			if revertErr := s.repo.UpdateStatusConditional(ctx, memoID, models.StatusTranscribing, models.StatusFailed); revertErr != nil {
+				log.Printf("Failed to revert status for memo %s: %v", memoID.Hex(), revertErr)
+			}
 			return apperrors.ErrTranscriptionQueueFull
 		}
 		return err
@@ -353,7 +360,9 @@ func (s *VoiceMemoService) RetryTeamTranscription(ctx context.Context, memoID, t
 	if err := s.queue.Enqueue(job); err != nil {
 		if errors.Is(err, queue.ErrQueueFull) {
 			// Revert status back to failed if queue is full (only if still transcribing)
-			_ = s.repo.UpdateStatusConditional(ctx, memoID, models.StatusTranscribing, models.StatusFailed)
+			if revertErr := s.repo.UpdateStatusConditional(ctx, memoID, models.StatusTranscribing, models.StatusFailed); revertErr != nil {
+				log.Printf("Failed to revert status for memo %s: %v", memoID.Hex(), revertErr)
+			}
 			return apperrors.ErrTranscriptionQueueFull
 		}
 		return err

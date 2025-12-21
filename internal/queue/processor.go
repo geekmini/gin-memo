@@ -73,23 +73,15 @@ func (p *Processor) worker(ctx context.Context, id int) {
 	log.Printf("Worker %d started", id)
 
 	for {
-		select {
-		case <-ctx.Done():
-			log.Printf("Worker %d shutting down: context cancelled", id)
-			return
-		case <-p.shutdownCh:
-			log.Printf("Worker %d shutting down: shutdown signal", id)
-			return
-		default:
-			job, err := p.queue.Dequeue(ctx)
-			if err != nil {
-				if err == ErrQueueClosed || err == context.Canceled {
-					return
-				}
-				continue
+		job, err := p.queue.Dequeue(ctx)
+		if err != nil {
+			if err == ErrQueueClosed || err == context.Canceled {
+				log.Printf("Worker %d shutting down", id)
+				return
 			}
-			p.processJob(ctx, job)
+			continue
 		}
+		p.processJob(ctx, job)
 	}
 }
 
