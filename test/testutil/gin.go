@@ -77,6 +77,38 @@ func ParseResponse(t *testing.T, w *httptest.ResponseRecorder, target interface{
 	require.NoError(t, err)
 }
 
+// APIResponse is a test-friendly response struct with proper types.
+type APIResponse struct {
+	Success bool                   `json:"success"`
+	Data    map[string]interface{} `json:"data,omitempty"`
+	Error   string                 `json:"error,omitempty"`
+}
+
+// APIListResponse is a response struct where data is an array.
+type APIListResponse struct {
+	Success bool          `json:"success"`
+	Data    []interface{} `json:"data,omitempty"`
+	Error   string        `json:"error,omitempty"`
+}
+
+// ParseAPIResponse parses JSON response into APIResponse for easier testing.
+func ParseAPIResponse(t *testing.T, w *httptest.ResponseRecorder) *APIResponse {
+	t.Helper()
+	var resp APIResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	return &resp
+}
+
+// ParseAPIListResponse parses JSON response where data is an array.
+func ParseAPIListResponse(t *testing.T, w *httptest.ResponseRecorder) *APIListResponse {
+	t.Helper()
+	var resp APIListResponse
+	err := json.Unmarshal(w.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	return &resp
+}
+
 // SetUserID sets user ID in Gin context (simulates authenticated user).
 func SetUserID(c *gin.Context, userID string) {
 	c.Set("userID", userID)
