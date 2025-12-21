@@ -598,7 +598,7 @@ func uploadTestAudioWithContent(t *testing.T, uploadURL string, content []byte) 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	require.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)

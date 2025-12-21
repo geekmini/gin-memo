@@ -218,17 +218,6 @@ func GetObjectIDFromResponse(t *testing.T, data map[string]interface{}) primitiv
 	return oid
 }
 
-// AssertErrorResponse asserts the response is an error with expected status and message contains.
-func AssertErrorResponse(t *testing.T, w interface {
-	Code() int
-	Body() []byte
-}, expectedStatus int, messageContains string) {
-	t.Helper()
-
-	// This would need the actual recorder interface
-	// For now, provide a simpler version
-}
-
 // SeedUser directly inserts a user into the database (bypasses API).
 func (ah *AuthHelper) SeedUser(t *testing.T, user *models.User) *models.User {
 	t.Helper()

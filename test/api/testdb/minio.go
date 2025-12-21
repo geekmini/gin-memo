@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -140,6 +141,7 @@ func (mc *MinIOContainer) Cleanup(ctx context.Context) error {
 }
 
 // ClearBucket removes all objects from the bucket.
+// Uses batch deletion (up to 1000 objects per request) for efficiency.
 // Handles pagination for buckets with more than 1000 objects.
 func (mc *MinIOContainer) ClearBucket(ctx context.Context) error {
 	var continuationToken *string
@@ -154,15 +156,33 @@ func (mc *MinIOContainer) ClearBucket(ctx context.Context) error {
 			return err
 		}
 
-		// Delete each object in this page
-		for _, obj := range listOutput.Contents {
-			_, err := mc.Client.DeleteObject(ctx, &s3.DeleteObjectInput{
-				Bucket: aws.String(mc.Bucket),
-				Key:    obj.Key,
-			})
-			if err != nil {
-				return err
+		// Skip if no objects in this page
+		if len(listOutput.Contents) == 0 {
+			if listOutput.IsTruncated == nil || !*listOutput.IsTruncated {
+				break
 			}
+			continuationToken = listOutput.NextContinuationToken
+			continue
+		}
+
+		// Build batch delete request (up to 1000 objects per request)
+		objectIds := make([]types.ObjectIdentifier, 0, len(listOutput.Contents))
+		for _, obj := range listOutput.Contents {
+			objectIds = append(objectIds, types.ObjectIdentifier{
+				Key: obj.Key,
+			})
+		}
+
+		// Batch delete all objects in this page
+		_, err = mc.Client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+			Bucket: aws.String(mc.Bucket),
+			Delete: &types.Delete{
+				Objects: objectIds,
+				Quiet:   aws.Bool(true),
+			},
+		})
+		if err != nil {
+			return err
 		}
 
 		// Check if there are more objects to list
