@@ -359,11 +359,11 @@ Update the spec document status:
 
 ### Status Lifecycle
 
-| Status | Meaning |
-|--------|---------|
-| **Draft** | Spec created, pending review |
-| **Approved** | User approved, ready for implementation |
-| **Implemented** | Code complete and verified |
+| Status          | Meaning                                 |
+| --------------- | --------------------------------------- |
+| **Draft**       | Spec created, pending review            |
+| **Approved**    | User approved, ready for implementation |
+| **Implemented** | Code complete and verified              |
 
 **Note**: Do not proceed to Phase 8 until user explicitly approves.
 
@@ -444,14 +444,18 @@ Review output format:
 
 If issues are found (especially Critical/High severity):
 
-**The Review Comments Fixer skill** will activate in Local mode to address issues one by one:
+**IMPORTANT: Always use the pr-fix skill to fix issues. Do NOT fix issues directly without user approval.**
+
+Run `/pr-fix` in Local mode to address issues one by one:
 
 1. Present each issue with context and severity
 2. User decides: Fix / Skip / Need more context
-3. Apply fixes after approval
+3. Apply fixes **only after user approval**
 4. Track all changes made
 
 See `.claude/skills/pr-fix/SKILL.md` for the full process.
+
+**Why this matters:** The pr-fix skill ensures user oversight on all code changes, prevents unwanted modifications, and maintains a clear audit trail of what was fixed and why.
 
 ### Step 3: Re-review if Needed
 
