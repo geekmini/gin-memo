@@ -2,6 +2,137 @@
 
 A comprehensive workflow that combines structured requirements gathering, codebase exploration, architecture design, spec documentation, Postman integration, implementation, and quality review.
 
+---
+
+## Session Management
+
+This workflow uses a checkpoint file (`.claude/dev-checkpoint.md`) to persist progress across conversations. This ensures you can resume from where you left off even after context compaction.
+
+### On `/dev` Invocation
+
+**Step 1: Check for existing session**
+
+```bash
+# Check if checkpoint file exists
+ls .claude/dev-checkpoint.md
+```
+
+**Step 2: If checkpoint exists → Offer to resume**
+
+Read the checkpoint file and present:
+```
+Found existing dev session:
+- Feature: [feature name]
+- Current Phase: [phase number] - [phase name]
+- Last Updated: [timestamp]
+
+Options:
+1. Resume this session
+2. Start fresh (archives existing checkpoint)
+```
+
+If user chooses to resume:
+- Read checkpoint file for full context
+- Continue from the current phase listed
+- Update checkpoint as you progress
+
+If user chooses to start fresh:
+- Move existing checkpoint to `.claude/dev-checkpoints/[feature]-[timestamp].md`
+- Create new checkpoint file
+
+**Step 3: If no checkpoint exists → Start new session**
+
+After Phase 1 (Discovery), create the checkpoint file.
+
+### Checkpoint File Format
+
+Location: `.claude/dev-checkpoint.md`
+
+```markdown
+# Dev Session: [feature-name]
+
+**Current Phase:** [number] - [phase name]
+**Spec File:** spec/[feature-name].md (if created)
+**Branch:** [branch name] (if created)
+**Last Updated:** [ISO timestamp]
+
+---
+
+## Completed Phases
+
+### Phase 1: Discovery
+[Summary of what user wants - 2-3 sentences]
+
+### Phase 2: Codebase Exploration
+[Key patterns found, relevant files]
+
+### Phase 3: Clarifying Questions
+[Key decisions from Q&A - bullet points]
+
+### Phase 4: Summary & Approval
+[Confirmed: Yes/No, any changes requested]
+
+### Phase 5: Architecture
+**Decision:** [Option chosen]
+**Rationale:** [Why this option]
+
+### Phase 6: Spec Generated
+**File:** spec/[feature-name].md
+
+### Phase 7: Postman
+[Added N endpoints / Skipped]
+
+### Phase 7b: Spec Approved
+[Approved: Yes, timestamp]
+
+### Phase 8: Implementation
+**Status:** [In progress / Complete]
+**Completed:**
+- [x] Models
+- [x] Repository
+- [ ] Service (3/5 methods)
+- [ ] Handler
+- [ ] Router
+
+### Phase 9: Quality Review
+**Review Status:** [Pending / Passed / Issues Found]
+**Issues Fixed:** [N/A / List]
+
+### Phase 10: Documentation & PR
+**Docs Updated:** [Yes/No]
+**PR:** [#number or N/A]
+
+---
+
+## Current Context
+
+[Any important context for resuming - what was being worked on, blockers, next immediate step]
+
+---
+
+## Next Steps
+
+1. [Immediate next action]
+2. [Following action]
+```
+
+### Checkpoint Update Rules
+
+Update the checkpoint file:
+- **After each phase completes** - Add phase summary to "Completed Phases"
+- **On phase transitions** - Update "Current Phase"
+- **When blocked or pausing** - Update "Current Context" with state
+- **At key decision points** - Record decisions and rationale
+
+### Session Completion
+
+When Phase 10 completes successfully:
+1. Archive checkpoint to `.claude/dev-checkpoints/[feature]-[timestamp].md`
+2. Delete `.claude/dev-checkpoint.md`
+3. Confirm: "Dev session complete. Checkpoint archived."
+
+---
+
 ## Workflow Overview
 
 ```
@@ -27,11 +158,13 @@ When the user describes a feature or requirement:
 - Identify the core functionality requested
 - Note any explicit constraints or preferences mentioned
 
+**Checkpoint:** Create `.claude/dev-checkpoint.md` with feature name, set Current Phase to "2 - Codebase Exploration", and add Phase 1 summary.
+
 ---
 
 ## Phase 2: Codebase Exploration
 
-**Use the Task tool with `subagent_type: "feature-dev:code-explorer"`** to understand existing patterns.
+**Use the Task tool with `subagent_type: "code-explorer"`** to understand existing patterns.
 
 Launch parallel code-explorer agents to investigate:
 - Similar features already implemented
@@ -55,6 +188,8 @@ Present findings to the user:
 Based on existing patterns, this feature should follow [approach]
 ```
 
+**Checkpoint:** Update Current Phase to "3 - Clarifying Questions", add Phase 2 summary with key patterns and files found.
+
 ---
 
 ## Phase 3: Clarifying Questions
@@ -71,6 +206,8 @@ Ask questions **one by one** (not all at once), informed by codebase exploration
 - **Error handling**: What can go wrong?
 
 Wait for the user's answer before asking the next question.
+
+**Checkpoint:** Update Current Phase to "4 - Summary & Approval", add Phase 3 summary with key decisions from Q&A.
 
 ---
 
@@ -104,11 +241,13 @@ After gathering all information, present a summary:
 
 **Ask the user to review and approve before proceeding.**
 
+**Checkpoint:** Update Current Phase to "5 - Architecture Design", add Phase 4 summary (Confirmed: Yes/No).
+
 ---
 
 ## Phase 5: Architecture Design
 
-**Use the Task tool with `subagent_type: "feature-dev:code-architect"`** to design the implementation.
+**Use the Task tool with `subagent_type: "code-architect"`** to design the implementation.
 
 Present **2-3 implementation approaches** with trade-offs:
 
@@ -141,6 +280,8 @@ I recommend **Option [X]** because [reasoning based on codebase patterns].
 
 **Wait for user to choose an approach before proceeding.**
 
+**Checkpoint:** Update Current Phase to "6 - Generate Spec", add Phase 5 summary with decision and rationale.
+
 ---
 
 ## Phase 6: Generate Spec Document
@@ -160,6 +301,8 @@ The skill will:
 - Business rules and out of scope items (from Phase 3-4)
 
 See `.claude/skills/spec-gen/SKILL.md` for the full template structure.
+
+**Checkpoint:** Update Current Phase to "7 - Postman", add Phase 6 summary with spec file path, update Spec File field.
 
 ---
 
@@ -197,6 +340,8 @@ See `.claude/skills/postman/SKILL.md` for all operations.
 
 If no or no endpoints to add, skip to Phase 7b.
 
+**Checkpoint:** Update Current Phase to "7b - Approve Spec", add Phase 7 summary (Added N endpoints / Skipped).
+
 ---
 
 ## Phase 7b: Approve Spec
@@ -221,6 +366,8 @@ Update the spec document status:
 | **Implemented** | Code complete and verified |
 
 **Note**: Do not proceed to Phase 8 until user explicitly approves.
+
+**Checkpoint:** Update Current Phase to "8 - Implementation", add Phase 7b summary (Approved: Yes, timestamp).
 
 ---
 
@@ -260,13 +407,15 @@ After implementation:
 3. **Run `task swagger`** to regenerate API documentation
 4. Verify the feature works as expected
 
+**Checkpoint:** Update Current Phase to "9 - Quality Review", add Phase 8 summary with implementation status and completed layers checklist.
+
 ---
 
 ## Phase 9: Quality Review & Fix
 
 ### Step 1: Code Review
 
-**Use the Task tool with `subagent_type: "feature-dev:code-reviewer"`** to review the implementation.
+**Use the Task tool with `subagent_type: "code-reviewer"`** to review the implementation.
 
 The code reviewer checks for:
 - Bugs and logic errors
@@ -325,6 +474,8 @@ After quality review passes, update the spec document:
 
 **Note**: This ensures the spec document accurately reflects the current state of the feature.
 
+**Checkpoint:** Update Current Phase to "10 - Documentation & PR", add Phase 9 summary with review status and issues fixed.
+
 ---
 
 ## Phase 10: Documentation & Completion
@@ -353,18 +504,11 @@ See `.claude/skills/docs/SKILL.md` for the full decision matrix and update proce
 
 **Ask the user**: "Would you like me to commit, push, and create a PR?"
 
-If yes, use the `/commit-commands:commit-push-pr` plugin skill (if available) or perform manually:
-
-**Using plugin skill:**
-```
-/commit-commands:commit-push-pr
-```
-
-**Manual process (if plugin not available):**
-1. Stage all changes: `git add .`
-2. Create commit with conventional commit message: `git commit -m "feat: [description]"`
-3. Push to remote branch: `git push -u origin [branch-name]`
-4. Create PR: `gh pr create --title "[title]" --body "[description]"`
+If yes, run `/commit-push-pr` which will:
+1. Create a new branch if on main
+2. Commit with conventional commit message
+3. Push to remote
+4. Create PR via `gh pr create`
 
 The PR description will include:
 - Feature summary from Phase 4
@@ -373,6 +517,13 @@ The PR description will include:
 - Test plan
 
 **Note**: After the PR is created, GitHub Actions will run automated code review. When review comments arrive, use the Review Comments Fixer skill manually to address them.
+
+### Archive Checkpoint
+
+After successful completion:
+1. Create `.claude/dev-checkpoints/` directory if it doesn't exist
+2. Move `.claude/dev-checkpoint.md` to `.claude/dev-checkpoints/[feature-name]-[timestamp].md`
+3. Confirm: "Dev session archived to `.claude/dev-checkpoints/[feature-name]-[timestamp].md`"
 
 ### Final Summary
 
