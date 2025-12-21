@@ -76,7 +76,10 @@ func Setup(cfg *Config) *gin.Engine {
 		voiceMemos.Use(middleware.Auth(cfg.JWTManager))
 		{
 			voiceMemos.GET("", cfg.VoiceMemoHandler.ListVoiceMemos)
+			voiceMemos.POST("", cfg.VoiceMemoHandler.CreateVoiceMemo)
 			voiceMemos.DELETE("/:id", cfg.VoiceMemoHandler.DeleteVoiceMemo)
+			voiceMemos.POST("/:id/confirm-upload", cfg.VoiceMemoHandler.ConfirmUpload)
+			voiceMemos.POST("/:id/retry-transcription", cfg.VoiceMemoHandler.RetryTranscription)
 		}
 
 		// Team routes (protected)
@@ -117,8 +120,11 @@ func Setup(cfg *Config) *gin.Engine {
 				teamMemos := teamWithID.Group("/voice-memos")
 				{
 					teamMemos.GET("", middleware.TeamAuthz(cfg.Authorizer, authz.ActionMemoView), cfg.VoiceMemoHandler.ListTeamVoiceMemos)
+					teamMemos.POST("", middleware.TeamAuthz(cfg.Authorizer, authz.ActionMemoCreate), cfg.VoiceMemoHandler.CreateTeamVoiceMemo)
 					teamMemos.GET("/:id", middleware.TeamAuthz(cfg.Authorizer, authz.ActionMemoView), cfg.VoiceMemoHandler.GetTeamVoiceMemo)
 					teamMemos.DELETE("/:id", middleware.TeamAuthz(cfg.Authorizer, authz.ActionMemoDelete), cfg.VoiceMemoHandler.DeleteTeamVoiceMemo)
+					teamMemos.POST("/:id/confirm-upload", middleware.TeamAuthz(cfg.Authorizer, authz.ActionMemoCreate), cfg.VoiceMemoHandler.ConfirmTeamUpload)
+					teamMemos.POST("/:id/retry-transcription", middleware.TeamAuthz(cfg.Authorizer, authz.ActionMemoCreate), cfg.VoiceMemoHandler.RetryTeamTranscription)
 				}
 			}
 		}

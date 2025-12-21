@@ -20,8 +20,10 @@ var (
 
 // Voice memo errors
 var (
-	ErrVoiceMemoNotFound     = errors.New("voice memo not found")
-	ErrVoiceMemoUnauthorized = errors.New("you can only delete your own voice memos")
+	ErrVoiceMemoNotFound      = errors.New("voice memo not found")
+	ErrVoiceMemoUnauthorized  = errors.New("you can only delete your own voice memos")
+	ErrVoiceMemoInvalidStatus = errors.New("invalid voice memo status transition")
+	ErrTranscriptionQueueFull = errors.New("transcription queue is full, please try again later")
 )
 
 // Team errors

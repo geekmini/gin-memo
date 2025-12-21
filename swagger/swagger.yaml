@@ -79,6 +79,55 @@ definitions:
     - name
     - password
     type: object
+  models.CreateVoiceMemoRequest:
+    properties:
+      audioFormat:
+        enum:
+        - mp3
+        - wav
+        - m4a
+        - webm
+        - aac
+        example: mp3
+        type: string
+      duration:
+        example: 120
+        minimum: 0
+        type: integer
+      fileSize:
+        description: max 100MB
+        example: 1048576
+        maximum: 104857600
+        type: integer
+      isFavorite:
+        example: false
+        type: boolean
+      tags:
+        example:
+        - work
+        - meeting
+        items:
+          type: string
+        maxItems: 10
+        type: array
+      title:
+        example: Meeting Notes
+        maxLength: 200
+        minLength: 1
+        type: string
+    required:
+    - audioFormat
+    - fileSize
+    - title
+    type: object
+  models.CreateVoiceMemoResponse:
+    properties:
+      memo:
+        $ref: '#/definitions/models.VoiceMemo'
+      uploadUrl:
+        example: https://s3.amazonaws.com/bucket/voice-memos/...?X-Amz-Algorithm=...
+        type: string
+    type: object
   models.InvitationListResponse:
     properties:
       items:
@@ -376,6 +425,10 @@ definitions:
       isFavorite:
         example: false
         type: boolean
+      status:
+        allOf:
+        - $ref: '#/definitions/models.VoiceMemoStatus'
+        example: ready
       tags:
         example:
         - work
@@ -400,6 +453,7 @@ definitions:
         example: 507f1f77bcf86cd799439012
         type: string
       version:
+        description: Existing docs default to 0, increments to 1+ on first modification
         example: 1
         type: integer
     type: object
@@ -412,6 +466,18 @@ definitions:
       pagination:
         $ref: '#/definitions/models.Pagination'
     type: object
+  models.VoiceMemoStatus:
+    enum:
+    - pending_upload
+    - transcribing
+    - ready
+    - failed
+    type: string
+    x-enum-varnames:
+    - StatusPendingUpload
+    - StatusTranscribing
+    - StatusReady
+    - StatusFailed
   response.Response:
     properties:
       data: {}
@@ -1373,6 +1439,56 @@ paths:
       summary: List team voice memos
       tags:
       - team-voice-memos
+    post:
+      consumes:
+      - application/json
+      description: Create a new team voice memo and get a pre-signed URL for audio
+        upload
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      - description: Voice memo details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateVoiceMemoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.CreateVoiceMemoResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Create team voice memo
+      tags:
+      - team-voice-memos
   /teams/{teamId}/voice-memos/{id}:
     delete:
       description: Soft delete a voice memo from a team. Idempotent - returns 204
@@ -1466,6 +1582,115 @@ paths:
       security:
       - BearerAuth: []
       summary: Get team voice memo
+      tags:
+      - team-voice-memos
+  /teams/{teamId}/voice-memos/{id}/confirm-upload:
+    post:
+      description: Confirm that audio has been uploaded to S3 and trigger transcription
+        for a team memo
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      - description: Voice Memo ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Invalid status transition
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+        "503":
+          description: Transcription queue full
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Confirm team audio upload
+      tags:
+      - team-voice-memos
+  /teams/{teamId}/voice-memos/{id}/retry-transcription:
+    post:
+      description: Retry transcription for a failed team voice memo
+      parameters:
+      - description: Team ID
+        in: path
+        name: teamId
+        required: true
+        type: string
+      - description: Voice Memo ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Invalid status - memo is not in failed state
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+        "503":
+          description: Transcription queue full
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Retry team transcription
       tags:
       - team-voice-memos
   /users:
@@ -1651,6 +1876,47 @@ paths:
       summary: List user's voice memos
       tags:
       - voice-memos
+    post:
+      consumes:
+      - application/json
+      description: Create a new private voice memo and get a pre-signed URL for audio
+        upload
+      parameters:
+      - description: Voice memo details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateVoiceMemoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.CreateVoiceMemoResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Create voice memo
+      tags:
+      - voice-memos
   /voice-memos/{id}:
     delete:
       description: Mark a voice memo as deleted. User can only delete their own memos.
@@ -1687,6 +1953,104 @@ paths:
       security:
       - BearerAuth: []
       summary: Soft delete voice memo
+      tags:
+      - voice-memos
+  /voice-memos/{id}/confirm-upload:
+    post:
+      description: Confirm that audio has been uploaded to S3 and trigger transcription
+      parameters:
+      - description: Voice Memo ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Invalid status transition
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+        "503":
+          description: Transcription queue full
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Confirm audio upload
+      tags:
+      - voice-memos
+  /voice-memos/{id}/retry-transcription:
+    post:
+      description: Retry transcription for a failed voice memo
+      parameters:
+      - description: Voice Memo ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Invalid status - memo is not in failed state
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+        "503":
+          description: Transcription queue full
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Retry transcription
       tags:
       - voice-memos
 securityDefinitions:
