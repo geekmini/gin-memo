@@ -23,6 +23,8 @@ type MockService struct {
 	SimulatedDelay time.Duration
 	// FailureRate is the probability of failure (0.0 to 1.0) for testing retry logic.
 	FailureRate float64
+	// rng is a seeded random source for failure simulation.
+	rng *rand.Rand
 }
 
 // NewMockService creates a new MockService with default settings.
@@ -30,6 +32,7 @@ func NewMockService() *MockService {
 	return &MockService{
 		SimulatedDelay: 2 * time.Second,
 		FailureRate:    0.0, // No failures by default
+		rng:            rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 }
 
@@ -43,7 +46,7 @@ func (s *MockService) Transcribe(ctx context.Context, audioKey string) (string, 
 	}
 
 	// Simulate random failures based on FailureRate
-	if s.FailureRate > 0 && rand.Float64() < s.FailureRate {
+	if s.FailureRate > 0 && s.rng.Float64() < s.FailureRate {
 		return "", ErrTranscriptionFailed
 	}
 

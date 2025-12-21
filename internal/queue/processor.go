@@ -19,6 +19,8 @@ const (
 	RetryDelay = 5 * time.Second
 	// StatusUpdateTimeout is the timeout for status updates during error handling.
 	StatusUpdateTimeout = 5 * time.Second
+	// TranscriptionTimeout is the timeout for transcription operations.
+	TranscriptionTimeout = 5 * time.Minute
 )
 
 // TranscriptionUpdater defines the interface for updating transcription results.
@@ -88,16 +90,22 @@ func (p *Processor) worker(ctx context.Context, id int) {
 func (p *Processor) processJob(ctx context.Context, job TranscriptionJob) {
 	log.Printf("Processing transcription job for memo %s (attempt %d)", job.MemoID.Hex(), job.RetryCount+1)
 
-	// Perform transcription
-	text, err := p.transcriber.Transcribe(ctx, job.AudioFileKey)
+	// Perform transcription with timeout
+	transcribeCtx, transcribeCancel := context.WithTimeout(ctx, TranscriptionTimeout)
+	defer transcribeCancel()
+
+	text, err := p.transcriber.Transcribe(transcribeCtx, job.AudioFileKey)
 	if err != nil {
 		log.Printf("Transcription failed for memo %s: %v", job.MemoID.Hex(), err)
 		p.handleFailure(ctx, job)
 		return
 	}
 
-	// Update memo with transcription result
-	err = p.updater.UpdateTranscriptionAndStatus(ctx, job.MemoID, text, models.StatusReady)
+	// Update memo with transcription result (with timeout)
+	updateCtx, updateCancel := context.WithTimeout(ctx, StatusUpdateTimeout)
+	defer updateCancel()
+
+	err = p.updater.UpdateTranscriptionAndStatus(updateCtx, job.MemoID, text, models.StatusReady)
 	if err != nil {
 		log.Printf("Failed to update memo %s with transcription: %v", job.MemoID.Hex(), err)
 		p.handleFailure(ctx, job)
