@@ -26,46 +26,29 @@ Help a new engineer set up the gin-sample project for local development.
 
    Remind user to add `$HOME/go/bin` to PATH if tools installed via `go install` are not found.
 
-3. **Install Claude Code Plugins**
-   The `/dev` workflow requires these plugins:
-   - `feature-dev` - Code exploration, architecture, and review agents
-   - `commit-commands` - Commit, push, and PR creation
-
-   Check if plugins are installed:
-   ```bash
-   claude plugins list
-   ```
-
-   Install missing plugins:
-   ```bash
-   claude plugins add feature-dev
-   claude plugins add commit-commands
-   ```
-
-4. **Environment Setup**
+3. **Environment Setup**
    - Check if `.env` exists, if not copy from `.env.example`
    - Run `task setup` to install git hooks
 
-5. **Start Services**
+4. **Start Services**
    - Run `task docker:up` to start MongoDB, Redis, MinIO
    - Wait for services to be healthy
 
-6. **Create Database Indexes**
+5. **Create Database Indexes**
    - Run `task index` to create MongoDB indexes
    - This is required for optimal query performance
 
-7. **Seed Test Data** (optional)
+6. **Seed Test Data** (optional)
    - Ask if user wants to seed test data
    - If yes, run `task seed`
 
-8. **Verify Setup**
+7. **Verify Setup**
    - Verify Docker services are running: `docker compose ps`
    - Confirm MongoDB, Redis, and MinIO are healthy
 
-9. **Summary**
+8. **Summary**
    Print a summary of:
    - All tools installed
-   - Claude Code plugins installed
    - Services running
    - Test credentials (if seeded): alice@example.com / password123
 
