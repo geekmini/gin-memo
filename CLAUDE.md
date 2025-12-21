@@ -172,7 +172,7 @@ See Swagger for complete API documentation:
 
 **Default workspace and collection for MCP operations:**
 
-| Resource   | Name      | ID                                           |
-| ---------- | --------- | -------------------------------------------- |
-| Workspace  | golang    | `1ee078be-5479-45b9-9d5a-883cd4c6ef50`       |
-| Collection | go-sample | `25403495-bb644262-dce4-42ac-8cc4-810d8a328fc9` |
+| Resource   | Name      | ID                                              |
+| ---------- | --------- | ----------------------------------------------- |
+| Workspace  | golang    | `1ee078be-5479-45b9-9d5a-883cd4c6ef50`          |
+| Collection | go-sample | `25403495-fd7a5765-5ad9-48d3-ab01-f3317012f96e` |

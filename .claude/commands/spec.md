@@ -10,11 +10,11 @@ A comprehensive workflow that combines structured requirements gathering, codeba
 3. Clarifying Questions → Resolve ambiguities
 4. Summary & Approval  → Confirm understanding
 5. Architecture Design → Propose 2-3 approaches (agents)
-6. Generate Spec      → Create spec document
-7. Add to Postman     → Add endpoints to collection (optional)
-8. Implementation     → Build the feature + regenerate Swagger (optional)
+6. Generate Spec      → Create spec document (skill)
+7. Add to Postman     → Add endpoints to collection (skill, optional)
+8. Implementation     → Build the feature + regenerate Swagger (skill, optional)
 9. Quality Review     → Review code quality (agents)
-10. Documentation     → Update CLAUDE.md if needed, final summary
+10. Documentation     → Update CLAUDE.md if needed (skill), final summary
 ```
 
 ---
@@ -144,91 +144,21 @@ I recommend **Option [X]** because [reasoning based on codebase patterns].
 
 ## Phase 6: Generate Spec Document
 
-After architecture approval, create a spec document at `spec/[feature-name].md`:
+**The Spec Generator skill** will automatically activate to generate the specification document.
 
-```markdown
-# [Feature Name] Specification
+The skill will:
+1. Validate all required inputs from previous phases
+2. Determine file path: `spec/[feature-name-kebab-case].md`
+3. Generate structured spec using the standard template
+4. Write the file and confirm creation
 
-**Author**: [ask user or use "Team"]
-**Created**: [current date in YYYY-MM-DD format]
-**Status**: Draft
-**Architecture**: [chosen option from Phase 5]
+**Inputs gathered from previous phases:**
+- Feature name and description (from Phase 1)
+- Data model and endpoints (from Phase 3)
+- Architecture decision and file changes (from Phase 5)
+- Business rules and out of scope items (from Phase 3-4)
 
-## Overview
-
-[Brief description of the feature]
-
-## Architecture Decision
-
-**Chosen Approach**: [Option name]
-**Rationale**: [Why this approach was selected]
-
-### Files to Create
-- `path/to/file.go` - [purpose]
-
-### Files to Modify
-- `path/to/file.go` - [changes needed]
-
-## Data Model
-
-### [Entity Name]
-
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| ...   | ...  | ...      | ...         |
-
-## API Endpoints
-
-### [Endpoint Name]
-
-**Endpoint**: `METHOD /path`
-**Authentication**: Required/None
-**Description**: [what it does]
-
-#### Request
-
-```json
-{
-  "field": "value"
-}
-```
-
-#### Response
-
-```json
-{
-  "field": "value"
-}
-```
-
-#### Error Responses
-
-| Status | Code          | Description |
-| ------ | ------------- | ----------- |
-| 400    | INVALID_INPUT | ...         |
-| 404    | NOT_FOUND     | ...         |
-
-## Business Rules
-
-1. Rule 1
-2. Rule 2
-
-## Implementation Steps
-
-1. [ ] Step 1 - [description]
-2. [ ] Step 2 - [description]
-3. [ ] Step 3 - [description]
-
-## Out of Scope
-
-- Item 1
-- Item 2
-
-## Open Questions
-
-- [ ] Question 1
-- [ ] Question 2
-```
+See `.claude/skills/spec-gen/SKILL.md` for the full template structure.
 
 ---
 
@@ -239,9 +169,9 @@ After architecture approval, create a spec document at `spec/[feature-name].md`:
 | Source      | Purpose                                                                    |
 | ----------- | -------------------------------------------------------------------------- |
 | **Swagger** | API contract (endpoints, params, schemas) - regenerated via `task swagger` |
-| **Postman** | Team workflow (tests, examples, env configs) - managed via MCP             |
+| **Postman** | Team workflow (tests, examples, env configs) - managed via Postman skill   |
 
-**Note:** Postman's OpenAPI sync has limitations (doesn't delete removed endpoints, can overwrite team customizations). Use Postman MCP for incremental updates rather than full collection sync.
+**Note:** Postman's OpenAPI sync has limitations (doesn't delete removed endpoints, can overwrite team customizations). The Postman Collection Manager skill handles incremental updates rather than full collection sync.
 
 ### When to Skip
 
@@ -253,17 +183,16 @@ After architecture approval, create a spec document at `spec/[feature-name].md`:
 
 ### If Yes, Add Endpoints
 
-1. Use the Postman MCP tools to add each new endpoint to the collection
-2. Use the workspace and collection IDs from CLAUDE.md:
-   - Workspace: `1ee078be-5479-45b9-9d5a-883cd4c6ef50` (golang)
-   - Collection: `25403495-bb644262-dce4-42ac-8cc4-810d8a328fc9` (go-sample)
-3. For each endpoint, set:
-   - Name: Descriptive name (e.g., "Create Voice Memo")
-   - Method: GET/POST/PUT/DELETE
-   - URL: `{{base_url}}/api/v1/...`
-   - Headers: Content-Type if needed
-   - Body: Sample request body for POST/PUT requests
-4. Verify the endpoints were added correctly
+**The Postman Collection Manager skill** will activate with "Add Endpoints from Spec" operation:
+
+1. The skill will read the spec file created in Phase 6
+2. Extract API endpoints from the spec
+3. Add each endpoint to the Postman collection with proper folder organization
+4. Report success/failure for each endpoint
+
+The skill also supports "Add Single Endpoint" for manual additions.
+
+See `.claude/skills/postman/SKILL.md` for all operations.
 
 If no or no endpoints to add, skip to Phase 8.
 
@@ -273,14 +202,16 @@ If no or no endpoints to add, skip to Phase 8.
 
 **Ask the user**: "Would you like me to implement this feature now?"
 
-If yes, proceed with implementation:
-1. Follow the implementation steps from the spec
-2. Follow the chosen architecture approach
-3. Use existing patterns discovered in Phase 2
-4. Create/modify files as specified
-5. Run tests if available
-6. Run linters/formatters
-7. **Run `task swagger`** to regenerate API documentation
+If yes, **use the `/feature-dev` skill** for guided implementation:
+
+1. The skill will use the spec document as the implementation guide
+2. It follows the chosen architecture approach from Phase 5
+3. Uses existing patterns discovered in Phase 2
+4. Creates/modifies files as specified in the spec
+5. Runs tests and linters
+6. **Runs `task swagger`** to regenerate API documentation
+
+**Note**: The `/feature-dev` skill provides guided feature development with codebase understanding and architecture focus.
 
 If no, skip to Phase 10.
 
@@ -323,40 +254,23 @@ Fix any critical issues before proceeding.
 
 ### Documentation Update Check
 
-**Automatically check if `CLAUDE.md` + related `docs/` files need updates based on the feature implemented.**
+**The Documentation Updater skill** will automatically activate to analyze changes and update documentation.
 
-#### CLAUDE.md Updates
+The skill will:
+1. Identify what changed during implementation
+2. Map changes to documentation files using decision matrix
+3. Check each documentation file for required updates
+4. Propose specific updates for user approval
+5. Apply updates after approval
 
-| Change Type              | Section to Update           |
-| ------------------------ | --------------------------- |
-| Change project structure | "Project Structure" section |
+**Files checked:**
+- `CLAUDE.md` - Project structure, conventions
+- `docs/architecture.md` - Layer conventions, DTOs
+- `docs/design-patterns.md` - Design patterns, caching, tokens
+- `.env.example` - Environment variables
+- `swagger/swagger.yaml` - API docs (via `task swagger`)
 
-#### Source of Truth Files
-
-| Change Type                            | File to Update                              |
-| -------------------------------------- | ------------------------------------------- |
-| Add/modify/delete API endpoint         | `swagger/swagger.yaml` (via `task swagger`) |
-| Add/modify/delete environment variable | `.env.example`                              |
-| Add/modify local services              | `docker-compose.yml`                        |
-| Add/modify task commands               | `Taskfile.yml`                              |
-
-#### Related docs/ Updates
-
-| Change Type                           | Document                  | Section to Update               |
-| ------------------------------------- | ------------------------- | ------------------------------- |
-| Add/modify layer convention           | `docs/architecture.md`    | Relevant layer section          |
-| Add/modify DTO pattern                | `docs/architecture.md`    | "Request/Response DTOs" section |
-| Complete handler validation migration | `docs/architecture.md`    | "Migration Status" table        |
-| Add/modify design pattern             | `docs/design-patterns.md` | Relevant pattern section        |
-| Add/modify caching strategy           | `docs/design-patterns.md` | "Cache Key Pattern" section     |
-| Add/modify token flow                 | `docs/design-patterns.md` | "Token Pattern" section         |
-
-**If updates are needed:**
-1. Read `CLAUDE.md` and relevant `docs/` files
-2. Propose the specific updates to the user
-3. Apply updates after user approval
-
-**If no updates needed**, note this in the completion summary.
+See `.claude/skills/docs/SKILL.md` for the full decision matrix and update process.
 
 ### Final Summary
 
