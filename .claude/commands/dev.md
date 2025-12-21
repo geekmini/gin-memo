@@ -1,6 +1,6 @@
-# Spec-Driven Development
+# Feature Development Workflow
 
-A comprehensive workflow that combines structured requirements gathering, codebase exploration, architecture design, spec documentation, Postman integration, and optional implementation with quality review.
+A comprehensive workflow that combines structured requirements gathering, codebase exploration, architecture design, spec documentation, Postman integration, implementation, and quality review.
 
 ## Workflow Overview
 
@@ -10,11 +10,11 @@ A comprehensive workflow that combines structured requirements gathering, codeba
 3. Clarifying Questions → Resolve ambiguities
 4. Summary & Approval  → Confirm understanding
 5. Architecture Design → Propose 2-3 approaches (agents)
-6. Generate Spec      → Create spec document
-7. Add to Postman     → Add endpoints to collection (optional)
-8. Implementation     → Build the feature + regenerate Swagger (optional)
-9. Quality Review     → Review code quality (agents)
-10. Documentation     → Update CLAUDE.md if needed, final summary
+6. Generate Spec      → Create spec document (skill)
+7. Add to Postman     → Add endpoints to collection (skill, optional)
+8. Implementation     → Build the feature + regenerate Swagger
+9. Quality Review & Fix → Review + fix issues (agents + skill)
+10. Documentation & PR → Update docs (skill), commit/push/PR (skill)
 ```
 
 ---
@@ -144,91 +144,21 @@ I recommend **Option [X]** because [reasoning based on codebase patterns].
 
 ## Phase 6: Generate Spec Document
 
-After architecture approval, create a spec document at `spec/[feature-name].md`:
+**The Spec Generator skill** will automatically activate to generate the specification document.
 
-```markdown
-# [Feature Name] Specification
+The skill will:
+1. Validate all required inputs from previous phases
+2. Determine file path: `spec/[feature-name-kebab-case].md`
+3. Generate structured spec using the standard template
+4. Write the file and confirm creation
 
-**Author**: [ask user or use "Team"]
-**Created**: [current date in YYYY-MM-DD format]
-**Status**: Draft
-**Architecture**: [chosen option from Phase 5]
+**Inputs gathered from previous phases:**
+- Feature name and description (from Phase 1)
+- Data model and endpoints (from Phase 3)
+- Architecture decision and file changes (from Phase 5)
+- Business rules and out of scope items (from Phase 3-4)
 
-## Overview
-
-[Brief description of the feature]
-
-## Architecture Decision
-
-**Chosen Approach**: [Option name]
-**Rationale**: [Why this approach was selected]
-
-### Files to Create
-- `path/to/file.go` - [purpose]
-
-### Files to Modify
-- `path/to/file.go` - [changes needed]
-
-## Data Model
-
-### [Entity Name]
-
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| ...   | ...  | ...      | ...         |
-
-## API Endpoints
-
-### [Endpoint Name]
-
-**Endpoint**: `METHOD /path`
-**Authentication**: Required/None
-**Description**: [what it does]
-
-#### Request
-
-```json
-{
-  "field": "value"
-}
-```
-
-#### Response
-
-```json
-{
-  "field": "value"
-}
-```
-
-#### Error Responses
-
-| Status | Code          | Description |
-| ------ | ------------- | ----------- |
-| 400    | INVALID_INPUT | ...         |
-| 404    | NOT_FOUND     | ...         |
-
-## Business Rules
-
-1. Rule 1
-2. Rule 2
-
-## Implementation Steps
-
-1. [ ] Step 1 - [description]
-2. [ ] Step 2 - [description]
-3. [ ] Step 3 - [description]
-
-## Out of Scope
-
-- Item 1
-- Item 2
-
-## Open Questions
-
-- [ ] Question 1
-- [ ] Question 2
-```
+See `.claude/skills/spec-gen/SKILL.md` for the full template structure.
 
 ---
 
@@ -239,9 +169,9 @@ After architecture approval, create a spec document at `spec/[feature-name].md`:
 | Source      | Purpose                                                                    |
 | ----------- | -------------------------------------------------------------------------- |
 | **Swagger** | API contract (endpoints, params, schemas) - regenerated via `task swagger` |
-| **Postman** | Team workflow (tests, examples, env configs) - managed via MCP             |
+| **Postman** | Team workflow (tests, examples, env configs) - managed via Postman skill   |
 
-**Note:** Postman's OpenAPI sync has limitations (doesn't delete removed endpoints, can overwrite team customizations). Use Postman MCP for incremental updates rather than full collection sync.
+**Note:** Postman's OpenAPI sync has limitations (doesn't delete removed endpoints, can overwrite team customizations). The Postman Collection Manager skill handles incremental updates rather than full collection sync.
 
 ### When to Skip
 
@@ -253,42 +183,62 @@ After architecture approval, create a spec document at `spec/[feature-name].md`:
 
 ### If Yes, Add Endpoints
 
-1. Use the Postman MCP tools to add each new endpoint to the collection
-2. Use the workspace and collection IDs from CLAUDE.md:
-   - Workspace: `1ee078be-5479-45b9-9d5a-883cd4c6ef50` (golang)
-   - Collection: `25403495-bb644262-dce4-42ac-8cc4-810d8a328fc9` (go-sample)
-3. For each endpoint, set:
-   - Name: Descriptive name (e.g., "Create Voice Memo")
-   - Method: GET/POST/PUT/DELETE
-   - URL: `{{base_url}}/api/v1/...`
-   - Headers: Content-Type if needed
-   - Body: Sample request body for POST/PUT requests
-4. Verify the endpoints were added correctly
+**The Postman Collection Manager skill** will activate with "Add Endpoints from Spec" operation:
+
+1. The skill will read the spec file created in Phase 6
+2. Extract API endpoints from the spec
+3. Add each endpoint to the Postman collection with proper folder organization
+4. Report success/failure for each endpoint
+
+The skill also supports "Add Single Endpoint" for manual additions.
+
+See `.claude/skills/postman/SKILL.md` for all operations.
 
 If no or no endpoints to add, skip to Phase 8.
 
 ---
 
-## Phase 8: Implementation (Optional)
+## Phase 8: Implementation
 
-**Ask the user**: "Would you like me to implement this feature now?"
+Implement the feature using the spec document and architecture decisions from previous phases.
 
-If yes, proceed with implementation:
-1. Follow the implementation steps from the spec
-2. Follow the chosen architecture approach
-3. Use existing patterns discovered in Phase 2
-4. Create/modify files as specified
-5. Run tests if available
-6. Run linters/formatters
-7. **Run `task swagger`** to regenerate API documentation
+### Step 1: Follow the Spec
 
-If no, skip to Phase 10.
+Use the spec document (`spec/[feature-name].md`) as the implementation guide:
+- Create files listed in "Files to Create"
+- Modify files listed in "Files to Modify"
+- Implement each endpoint from the API section
+- Apply business rules as specified
+
+### Step 2: Use Existing Patterns
+
+Reference patterns discovered in Phase 2:
+- Follow existing handler/service/repository structure
+- Use established error handling conventions
+- Match existing code style and naming
+
+### Step 3: Implementation Order
+
+Follow the layered architecture (bottom-up):
+1. **Models** - Add/update data structures in `internal/models/`
+2. **Repository** - Add database operations in `internal/repository/`
+3. **Service** - Add business logic in `internal/service/`
+4. **Handler** - Add HTTP handlers with Swagger annotations in `internal/handler/`
+5. **Router** - Register routes in `internal/router/router.go`
+
+### Step 4: Verify
+
+After implementation:
+1. Run tests: `task test`
+2. Run linter: `task lint` (if available)
+3. **Run `task swagger`** to regenerate API documentation
+4. Verify the feature works as expected
 
 ---
 
-## Phase 9: Quality Review
+## Phase 9: Quality Review & Fix
 
-**Only run if implementation was done in Phase 8.**
+### Step 1: Code Review
 
 **Use the Task tool with `subagent_type: "feature-dev:code-reviewer"`** to review the implementation.
 
@@ -299,7 +249,7 @@ The code reviewer checks for:
 - Adherence to project conventions (CLAUDE.md)
 - Proper error handling
 
-Present findings:
+Review output format:
 ```markdown
 ## Code Review Results
 
@@ -315,7 +265,28 @@ Present findings:
 [Pass/Needs Changes] - [summary]
 ```
 
-Fix any critical issues before proceeding.
+### Step 2: Fix Review Issues
+
+If issues are found (especially Critical/High severity):
+
+**The Review Comments Fixer skill** will activate in Local mode to address issues one by one:
+
+1. Present each issue with context and severity
+2. User decides: Fix / Skip / Need more context
+3. Apply fixes after approval
+4. Track all changes made
+
+See `.claude/skills/pr-fix/SKILL.md` for the full process.
+
+### Step 3: Re-review if Needed
+
+If critical fixes were made:
+- Re-run code reviewer to verify fixes
+- Ensure no new issues introduced
+
+Proceed to Phase 10 when:
+- All critical/high severity issues are resolved
+- Or user explicitly approves to proceed with remaining issues
 
 ---
 
@@ -323,40 +294,48 @@ Fix any critical issues before proceeding.
 
 ### Documentation Update Check
 
-**Automatically check if `CLAUDE.md` + related `docs/` files need updates based on the feature implemented.**
+**The Documentation Updater skill** will automatically activate to analyze changes and update documentation.
 
-#### CLAUDE.md Updates
+The skill will:
+1. Identify what changed during implementation
+2. Map changes to documentation files using decision matrix
+3. Check each documentation file for required updates
+4. Propose specific updates for user approval
+5. Apply updates after approval
 
-| Change Type              | Section to Update           |
-| ------------------------ | --------------------------- |
-| Change project structure | "Project Structure" section |
+**Files checked:**
+- `CLAUDE.md` - Project structure, conventions
+- `docs/architecture.md` - Layer conventions, DTOs
+- `docs/design-patterns.md` - Design patterns, caching, tokens
+- `.env.example` - Environment variables
+- `swagger/swagger.yaml` - API docs (via `task swagger`)
 
-#### Source of Truth Files
+See `.claude/skills/docs/SKILL.md` for the full decision matrix and update process.
 
-| Change Type                            | File to Update                              |
-| -------------------------------------- | ------------------------------------------- |
-| Add/modify/delete API endpoint         | `swagger/swagger.yaml` (via `task swagger`) |
-| Add/modify/delete environment variable | `.env.example`                              |
-| Add/modify local services              | `docker-compose.yml`                        |
-| Add/modify task commands               | `Taskfile.yml`                              |
+### Commit, Push & Create PR
 
-#### Related docs/ Updates
+**Ask the user**: "Would you like me to commit, push, and create a PR?"
 
-| Change Type                           | Document                  | Section to Update               |
-| ------------------------------------- | ------------------------- | ------------------------------- |
-| Add/modify layer convention           | `docs/architecture.md`    | Relevant layer section          |
-| Add/modify DTO pattern                | `docs/architecture.md`    | "Request/Response DTOs" section |
-| Complete handler validation migration | `docs/architecture.md`    | "Migration Status" table        |
-| Add/modify design pattern             | `docs/design-patterns.md` | Relevant pattern section        |
-| Add/modify caching strategy           | `docs/design-patterns.md` | "Cache Key Pattern" section     |
-| Add/modify token flow                 | `docs/design-patterns.md` | "Token Pattern" section         |
+If yes, use the `/commit-commands:commit-push-pr` plugin skill (if available) or perform manually:
 
-**If updates are needed:**
-1. Read `CLAUDE.md` and relevant `docs/` files
-2. Propose the specific updates to the user
-3. Apply updates after user approval
+**Using plugin skill:**
+```
+/commit-commands:commit-push-pr
+```
 
-**If no updates needed**, note this in the completion summary.
+**Manual process (if plugin not available):**
+1. Stage all changes: `git add .`
+2. Create commit with conventional commit message: `git commit -m "feat: [description]"`
+3. Push to remote branch: `git push -u origin [branch-name]`
+4. Create PR: `gh pr create --title "[title]" --body "[description]"`
+
+The PR description will include:
+- Feature summary from Phase 4
+- Implementation details
+- Files changed
+- Test plan
+
+**Note**: After the PR is created, GitHub Actions will run automated code review. When review comments arrive, use the Review Comments Fixer skill manually to address them.
 
 ### Final Summary
 
@@ -393,9 +372,15 @@ Present final summary:
 ### Files Changed (if implemented)
 - `path/to/file.go` - [created/modified]
 
+### PR Status (if created)
+- PR: #[number] - [title]
+- URL: [link]
+- Status: Awaiting review
+
 ### Next Steps
 - [ ] Review and update spec status to "Approved"
-- [ ] [Additional follow-up items]
+- [ ] Wait for GitHub Action code review
+- [ ] Use "fix PR comments" to address review feedback when ready
 ```
 
 Ask if the user wants to make any changes.
