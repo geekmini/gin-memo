@@ -36,7 +36,6 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          use_sticky_comment: true
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
@@ -45,7 +44,12 @@ jobs:
             - `docs/code-review-guide.md` for review guidelines and output format
             - `CLAUDE.md` for project-specific conventions
 
-            Use `gh pr comment` to leave comment.
+            IMPORTANT - Comment Management:
+            There should only be ONE review comment from Claude at any time. Before leaving a comment:
+            1. First, check for existing comments using: `gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments`
+            2. Look for any comment where the author login is "github-actions[bot]" or contains "Claude" in the body
+            3. If an existing comment is found, UPDATE it using: `gh api repos/${{ github.repository }}/issues/comments/{comment_id} -X PATCH -f body="<new review content>"`
+            4. If no existing comment is found, create a new one using: `gh pr comment ${{ github.event.pull_request.number }} --body "<review content>"`
 
           # Use Claude Opus 4.5 model with allowed tools for PR review
-          claude_args: '--model claude-opus-4-5 --allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
+          claude_args: '--model claude-opus-4-5 --allowed-tools "Bash(gh api:*),Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
