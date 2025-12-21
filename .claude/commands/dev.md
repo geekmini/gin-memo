@@ -10,10 +10,11 @@ A comprehensive workflow that combines structured requirements gathering, codeba
 3. Clarifying Questions → Resolve ambiguities
 4. Summary & Approval  → Confirm understanding
 5. Architecture Design → Propose 2-3 approaches (agents)
-6. Generate Spec      → Create spec document (skill)
+6. Generate Spec      → Create spec document (skill) [Status: Draft]
 7. Add to Postman     → Add endpoints to collection (skill, optional)
+7b. Approve Spec      → User approves spec [Status: Draft → Approved]
 8. Implementation     → Build the feature + regenerate Swagger
-9. Quality Review & Fix → Review + fix issues (agents + skill)
+9. Quality Review & Fix → Review + fix issues (agents + skill) [Status: Approved → Implemented]
 10. Documentation & PR → Update docs (skill), commit/push/PR (skill)
 ```
 
@@ -194,7 +195,32 @@ The skill also supports "Add Single Endpoint" for manual additions.
 
 See `.claude/skills/postman/SKILL.md` for all operations.
 
-If no or no endpoints to add, skip to Phase 8.
+If no or no endpoints to add, skip to Phase 7b.
+
+---
+
+## Phase 7b: Approve Spec
+
+Before starting implementation, get explicit user approval on the spec document.
+
+**Ask the user**: "The spec document is ready at `spec/[feature-name].md`. Would you like to review it and approve for implementation?"
+
+### On Approval
+
+Update the spec document status:
+
+1. Change `**Status**: Draft` to `**Status**: Approved`
+2. Confirm: "Spec status updated to 'Approved'. Proceeding to implementation."
+
+### Status Lifecycle
+
+| Status | Meaning |
+|--------|---------|
+| **Draft** | Spec created, pending review |
+| **Approved** | User approved, ready for implementation |
+| **Implemented** | Code complete and verified |
+
+**Note**: Do not proceed to Phase 8 until user explicitly approves.
 
 ---
 
@@ -284,9 +310,20 @@ If critical fixes were made:
 - Re-run code reviewer to verify fixes
 - Ensure no new issues introduced
 
-Proceed to Phase 10 when:
+Proceed to Step 4 when:
 - All critical/high severity issues are resolved
 - Or user explicitly approves to proceed with remaining issues
+
+### Step 4: Update Spec Status to Implemented
+
+After quality review passes, update the spec document:
+
+1. Change `**Status**: Approved` to `**Status**: Implemented`
+2. Mark all implementation checklist items as complete (`[x]`)
+3. Mark testing checklist items as complete (if applicable)
+4. Confirm: "Spec status updated to 'Implemented'. All checklist items marked complete."
+
+**Note**: This ensures the spec document accurately reflects the current state of the feature.
 
 ---
 
@@ -346,6 +383,7 @@ Present final summary:
 
 ### Spec Document
 - Created: `spec/[feature-name].md`
+- Status: [Draft → Approved → Implemented]
 
 ### Swagger Documentation
 - [Updated via `task swagger`] / [Skipped - no implementation]
@@ -378,7 +416,6 @@ Present final summary:
 - Status: Awaiting review
 
 ### Next Steps
-- [ ] Review and update spec status to "Approved"
 - [ ] Wait for GitHub Action code review
 - [ ] Use "fix PR comments" to address review feedback when ready
 ```
