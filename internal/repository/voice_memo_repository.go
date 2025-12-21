@@ -16,9 +16,14 @@ import (
 
 // VoiceMemoRepository defines the interface for voice memo data operations.
 type VoiceMemoRepository interface {
+	Create(ctx context.Context, memo *models.VoiceMemo) error
 	FindByUserID(ctx context.Context, userID primitive.ObjectID, page, limit int) ([]models.VoiceMemo, int, error)
 	FindByTeamID(ctx context.Context, teamID primitive.ObjectID, page, limit int) ([]models.VoiceMemo, int, error)
 	FindByID(ctx context.Context, id primitive.ObjectID) (*models.VoiceMemo, error)
+	UpdateStatus(ctx context.Context, id primitive.ObjectID, status models.VoiceMemoStatus) error
+	UpdateStatusWithOwnership(ctx context.Context, id, userID primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) error
+	UpdateStatusWithTeam(ctx context.Context, id, teamID primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) error
+	UpdateTranscriptionAndStatus(ctx context.Context, id primitive.ObjectID, transcription string, status models.VoiceMemoStatus) error
 	SoftDeleteByID(ctx context.Context, id primitive.ObjectID) error
 	SoftDeleteWithOwnership(ctx context.Context, id, userID primitive.ObjectID) error
 	SoftDeleteWithTeam(ctx context.Context, id, teamID primitive.ObjectID) error
@@ -35,6 +40,177 @@ func NewVoiceMemoRepository(db *mongo.Database) VoiceMemoRepository {
 	return &voiceMemoRepository{
 		collection: db.Collection("voice_memos"),
 	}
+}
+
+// Create inserts a new voice memo into the database.
+func (r *voiceMemoRepository) Create(ctx context.Context, memo *models.VoiceMemo) error {
+	memo.ID = primitive.NewObjectID()
+	memo.CreatedAt = time.Now()
+	memo.UpdatedAt = memo.CreatedAt
+	memo.Version = 0
+
+	_, err := r.collection.InsertOne(ctx, memo)
+	return err
+}
+
+// UpdateStatus updates the status of a voice memo.
+func (r *voiceMemoRepository) UpdateStatus(ctx context.Context, id primitive.ObjectID, status models.VoiceMemoStatus) error {
+	now := time.Now()
+	filter := bson.M{
+		"_id":       id,
+		"deletedAt": bson.M{"$exists": false},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":    status,
+			"updatedAt": now,
+		},
+		"$inc": bson.M{"version": 1},
+	}
+
+	result, err := r.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return apperrors.ErrVoiceMemoNotFound
+	}
+
+	return nil
+}
+
+// UpdateStatusWithOwnership atomically updates status if the user owns the memo and it's in the expected state.
+// Returns ErrVoiceMemoNotFound if memo doesn't exist.
+// Returns ErrVoiceMemoUnauthorized if memo exists but user doesn't own it.
+// Returns ErrVoiceMemoInvalidStatus if memo is not in the expected fromStatus.
+func (r *voiceMemoRepository) UpdateStatusWithOwnership(ctx context.Context, id, userID primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) error {
+	now := time.Now()
+	filter := bson.M{
+		"_id":       id,
+		"userId":    userID,
+		"status":    fromStatus,
+		"deletedAt": bson.M{"$exists": false},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":    toStatus,
+			"updatedAt": now,
+		},
+		"$inc": bson.M{"version": 1},
+	}
+
+	result := r.collection.FindOneAndUpdate(ctx, filter, update)
+
+	if result.Err() != nil {
+		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+			// Determine why update failed
+			var existingMemo models.VoiceMemo
+			checkErr := r.collection.FindOne(ctx, bson.M{"_id": id, "deletedAt": bson.M{"$exists": false}}).Decode(&existingMemo)
+
+			if checkErr != nil {
+				if errors.Is(checkErr, mongo.ErrNoDocuments) {
+					return apperrors.ErrVoiceMemoNotFound
+				}
+				return checkErr
+			}
+
+			if existingMemo.UserID != userID {
+				return apperrors.ErrVoiceMemoUnauthorized
+			}
+
+			if existingMemo.Status != fromStatus {
+				return apperrors.ErrVoiceMemoInvalidStatus
+			}
+
+			return apperrors.ErrVoiceMemoNotFound
+		}
+		return result.Err()
+	}
+
+	return nil
+}
+
+// UpdateStatusWithTeam atomically updates status if the memo belongs to the team and is in the expected state.
+// Returns ErrVoiceMemoNotFound if memo doesn't exist or doesn't belong to team.
+// Returns ErrVoiceMemoInvalidStatus if memo is not in the expected fromStatus.
+func (r *voiceMemoRepository) UpdateStatusWithTeam(ctx context.Context, id, teamID primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) error {
+	now := time.Now()
+	filter := bson.M{
+		"_id":       id,
+		"teamId":    teamID,
+		"status":    fromStatus,
+		"deletedAt": bson.M{"$exists": false},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status":    toStatus,
+			"updatedAt": now,
+		},
+		"$inc": bson.M{"version": 1},
+	}
+
+	result := r.collection.FindOneAndUpdate(ctx, filter, update)
+
+	if result.Err() != nil {
+		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+			// Determine why update failed
+			var existingMemo models.VoiceMemo
+			checkErr := r.collection.FindOne(ctx, bson.M{"_id": id, "deletedAt": bson.M{"$exists": false}}).Decode(&existingMemo)
+
+			if checkErr != nil {
+				if errors.Is(checkErr, mongo.ErrNoDocuments) {
+					return apperrors.ErrVoiceMemoNotFound
+				}
+				return checkErr
+			}
+
+			if existingMemo.TeamID == nil || *existingMemo.TeamID != teamID {
+				return apperrors.ErrVoiceMemoNotFound
+			}
+
+			if existingMemo.Status != fromStatus {
+				return apperrors.ErrVoiceMemoInvalidStatus
+			}
+
+			return apperrors.ErrVoiceMemoNotFound
+		}
+		return result.Err()
+	}
+
+	return nil
+}
+
+// UpdateTranscriptionAndStatus updates both transcription text and status atomically.
+func (r *voiceMemoRepository) UpdateTranscriptionAndStatus(ctx context.Context, id primitive.ObjectID, transcription string, status models.VoiceMemoStatus) error {
+	now := time.Now()
+	filter := bson.M{
+		"_id":       id,
+		"deletedAt": bson.M{"$exists": false},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"transcription": transcription,
+			"status":        status,
+			"updatedAt":     now,
+		},
+		"$inc": bson.M{"version": 1},
+	}
+
+	result, err := r.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return apperrors.ErrVoiceMemoNotFound
+	}
+
+	return nil
 }
 
 // FindByUserID returns paginated private voice memos for a user, sorted by createdAt descending.

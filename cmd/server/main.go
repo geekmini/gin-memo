@@ -1,18 +1,24 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"gin-sample/internal/authz"
 	"gin-sample/internal/cache"
 	"gin-sample/internal/config"
 	"gin-sample/internal/database"
 	"gin-sample/internal/handler"
+	"gin-sample/internal/queue"
 	"gin-sample/internal/repository"
 	"gin-sample/internal/router"
 	"gin-sample/internal/service"
 	"gin-sample/internal/storage"
+	"gin-sample/internal/transcription"
 	"gin-sample/internal/validator"
 	"gin-sample/pkg/auth"
 
@@ -70,13 +76,20 @@ func main() {
 	// Authorization
 	authorizer := authz.NewLocalAuthorizer(teamMemberRepo)
 
+	// Transcription queue and processor
+	transcriptionQueue := queue.NewMemoryQueue(100)
+	transcriptionService := transcription.NewMockService()
+
 	// Service layer
 	authService := service.NewAuthService(userRepo, refreshTokenRepo, redisCache, jwtManager, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
 	userService := service.NewUserService(userRepo, redisCache)
-	voiceMemoService := service.NewVoiceMemoService(voiceMemoRepo, s3Client)
+	voiceMemoService := service.NewVoiceMemoService(voiceMemoRepo, s3Client, transcriptionQueue)
 	teamService := service.NewTeamService(teamRepo, teamMemberRepo, teamInvitationRepo, voiceMemoRepo)
 	teamMemberService := service.NewTeamMemberService(teamMemberRepo, userRepo, teamRepo)
 	teamInvitationService := service.NewTeamInvitationService(teamInvitationRepo, teamMemberRepo, teamRepo, userRepo)
+
+	// Transcription processor (uses voiceMemoRepo for updates)
+	transcriptionProcessor := queue.NewProcessor(transcriptionQueue, transcriptionService, voiceMemoRepo, 2)
 
 	// Handler layer
 	authHandler := handler.NewAuthHandler(authService)
@@ -97,6 +110,23 @@ func main() {
 		JWTManager:        jwtManager,
 		Authorizer:        authorizer,
 	})
+
+	// Create context for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Start transcription processor
+	transcriptionProcessor.Start(ctx)
+	defer transcriptionProcessor.Stop()
+
+	// Handle graceful shutdown
+	go func() {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+		<-sigCh
+		log.Println("Shutdown signal received")
+		cancel()
+	}()
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.ServerPort)

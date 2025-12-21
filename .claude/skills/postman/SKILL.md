@@ -52,13 +52,17 @@ Use the workspace and collection IDs from CLAUDE.md:
 1. List available spec files in `spec/` directory
 2. Ask user to select a spec file (or provide path)
 3. Read the spec file and extract API endpoints from the "API Endpoints" section
-4. For each endpoint, use `mcp__postman__createCollectionRequest` to add:
-   - Name: Endpoint name from spec
-   - Method: HTTP method (GET/POST/PUT/DELETE)
-   - URL: `{{base_url}}/api/v1/...`
-   - Headers: `Content-Type: application/json` for POST/PUT
-   - Body: Sample request body from spec (if applicable)
+4. Use `mcp__postman__patchCollection` to add fully-configured endpoints:
+   - Include `info` object with collection name and schema
+   - Include `item` array with each endpoint's full configuration:
+     - Name: Endpoint name from spec
+     - Method: HTTP method (GET/POST/PUT/DELETE)
+     - URL: `{{base_url}}/api/v1/...` with path segments
+     - Headers: `Content-Type: application/json` for POST/PUT, `Authorization` for protected routes
+     - Body: Sample request body from spec (if applicable)
 5. Report success/failure for each endpoint
+
+**Note:** Do NOT use `createCollectionRequest` - it cannot set URL, headers, or body. See "MCP Tool Limitations" section.
 
 ### 2. Add Single Endpoint
 
@@ -71,8 +75,10 @@ Use the workspace and collection IDs from CLAUDE.md:
    - Path (e.g., `/api/v1/users`)
    - Auth required? (Yes/No)
    - Request body? (for POST/PUT)
-2. Use `mcp__postman__createCollectionRequest` to add the endpoint
+2. Use `mcp__postman__patchCollection` with full endpoint configuration
 3. Confirm success
+
+**Note:** Do NOT use `createCollectionRequest` for configured endpoints. See "MCP Tool Limitations" section.
 
 ### 3. Add Endpoint to Folder
 
@@ -187,11 +193,128 @@ When adding endpoints, place them in the appropriate folder based on their path.
 
 ---
 
+## MCP Tool Limitations & Workarounds
+
+### Tool Limitations
+
+| Tool | Supported Parameters | NOT Supported |
+|------|---------------------|---------------|
+| `createCollectionRequest` | `name`, `collectionId`, `folderId` | URL, headers, body, method |
+| `updateCollectionRequest` | `name`, `method`, `requestId`, `collectionId` | URL, headers, body |
+| `patchCollection` | Collection-level: name, events, variables | Request items (use `putCollection`) |
+| `putCollection` | Full collection schema with all items | - |
+
+### Workaround: Use `putCollection` for Full Request Configuration
+
+Since `createCollectionRequest` and `updateCollectionRequest` have limited parameters, use `putCollection` to add/update fully-configured endpoints with URL, headers, and body.
+
+**Important:** `patchCollection` only updates collection-level properties (name, events, variables) - it does NOT add or update request items. Use `putCollection` instead.
+
+**Required Structure:**
+
+When using `putCollection`, you MUST:
+1. Include the `info` object with `name` and `schema`
+2. Include ALL existing items (with their IDs) to preserve them
+3. Add/update items with full request configuration
+
+```json
+{
+  "collectionId": "25403495-fd7a5765-5ad9-48d3-ab01-f3317012f96e",
+  "collection": {
+    "info": {
+      "name": "go-sample",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "Endpoint Name",
+        "request": {
+          "method": "POST",
+          "header": [
+            {"key": "Content-Type", "value": "application/json"},
+            {"key": "Authorization", "value": "Bearer {{access_token}}"}
+          ],
+          "url": {
+            "raw": "{{base_url}}/api/v1/path/:id",
+            "host": ["{{base_url}}"],
+            "path": ["api", "v1", "path", ":id"]
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+**Common Error:**
+
+If you omit the `info` object, you'll get:
+```
+API request failed: 400 {"error":{"name":"paramMissingError","message":"'info' key is required when 'collection' is empty."}}
+```
+
+### Recommended Approach for Adding Endpoints
+
+1. **For basic endpoint creation (name only):** Use `createCollectionRequest`
+2. **For fully-configured endpoints (URL, headers, body):** Use `putCollection`
+3. **For updating name/method only:** Use `updateCollectionRequest`
+4. **For updating URL/headers/body:** Use `putCollection`
+
+**Workflow for adding new endpoints:**
+1. First, get the full collection with `getCollection` (model=full)
+2. Add new items to the item array with full configuration
+3. Use `putCollection` with the complete collection (preserving existing item IDs)
+
+### Example: Adding New Endpoints with `putCollection`
+
+```javascript
+// Use putCollection - must include ALL existing items to preserve them
+{
+  "collectionId": "25403495-fd7a5765-5ad9-48d3-ab01-f3317012f96e",
+  "collection": {
+    "info": {
+      "name": "go-sample",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+      {"key": "base_url", "value": "http://localhost:8080"},
+      {"key": "access_token", "value": ""}
+    ],
+    "item": [
+      // ... existing items with their IDs preserved ...
+      {"id": "existing-item-id", "name": "Existing Endpoint", ...},
+
+      // New items (no ID = will be created)
+      {
+        "name": "[Private Memos] Confirm Upload",
+        "request": {
+          "method": "POST",
+          "header": [
+            {"key": "Authorization", "value": "Bearer {{access_token}}"}
+          ],
+          "url": {
+            "raw": "{{base_url}}/api/v1/voice-memos/:id/confirm-upload",
+            "host": ["{{base_url}}"],
+            "path": ["api", "v1", "voice-memos", ":id", "confirm-upload"],
+            "variable": [{"key": "id"}]
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+**Warning:** If you omit existing items from the `item` array, they will be DELETED.
+
+---
+
 ## Error Handling
 
 - If MCP tool fails, report the error and suggest alternatives
 - If collection/folder not found, offer to create it
 - If endpoint already exists (by name), ask if user wants to update or skip
+- **If `createCollectionRequest` fails to set URL/headers:** Use `patchCollection` instead (see limitations above)
 
 ---
 

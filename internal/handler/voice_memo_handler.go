@@ -6,6 +6,7 @@ import (
 
 	apperrors "gin-sample/internal/errors"
 	"gin-sample/internal/middleware"
+	"gin-sample/internal/models"
 	"gin-sample/internal/service"
 	"gin-sample/pkg/response"
 
@@ -232,4 +233,335 @@ func (h *VoiceMemoHandler) DeleteTeamVoiceMemo(c *gin.Context) {
 	}
 
 	response.NoContent(c)
+}
+
+// CreateVoiceMemo godoc
+// @Summary      Create voice memo
+// @Description  Create a new private voice memo and get a pre-signed URL for audio upload
+// @Tags         voice-memos
+// @Accept       json
+// @Produce      json
+// @Param        request body      models.CreateVoiceMemoRequest  true  "Voice memo details"
+// @Success      201     {object}  response.Response{data=models.CreateVoiceMemoResponse}
+// @Failure      400     {object}  response.Response
+// @Failure      401     {object}  response.Response
+// @Failure      500     {object}  response.Response
+// @Security     BearerAuth
+// @Router       /voice-memos [post]
+func (h *VoiceMemoHandler) CreateVoiceMemo(c *gin.Context) {
+	// Get user ID from context
+	userIDStr, exists := c.Get("userID")
+	if !exists {
+		response.Unauthorized(c, "user not authenticated")
+		return
+	}
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr.(string))
+	if err != nil {
+		response.Unauthorized(c, "invalid user id format")
+		return
+	}
+
+	// Bind and validate request
+	var req models.CreateVoiceMemoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	// Create memo via service
+	result, err := h.service.CreateVoiceMemo(c.Request.Context(), userID, &req)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.Created(c, result)
+}
+
+// CreateTeamVoiceMemo godoc
+// @Summary      Create team voice memo
+// @Description  Create a new team voice memo and get a pre-signed URL for audio upload
+// @Tags         team-voice-memos
+// @Accept       json
+// @Produce      json
+// @Param        teamId  path      string                         true  "Team ID"
+// @Param        request body      models.CreateVoiceMemoRequest  true  "Voice memo details"
+// @Success      201     {object}  response.Response{data=models.CreateVoiceMemoResponse}
+// @Failure      400     {object}  response.Response
+// @Failure      401     {object}  response.Response
+// @Failure      403     {object}  response.Response
+// @Failure      500     {object}  response.Response
+// @Security     BearerAuth
+// @Router       /teams/{teamId}/voice-memos [post]
+func (h *VoiceMemoHandler) CreateTeamVoiceMemo(c *gin.Context) {
+	// Get team ID from middleware context
+	teamID, exists := middleware.GetTeamID(c)
+	if !exists {
+		response.BadRequest(c, "team id not found in context")
+		return
+	}
+
+	// Get user ID from context
+	userIDStr, exists := c.Get("userID")
+	if !exists {
+		response.Unauthorized(c, "user not authenticated")
+		return
+	}
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr.(string))
+	if err != nil {
+		response.Unauthorized(c, "invalid user id format")
+		return
+	}
+
+	// Bind and validate request
+	var req models.CreateVoiceMemoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+
+	// Create memo via service
+	result, err := h.service.CreateTeamVoiceMemo(c.Request.Context(), userID, teamID, &req)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	response.Created(c, result)
+}
+
+// ConfirmUpload godoc
+// @Summary      Confirm audio upload
+// @Description  Confirm that audio has been uploaded to S3 and trigger transcription
+// @Tags         voice-memos
+// @Produce      json
+// @Param        id   path      string  true  "Voice Memo ID"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Failure      403  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Failure      409  {object}  response.Response  "Invalid status transition"
+// @Failure      503  {object}  response.Response  "Transcription queue full"
+// @Failure      500  {object}  response.Response
+// @Security     BearerAuth
+// @Router       /voice-memos/{id}/confirm-upload [post]
+func (h *VoiceMemoHandler) ConfirmUpload(c *gin.Context) {
+	// Parse memo ID
+	memoID, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		response.BadRequest(c, "invalid voice memo id format")
+		return
+	}
+
+	// Get user ID from context
+	userIDStr, exists := c.Get("userID")
+	if !exists {
+		response.Unauthorized(c, "user not authenticated")
+		return
+	}
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr.(string))
+	if err != nil {
+		response.Unauthorized(c, "invalid user id format")
+		return
+	}
+
+	// Confirm upload via service
+	err = h.service.ConfirmUpload(c.Request.Context(), memoID, userID)
+	if err != nil {
+		if errors.Is(err, apperrors.ErrVoiceMemoNotFound) {
+			response.NotFound(c, err.Error())
+			return
+		}
+		if errors.Is(err, apperrors.ErrVoiceMemoUnauthorized) {
+			response.Forbidden(c, err.Error())
+			return
+		}
+		if errors.Is(err, apperrors.ErrVoiceMemoInvalidStatus) {
+			response.Conflict(c, err.Error())
+			return
+		}
+		if errors.Is(err, apperrors.ErrTranscriptionQueueFull) {
+			response.Error(c, 503, err.Error())
+			return
+		}
+		response.InternalError(c)
+		return
+	}
+
+	response.Success(c, gin.H{"message": "upload confirmed, transcription started"})
+}
+
+// ConfirmTeamUpload godoc
+// @Summary      Confirm team audio upload
+// @Description  Confirm that audio has been uploaded to S3 and trigger transcription for a team memo
+// @Tags         team-voice-memos
+// @Produce      json
+// @Param        teamId path      string  true  "Team ID"
+// @Param        id     path      string  true  "Voice Memo ID"
+// @Success      200    {object}  response.Response
+// @Failure      400    {object}  response.Response
+// @Failure      401    {object}  response.Response
+// @Failure      403    {object}  response.Response
+// @Failure      404    {object}  response.Response
+// @Failure      409    {object}  response.Response  "Invalid status transition"
+// @Failure      503    {object}  response.Response  "Transcription queue full"
+// @Failure      500    {object}  response.Response
+// @Security     BearerAuth
+// @Router       /teams/{teamId}/voice-memos/{id}/confirm-upload [post]
+func (h *VoiceMemoHandler) ConfirmTeamUpload(c *gin.Context) {
+	// Get team ID from middleware context
+	teamID, exists := middleware.GetTeamID(c)
+	if !exists {
+		response.BadRequest(c, "team id not found in context")
+		return
+	}
+
+	// Parse memo ID
+	memoID, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		response.BadRequest(c, "invalid voice memo id format")
+		return
+	}
+
+	// Confirm upload via service
+	err = h.service.ConfirmTeamUpload(c.Request.Context(), memoID, teamID)
+	if err != nil {
+		if errors.Is(err, apperrors.ErrVoiceMemoNotFound) {
+			response.NotFound(c, err.Error())
+			return
+		}
+		if errors.Is(err, apperrors.ErrVoiceMemoInvalidStatus) {
+			response.Conflict(c, err.Error())
+			return
+		}
+		if errors.Is(err, apperrors.ErrTranscriptionQueueFull) {
+			response.Error(c, 503, err.Error())
+			return
+		}
+		response.InternalError(c)
+		return
+	}
+
+	response.Success(c, gin.H{"message": "upload confirmed, transcription started"})
+}
+
+// RetryTranscription godoc
+// @Summary      Retry transcription
+// @Description  Retry transcription for a failed voice memo
+// @Tags         voice-memos
+// @Produce      json
+// @Param        id   path      string  true  "Voice Memo ID"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Failure      403  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Failure      409  {object}  response.Response  "Invalid status - memo is not in failed state"
+// @Failure      503  {object}  response.Response  "Transcription queue full"
+// @Failure      500  {object}  response.Response
+// @Security     BearerAuth
+// @Router       /voice-memos/{id}/retry-transcription [post]
+func (h *VoiceMemoHandler) RetryTranscription(c *gin.Context) {
+	// Parse memo ID
+	memoID, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		response.BadRequest(c, "invalid voice memo id format")
+		return
+	}
+
+	// Get user ID from context
+	userIDStr, exists := c.Get("userID")
+	if !exists {
+		response.Unauthorized(c, "user not authenticated")
+		return
+	}
+
+	userID, err := primitive.ObjectIDFromHex(userIDStr.(string))
+	if err != nil {
+		response.Unauthorized(c, "invalid user id format")
+		return
+	}
+
+	// Retry transcription via service
+	err = h.service.RetryTranscription(c.Request.Context(), memoID, userID)
+	if err != nil {
+		if errors.Is(err, apperrors.ErrVoiceMemoNotFound) {
+			response.NotFound(c, err.Error())
+			return
+		}
+		if errors.Is(err, apperrors.ErrVoiceMemoUnauthorized) {
+			response.Forbidden(c, err.Error())
+			return
+		}
+		if errors.Is(err, apperrors.ErrVoiceMemoInvalidStatus) {
+			response.Conflict(c, "memo is not in failed state")
+			return
+		}
+		if errors.Is(err, apperrors.ErrTranscriptionQueueFull) {
+			response.Error(c, 503, err.Error())
+			return
+		}
+		response.InternalError(c)
+		return
+	}
+
+	response.Success(c, gin.H{"message": "transcription retry started"})
+}
+
+// RetryTeamTranscription godoc
+// @Summary      Retry team transcription
+// @Description  Retry transcription for a failed team voice memo
+// @Tags         team-voice-memos
+// @Produce      json
+// @Param        teamId path      string  true  "Team ID"
+// @Param        id     path      string  true  "Voice Memo ID"
+// @Success      200    {object}  response.Response
+// @Failure      400    {object}  response.Response
+// @Failure      401    {object}  response.Response
+// @Failure      403    {object}  response.Response
+// @Failure      404    {object}  response.Response
+// @Failure      409    {object}  response.Response  "Invalid status - memo is not in failed state"
+// @Failure      503    {object}  response.Response  "Transcription queue full"
+// @Failure      500    {object}  response.Response
+// @Security     BearerAuth
+// @Router       /teams/{teamId}/voice-memos/{id}/retry-transcription [post]
+func (h *VoiceMemoHandler) RetryTeamTranscription(c *gin.Context) {
+	// Get team ID from middleware context
+	teamID, exists := middleware.GetTeamID(c)
+	if !exists {
+		response.BadRequest(c, "team id not found in context")
+		return
+	}
+
+	// Parse memo ID
+	memoID, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		response.BadRequest(c, "invalid voice memo id format")
+		return
+	}
+
+	// Retry transcription via service
+	err = h.service.RetryTeamTranscription(c.Request.Context(), memoID, teamID)
+	if err != nil {
+		if errors.Is(err, apperrors.ErrVoiceMemoNotFound) {
+			response.NotFound(c, err.Error())
+			return
+		}
+		if errors.Is(err, apperrors.ErrVoiceMemoInvalidStatus) {
+			response.Conflict(c, "memo is not in failed state")
+			return
+		}
+		if errors.Is(err, apperrors.ErrTranscriptionQueueFull) {
+			response.Error(c, 503, err.Error())
+			return
+		}
+		response.InternalError(c)
+		return
+	}
+
+	response.Success(c, gin.H{"message": "transcription retry started"})
 }

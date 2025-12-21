@@ -83,3 +83,17 @@ func (s *S3Client) PutObject(ctx context.Context, key string, body io.Reader, co
 	})
 	return err
 }
+
+// GetPresignedPutURL generates a pre-signed URL for uploading an object.
+func (s *S3Client) GetPresignedPutURL(ctx context.Context, key, contentType string, expiry time.Duration) (string, error) {
+	request, err := s.presignClient.PresignPutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(s.bucket),
+		Key:         aws.String(key),
+		ContentType: aws.String(contentType),
+	}, s3.WithPresignExpires(expiry))
+	if err != nil {
+		return "", err
+	}
+
+	return request.URL, nil
+}

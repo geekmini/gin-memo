@@ -2,28 +2,37 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
+	apperrors "gin-sample/internal/errors"
 	"gin-sample/internal/models"
+	"gin-sample/internal/queue"
 	"gin-sample/internal/repository"
 	"gin-sample/internal/storage"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const presignedURLExpiry = 1 * time.Hour
+const (
+	presignedURLExpiry    = 1 * time.Hour
+	presignedUploadExpiry = 15 * time.Minute
+)
 
 // VoiceMemoService handles business logic for voice memo operations.
 type VoiceMemoService struct {
 	repo     repository.VoiceMemoRepository
 	s3Client *storage.S3Client
+	queue    *queue.MemoryQueue
 }
 
 // NewVoiceMemoService creates a new VoiceMemoService.
-func NewVoiceMemoService(repo repository.VoiceMemoRepository, s3Client *storage.S3Client) *VoiceMemoService {
+func NewVoiceMemoService(repo repository.VoiceMemoRepository, s3Client *storage.S3Client, queue *queue.MemoryQueue) *VoiceMemoService {
 	return &VoiceMemoService{
 		repo:     repo,
 		s3Client: s3Client,
+		queue:    queue,
 	}
 }
 
@@ -152,4 +161,241 @@ func (s *VoiceMemoService) GetVoiceMemo(ctx context.Context, memoID primitive.Ob
 // Idempotent - returns nil if memo is already deleted.
 func (s *VoiceMemoService) DeleteTeamVoiceMemo(ctx context.Context, memoID, teamID primitive.ObjectID) error {
 	return s.repo.SoftDeleteWithTeam(ctx, memoID, teamID)
+}
+
+// CreateVoiceMemo creates a new private voice memo and returns upload URL.
+func (s *VoiceMemoService) CreateVoiceMemo(ctx context.Context, userID primitive.ObjectID, req *models.CreateVoiceMemoRequest) (*models.CreateVoiceMemoResponse, error) {
+	// Generate S3 key for private memo: voice-memos/{userId}/{memoId}.{format}
+	memoID := primitive.NewObjectID()
+	audioKey := fmt.Sprintf("voice-memos/%s/%s.%s", userID.Hex(), memoID.Hex(), req.AudioFormat)
+
+	// Create memo with pending_upload status
+	memo := &models.VoiceMemo{
+		ID:           memoID,
+		UserID:       userID,
+		Title:        req.Title,
+		Duration:     req.Duration,
+		FileSize:     req.FileSize,
+		AudioFormat:  req.AudioFormat,
+		Tags:         req.Tags,
+		IsFavorite:   req.IsFavorite,
+		AudioFileKey: audioKey,
+		Status:       models.StatusPendingUpload,
+	}
+
+	// Ensure tags is not nil
+	if memo.Tags == nil {
+		memo.Tags = []string{}
+	}
+
+	// Save to database
+	if err := s.repo.Create(ctx, memo); err != nil {
+		return nil, err
+	}
+
+	// Generate pre-signed upload URL
+	contentType := getContentType(req.AudioFormat)
+	uploadURL, err := s.s3Client.GetPresignedPutURL(ctx, audioKey, contentType, presignedUploadExpiry)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.CreateVoiceMemoResponse{
+		Memo:      *memo,
+		UploadURL: uploadURL,
+	}, nil
+}
+
+// CreateTeamVoiceMemo creates a new team voice memo and returns upload URL.
+func (s *VoiceMemoService) CreateTeamVoiceMemo(ctx context.Context, userID, teamID primitive.ObjectID, req *models.CreateVoiceMemoRequest) (*models.CreateVoiceMemoResponse, error) {
+	// Generate S3 key for team memo: voice-memos/{teamId}/{userId}/{memoId}.{format}
+	memoID := primitive.NewObjectID()
+	audioKey := fmt.Sprintf("voice-memos/%s/%s/%s.%s", teamID.Hex(), userID.Hex(), memoID.Hex(), req.AudioFormat)
+
+	// Create memo with pending_upload status
+	memo := &models.VoiceMemo{
+		ID:           memoID,
+		UserID:       userID,
+		TeamID:       &teamID,
+		Title:        req.Title,
+		Duration:     req.Duration,
+		FileSize:     req.FileSize,
+		AudioFormat:  req.AudioFormat,
+		Tags:         req.Tags,
+		IsFavorite:   req.IsFavorite,
+		AudioFileKey: audioKey,
+		Status:       models.StatusPendingUpload,
+	}
+
+	// Ensure tags is not nil
+	if memo.Tags == nil {
+		memo.Tags = []string{}
+	}
+
+	// Save to database
+	if err := s.repo.Create(ctx, memo); err != nil {
+		return nil, err
+	}
+
+	// Generate pre-signed upload URL
+	contentType := getContentType(req.AudioFormat)
+	uploadURL, err := s.s3Client.GetPresignedPutURL(ctx, audioKey, contentType, presignedUploadExpiry)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.CreateVoiceMemoResponse{
+		Memo:      *memo,
+		UploadURL: uploadURL,
+	}, nil
+}
+
+// ConfirmUpload confirms audio upload and triggers transcription for a private memo.
+func (s *VoiceMemoService) ConfirmUpload(ctx context.Context, memoID, userID primitive.ObjectID) error {
+	// Atomically update status from pending_upload to transcribing with ownership check
+	err := s.repo.UpdateStatusWithOwnership(ctx, memoID, userID, models.StatusPendingUpload, models.StatusTranscribing)
+	if err != nil {
+		return err
+	}
+
+	// Get memo to retrieve audio key
+	memo, err := s.repo.FindByID(ctx, memoID)
+	if err != nil {
+		return err
+	}
+
+	// Enqueue transcription job
+	job := queue.TranscriptionJob{
+		MemoID:       memoID,
+		AudioFileKey: memo.AudioFileKey,
+		RetryCount:   0,
+	}
+
+	if err := s.queue.Enqueue(job); err != nil {
+		if errors.Is(err, queue.ErrQueueFull) {
+			// Revert status back to pending_upload if queue is full
+			_ = s.repo.UpdateStatus(ctx, memoID, models.StatusPendingUpload)
+			return apperrors.ErrTranscriptionQueueFull
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ConfirmTeamUpload confirms audio upload and triggers transcription for a team memo.
+func (s *VoiceMemoService) ConfirmTeamUpload(ctx context.Context, memoID, teamID primitive.ObjectID) error {
+	// Atomically update status from pending_upload to transcribing with team check
+	err := s.repo.UpdateStatusWithTeam(ctx, memoID, teamID, models.StatusPendingUpload, models.StatusTranscribing)
+	if err != nil {
+		return err
+	}
+
+	// Get memo to retrieve audio key
+	memo, err := s.repo.FindByID(ctx, memoID)
+	if err != nil {
+		return err
+	}
+
+	// Enqueue transcription job
+	job := queue.TranscriptionJob{
+		MemoID:       memoID,
+		AudioFileKey: memo.AudioFileKey,
+		RetryCount:   0,
+	}
+
+	if err := s.queue.Enqueue(job); err != nil {
+		if errors.Is(err, queue.ErrQueueFull) {
+			// Revert status back to pending_upload if queue is full
+			_ = s.repo.UpdateStatus(ctx, memoID, models.StatusPendingUpload)
+			return apperrors.ErrTranscriptionQueueFull
+		}
+		return err
+	}
+
+	return nil
+}
+
+// RetryTranscription retries transcription for a failed private memo.
+func (s *VoiceMemoService) RetryTranscription(ctx context.Context, memoID, userID primitive.ObjectID) error {
+	// Atomically update status from failed to transcribing with ownership check
+	err := s.repo.UpdateStatusWithOwnership(ctx, memoID, userID, models.StatusFailed, models.StatusTranscribing)
+	if err != nil {
+		return err
+	}
+
+	// Get memo to retrieve audio key
+	memo, err := s.repo.FindByID(ctx, memoID)
+	if err != nil {
+		return err
+	}
+
+	// Enqueue transcription job
+	job := queue.TranscriptionJob{
+		MemoID:       memoID,
+		AudioFileKey: memo.AudioFileKey,
+		RetryCount:   0, // Reset retry count for manual retry
+	}
+
+	if err := s.queue.Enqueue(job); err != nil {
+		if errors.Is(err, queue.ErrQueueFull) {
+			// Revert status back to failed if queue is full
+			_ = s.repo.UpdateStatus(ctx, memoID, models.StatusFailed)
+			return apperrors.ErrTranscriptionQueueFull
+		}
+		return err
+	}
+
+	return nil
+}
+
+// RetryTeamTranscription retries transcription for a failed team memo.
+func (s *VoiceMemoService) RetryTeamTranscription(ctx context.Context, memoID, teamID primitive.ObjectID) error {
+	// Atomically update status from failed to transcribing with team check
+	err := s.repo.UpdateStatusWithTeam(ctx, memoID, teamID, models.StatusFailed, models.StatusTranscribing)
+	if err != nil {
+		return err
+	}
+
+	// Get memo to retrieve audio key
+	memo, err := s.repo.FindByID(ctx, memoID)
+	if err != nil {
+		return err
+	}
+
+	// Enqueue transcription job
+	job := queue.TranscriptionJob{
+		MemoID:       memoID,
+		AudioFileKey: memo.AudioFileKey,
+		RetryCount:   0, // Reset retry count for manual retry
+	}
+
+	if err := s.queue.Enqueue(job); err != nil {
+		if errors.Is(err, queue.ErrQueueFull) {
+			// Revert status back to failed if queue is full
+			_ = s.repo.UpdateStatus(ctx, memoID, models.StatusFailed)
+			return apperrors.ErrTranscriptionQueueFull
+		}
+		return err
+	}
+
+	return nil
+}
+
+// getContentType returns the MIME type for an audio format.
+func getContentType(format string) string {
+	switch format {
+	case "mp3":
+		return "audio/mpeg"
+	case "wav":
+		return "audio/wav"
+	case "m4a":
+		return "audio/mp4"
+	case "webm":
+		return "audio/webm"
+	case "aac":
+		return "audio/aac"
+	default:
+		return "application/octet-stream"
+	}
 }

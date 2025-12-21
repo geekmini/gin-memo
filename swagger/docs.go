@@ -1532,6 +1532,86 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new team voice memo and get a pre-signed URL for audio upload",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "team-voice-memos"
+                ],
+                "summary": "Create team voice memo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Team ID",
+                        "name": "teamId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Voice memo details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateVoiceMemoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.CreateVoiceMemoResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
             }
         },
         "/teams/{teamId}/voice-memos/{id}": {
@@ -1676,6 +1756,172 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/teams/{teamId}/voice-memos/{id}/confirm-upload": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Confirm that audio has been uploaded to S3 and trigger transcription for a team memo",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "team-voice-memos"
+                ],
+                "summary": "Confirm team audio upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Team ID",
+                        "name": "teamId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Voice Memo ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Invalid status transition",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "503": {
+                        "description": "Transcription queue full",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/teams/{teamId}/voice-memos/{id}/retry-transcription": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retry transcription for a failed team voice memo",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "team-voice-memos"
+                ],
+                "summary": "Retry team transcription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Team ID",
+                        "name": "teamId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Voice Memo ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Invalid status - memo is not in failed state",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "503": {
+                        "description": "Transcription queue full",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -1984,6 +2230,73 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new private voice memo and get a pre-signed URL for audio upload",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "voice-memos"
+                ],
+                "summary": "Create voice memo",
+                "parameters": [
+                    {
+                        "description": "Voice memo details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateVoiceMemoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/models.CreateVoiceMemoResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
             }
         },
         "/voice-memos/{id}": {
@@ -2037,6 +2350,158 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/voice-memos/{id}/confirm-upload": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Confirm that audio has been uploaded to S3 and trigger transcription",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "voice-memos"
+                ],
+                "summary": "Confirm audio upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Voice Memo ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Invalid status transition",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "503": {
+                        "description": "Transcription queue full",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/voice-memos/{id}/retry-transcription": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retry transcription for a failed voice memo",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "voice-memos"
+                ],
+                "summary": "Retry transcription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Voice Memo ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Invalid status - memo is not in failed state",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "503": {
+                        "description": "Transcription queue full",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2151,6 +2616,71 @@ const docTemplate = `{
                     "type": "string",
                     "minLength": 6,
                     "example": "secret123"
+                }
+            }
+        },
+        "models.CreateVoiceMemoRequest": {
+            "type": "object",
+            "required": [
+                "audioFormat",
+                "fileSize",
+                "title"
+            ],
+            "properties": {
+                "audioFormat": {
+                    "type": "string",
+                    "enum": [
+                        "mp3",
+                        "wav",
+                        "m4a",
+                        "webm",
+                        "aac"
+                    ],
+                    "example": "mp3"
+                },
+                "duration": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 120
+                },
+                "fileSize": {
+                    "description": "max 100MB",
+                    "type": "integer",
+                    "maximum": 104857600,
+                    "example": 1048576
+                },
+                "isFavorite": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "tags": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "work",
+                        "meeting"
+                    ]
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "example": "Meeting Notes"
+                }
+            }
+        },
+        "models.CreateVoiceMemoResponse": {
+            "type": "object",
+            "properties": {
+                "memo": {
+                    "$ref": "#/definitions/models.VoiceMemo"
+                },
+                "uploadUrl": {
+                    "type": "string",
+                    "example": "https://s3.amazonaws.com/bucket/voice-memos/...?X-Amz-Algorithm=..."
                 }
             }
         },
@@ -2574,6 +3104,14 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": false
                 },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.VoiceMemoStatus"
+                        }
+                    ],
+                    "example": "ready"
+                },
                 "tags": {
                     "type": "array",
                     "items": {
@@ -2606,6 +3144,7 @@ const docTemplate = `{
                     "example": "507f1f77bcf86cd799439012"
                 },
                 "version": {
+                    "description": "Existing docs default to 0, increments to 1+ on first modification",
                     "type": "integer",
                     "example": 1
                 }
@@ -2624,6 +3163,21 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.Pagination"
                 }
             }
+        },
+        "models.VoiceMemoStatus": {
+            "type": "string",
+            "enum": [
+                "pending_upload",
+                "transcribing",
+                "ready",
+                "failed"
+            ],
+            "x-enum-varnames": [
+                "StatusPendingUpload",
+                "StatusTranscribing",
+                "StatusReady",
+                "StatusFailed"
+            ]
         },
         "response.Response": {
             "type": "object",

@@ -102,6 +102,7 @@ Use `pkg/response` helpers:
 ```go
 response.Success(c, data)      // 200
 response.Created(c, data)      // 201
+response.NoContent(c)          // 204
 response.BadRequest(c, msg)    // 400
 response.Unauthorized(c, msg)  // 401
 response.Forbidden(c, msg)     // 403
