@@ -15,12 +15,12 @@ import (
 
 // TeamInvitationHandler handles HTTP requests for invitation operations.
 type TeamInvitationHandler struct {
-	invitationService *service.TeamInvitationService
-	userService       *service.UserService
+	invitationService service.TeamInvitationServicer
+	userService       service.UserServicer
 }
 
 // NewTeamInvitationHandler creates a new TeamInvitationHandler.
-func NewTeamInvitationHandler(invitationService *service.TeamInvitationService, userService *service.UserService) *TeamInvitationHandler {
+func NewTeamInvitationHandler(invitationService service.TeamInvitationServicer, userService service.UserServicer) *TeamInvitationHandler {
 	return &TeamInvitationHandler{
 		invitationService: invitationService,
 		userService:       userService,

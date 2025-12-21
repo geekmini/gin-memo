@@ -18,11 +18,11 @@ const userCacheTTL = 15 * time.Minute
 // UserService handles business logic for user operations.
 type UserService struct {
 	repo  repository.UserRepository
-	cache *cache.Redis
+	cache cache.Cache
 }
 
 // NewUserService creates a new UserService.
-func NewUserService(repo repository.UserRepository, cache *cache.Redis) *UserService {
+func NewUserService(repo repository.UserRepository, cache cache.Cache) *UserService {
 	return &UserService{
 		repo:  repo,
 		cache: cache,

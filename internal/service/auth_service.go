@@ -18,8 +18,8 @@ import (
 type AuthService struct {
 	userRepo         repository.UserRepository
 	refreshTokenRepo repository.RefreshTokenRepository
-	cache            *cache.Redis
-	jwtManager       *auth.JWTManager
+	cache            cache.Cache
+	jwtManager       auth.TokenManager
 	accessTokenTTL   time.Duration
 	refreshTokenTTL  time.Duration
 }
@@ -28,8 +28,8 @@ type AuthService struct {
 func NewAuthService(
 	userRepo repository.UserRepository,
 	refreshTokenRepo repository.RefreshTokenRepository,
-	cache *cache.Redis,
-	jwtManager *auth.JWTManager,
+	cache cache.Cache,
+	jwtManager auth.TokenManager,
 	accessTokenTTL time.Duration,
 	refreshTokenTTL time.Duration,
 ) *AuthService {
