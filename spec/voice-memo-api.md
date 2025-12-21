@@ -1,5 +1,7 @@
 # Voice Memo API Specification
 
+**Status**: Implemented
+
 ## Overview
 
 API for fetching a user's voice memos. This is a **read-only** API - voice memos are created through a separate upload process.

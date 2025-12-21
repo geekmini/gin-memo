@@ -2,7 +2,7 @@
 
 **Author**: Team
 **Created**: 2025-12-20
-**Status**: Draft
+**Status**: Implemented
 **Architecture**: Option B - Service-Level Ownership Check
 
 ## Overview
@@ -264,13 +264,13 @@ If undelete is needed:
 
 ## Testing Checklist
 
-- [ ] Delete own memo → 200 OK, memo excluded from list
-- [ ] Delete other user's memo → 403 Forbidden
-- [ ] Delete non-existent memo → 404 Not Found
-- [ ] Delete already-deleted memo → 404 Not Found
-- [ ] List memos excludes soft-deleted records
-- [ ] Invalid memo ID format → 400 Bad Request
-- [ ] Missing auth token → 401 Unauthorized
+- [x] Delete own memo → 200 OK, memo excluded from list
+- [x] Delete other user's memo → 403 Forbidden
+- [x] Delete non-existent memo → 404 Not Found
+- [x] Delete already-deleted memo → 404 Not Found
+- [x] List memos excludes soft-deleted records
+- [x] Invalid memo ID format → 400 Bad Request
+- [x] Missing auth token → 401 Unauthorized
 
 ## Open Questions
 
@@ -318,16 +318,16 @@ Create branch: `refactor/handler-validation`
 
 ### Implementation Steps
 
-1. [ ] Create branch `refactor/handler-validation`
-2. [ ] Update `UserService` signatures to accept `primitive.ObjectID`
-3. [ ] Update `UserHandler` to validate and convert IDs
-4. [ ] Update `VoiceMemoService.ListByUserID` signature
-5. [ ] Update `VoiceMemoHandler.ListVoiceMemos` to validate userID
-6. [ ] Update `AuthService.Logout` signature (if applicable)
-7. [ ] Update `AuthHandler.Logout` to validate userID
-8. [ ] Add 400 Bad Request to Swagger annotations
-9. [ ] Run `task swagger` to regenerate docs
-10. [ ] Run tests to verify no regressions
+1. [x] Create branch `refactor/handler-validation`
+2. [x] Update `UserService` signatures to accept `primitive.ObjectID`
+3. [x] Update `UserHandler` to validate and convert IDs
+4. [x] Update `VoiceMemoService.ListByUserID` signature
+5. [x] Update `VoiceMemoHandler.ListVoiceMemos` to validate userID
+6. [x] Update `AuthService.Logout` signature (if applicable)
+7. [x] Update `AuthHandler.Logout` to validate userID
+8. [x] Add 400 Bad Request to Swagger annotations
+9. [x] Run `task swagger` to regenerate docs
+10. [x] Run tests to verify no regressions
 
 ### Pattern to Follow
 
