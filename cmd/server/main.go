@@ -13,6 +13,7 @@ import (
 	"gin-sample/internal/router"
 	"gin-sample/internal/service"
 	"gin-sample/internal/storage"
+	"gin-sample/internal/validator"
 	"gin-sample/pkg/auth"
 
 	"github.com/gin-gonic/gin"
@@ -37,6 +38,9 @@ func main() {
 	// Load configuration
 	cfg := config.Load()
 	log.Println("Configuration loaded")
+
+	// Register custom validators
+	validator.RegisterCustomValidators()
 
 	// Set Gin mode
 	gin.SetMode(cfg.GinMode)

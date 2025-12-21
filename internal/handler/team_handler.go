@@ -253,7 +253,11 @@ func (h *TeamHandler) TransferOwnership(c *gin.Context) {
 	}
 
 	userIDStr := middleware.GetUserID(c)
-	currentOwnerID, _ := primitive.ObjectIDFromHex(userIDStr)
+	currentOwnerID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		response.Unauthorized(c, "invalid user id format")
+		return
+	}
 
 	var req models.TransferOwnershipRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

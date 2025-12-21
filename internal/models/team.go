@@ -24,7 +24,7 @@ type Team struct {
 // CreateTeamRequest is the payload for creating a team.
 type CreateTeamRequest struct {
 	Name        string `json:"name" binding:"required,min=2,max=100" example:"Engineering Team"`
-	Slug        string `json:"slug" binding:"required,min=2,max=50,alphanum" example:"engineering"`
+	Slug        string `json:"slug" binding:"required,min=2,max=50,slug" example:"engineering-team"`
 	Description string `json:"description" binding:"omitempty,max=500" example:"Our engineering team workspace"`
 	LogoURL     string `json:"logoUrl" binding:"omitempty,url" example:"https://example.com/logo.png"`
 }
@@ -32,7 +32,7 @@ type CreateTeamRequest struct {
 // UpdateTeamRequest is the payload for updating a team.
 type UpdateTeamRequest struct {
 	Name        *string `json:"name" binding:"omitempty,min=2,max=100" example:"Updated Team Name"`
-	Slug        *string `json:"slug" binding:"omitempty,min=2,max=50,alphanum" example:"updated-slug"`
+	Slug        *string `json:"slug" binding:"omitempty,min=2,max=50,slug" example:"updated-slug"`
 	Description *string `json:"description" binding:"omitempty,max=500" example:"Updated description"`
 	LogoURL     *string `json:"logoUrl" binding:"omitempty" example:"https://example.com/new-logo.png"`
 }

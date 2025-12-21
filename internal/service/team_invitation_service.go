@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 	"strings"
 	"time"
 
@@ -209,8 +210,10 @@ func (s *TeamInvitationService) AcceptInvitation(ctx context.Context, invitation
 		return nil, err
 	}
 
-	// Delete the invitation
-	_ = s.invitationRepo.Delete(ctx, invitationID)
+	// Delete the invitation (member already created, so log error but don't fail)
+	if err := s.invitationRepo.Delete(ctx, invitationID); err != nil {
+		log.Printf("Warning: failed to delete invitation %s after accepting: %v", invitationID.Hex(), err)
+	}
 
 	return &models.AcceptInvitationResponse{
 		Message: "invitation accepted",
