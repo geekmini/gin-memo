@@ -287,7 +287,8 @@ func TestListTeamVoiceMemos(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		resp := testutil.ParseAPIResponse(t, w)
-		items, _ := resp.Data["items"].([]interface{})
+		items, ok := resp.Data["items"].([]interface{})
+		require.True(t, ok, "items should be []interface{}")
 		assert.Len(t, items, 1)
 	})
 
@@ -316,10 +317,12 @@ func TestListTeamVoiceMemos(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		resp := testutil.ParseAPIResponse(t, w)
-		items, _ := resp.Data["items"].([]interface{})
+		items, ok := resp.Data["items"].([]interface{})
+		require.True(t, ok, "items should be []interface{}")
 		assert.Len(t, items, 2)
 
-		pagination, _ := resp.Data["pagination"].(map[string]interface{})
+		pagination, ok := resp.Data["pagination"].(map[string]interface{})
+		require.True(t, ok, "pagination should be map[string]interface{}")
 		assert.Equal(t, float64(5), pagination["totalItems"])
 		assert.Equal(t, float64(3), pagination["totalPages"])
 	})
@@ -372,7 +375,8 @@ func TestGetTeamVoiceMemo(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 
 		// Get the memo
@@ -416,7 +420,8 @@ func TestGetTeamVoiceMemo(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 
 		// Member gets the memo
@@ -445,7 +450,8 @@ func TestGetTeamVoiceMemo(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 
 		// Non-member tries to get memo
@@ -515,7 +521,8 @@ func TestDeleteTeamVoiceMemo(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 
 		// Delete the memo
@@ -558,7 +565,8 @@ func TestDeleteTeamVoiceMemo(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 
 		// Admin deletes the memo
@@ -597,7 +605,8 @@ func TestDeleteTeamVoiceMemo(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 
 		// Member deletes the memo (allowed per authorization rules)
@@ -626,7 +635,8 @@ func TestDeleteTeamVoiceMemo(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 
 		// Non-member tries to delete
@@ -684,7 +694,8 @@ func TestConfirmTeamUpload(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 		uploadURL := createResp.Data["uploadUrl"].(string)
 
@@ -719,7 +730,8 @@ func TestConfirmTeamUpload(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 		uploadURL := createResp.Data["uploadUrl"].(string)
 
@@ -754,7 +766,8 @@ func TestConfirmTeamUpload(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 
 		// Non-member tries to confirm
@@ -812,7 +825,8 @@ func TestRetryTeamTranscription(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 		uploadURL := createResp.Data["uploadUrl"].(string)
 
@@ -858,7 +872,8 @@ func TestRetryTeamTranscription(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 
 		// Try to retry (should fail - not in failed state)
@@ -887,7 +902,8 @@ func TestRetryTeamTranscription(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 
 		// Non-member tries to retry
@@ -945,7 +961,8 @@ func TestTeamVoiceMemoWorkflow(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 		uploadURL := createResp.Data["uploadUrl"].(string)
 		assert.Equal(t, string(models.StatusPendingUpload), memo["status"])
@@ -960,14 +977,21 @@ func TestTeamVoiceMemoWorkflow(t *testing.T) {
 		// 4. Start transcription processor
 		ctx := context.Background()
 		testServer.StartTranscriptionProcessor(ctx)
+		defer testServer.StopTranscriptionProcessor()
 
-		// 5. Wait for transcription to complete
-		time.Sleep(500 * time.Millisecond)
-		testServer.StopTranscriptionProcessor()
-
-		// 6. Verify memo status is ready
+		// 5. Poll for transcription completion (max 5 seconds)
 		memoOID, err := primitive.ObjectIDFromHex(memoID)
 		require.NoError(t, err)
+
+		require.Eventually(t, func() bool {
+			memo, err := testServer.VoiceMemoRepo.FindByID(ctx, memoOID)
+			if err != nil {
+				return false
+			}
+			return memo.Status == models.StatusReady
+		}, 5*time.Second, 100*time.Millisecond, "memo should reach ready status")
+
+		// 6. Verify memo status is ready
 		updatedMemo, err := testServer.VoiceMemoRepo.FindByID(ctx, memoOID)
 		require.NoError(t, err)
 		assert.Equal(t, models.StatusReady, updatedMemo.Status)
@@ -1004,7 +1028,8 @@ func TestTeamVoiceMemoWorkflow(t *testing.T) {
 		require.Equal(t, http.StatusCreated, createW.Code)
 
 		createResp := testutil.ParseAPIResponse(t, createW)
-		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
 		memoID := memo["id"].(string)
 
 		// Member can list and get the memo
