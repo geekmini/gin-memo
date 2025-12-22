@@ -1,0 +1,35 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: auto
+
+ignore:
+  # Entry points - minimal logic, just wiring
+  - "cmd/**/*"
+
+  # Generated documentation
+  - "swagger/**/*"
+
+  # Test files themselves
+  - "test/**/*"
+  - "**/*_test.go"
+
+  # Configuration - simple env loading
+  - "internal/config/**/*"
+
+  # Router - just route wiring, no business logic
+  - "internal/router/**/*"
+
+  # Models - data structs, no logic
+  - "internal/models/**/*"
+
+  # Validator - simple validation rules
+  - "internal/validator/**/*"
+
+  # Mock implementations
+  - "**/mocks/**/*"
