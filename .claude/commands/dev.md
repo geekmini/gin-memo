@@ -79,10 +79,7 @@ Location: `.claude/dev-checkpoint.md`
 ### Phase 6: Spec Generated
 **File:** spec/[feature-name].md
 
-### Phase 7: Postman
-[Added N endpoints / Skipped]
-
-### Phase 7b: Spec Approved
+### Phase 7: Spec Approved
 [Approved: Yes, timestamp]
 
 ### Phase 8: Implementation
@@ -94,13 +91,13 @@ Location: `.claude/dev-checkpoint.md`
 - [ ] Handler
 - [ ] Router
 
-### Phase 9: Quality Review
-**Review Status:** [Pending / Passed / Issues Found]
+### Phase 9: Finalization
+**Local Review:** [Passed / Issues Found]
 **Issues Fixed:** [N/A / List]
-
-### Phase 10: Documentation & PR
 **Docs Updated:** [Yes/No]
+**Postman:** [Added N endpoints / Skipped]
 **PR:** [#number or N/A]
+**CI Review:** [Pending / Passed / Issues Fixed]
 
 ---
 
@@ -126,7 +123,7 @@ Update the checkpoint file:
 
 ### Session Completion
 
-When Phase 10 completes successfully:
+When Phase 9 completes successfully:
 1. Archive checkpoint to `.claude/dev-checkpoints/[feature]-[timestamp].md`
 2. Delete `.claude/dev-checkpoint.md`
 3. Confirm: "Dev session complete. Checkpoint archived."
@@ -142,11 +139,9 @@ When Phase 10 completes successfully:
 4. Summary & Approval  → Confirm understanding
 5. Architecture Design → Propose 2-3 approaches (agents)
 6. Generate Spec      → Create spec document (skill) [Status: Draft]
-7. Add to Postman     → Add endpoints to collection (skill, optional)
-7b. Approve Spec      → User approves spec [Status: Draft → Approved]
+7. Approve Spec       → User approves spec [Status: Draft → Approved]
 8. Implementation     → Build the feature + regenerate Swagger
-9. Quality Review & Fix → Review + fix issues (agents + skill) [Status: Approved → Implemented]
-10. Documentation & PR → Update docs (skill), commit/push/PR (skill)
+9. Finalization       → Review, fix, docs, Postman, PR (LAST PHASE)
 ```
 
 ---
@@ -302,49 +297,11 @@ The skill will:
 
 See `.claude/skills/spec-gen/SKILL.md` for the full template structure.
 
-**Checkpoint:** Update Current Phase to "7 - Postman", add Phase 6 summary with spec file path, update Spec File field.
+**Checkpoint:** Update Current Phase to "7 - Approve Spec", add Phase 6 summary with spec file path, update Spec File field.
 
 ---
 
-## Phase 7: Add Endpoints to Postman (Optional)
-
-### Source of Truth
-
-| Source      | Purpose                                                                    |
-| ----------- | -------------------------------------------------------------------------- |
-| **Swagger** | API contract (endpoints, params, schemas) - regenerated via `task swagger` |
-| **Postman** | Team workflow (tests, examples, env configs) - managed via Postman skill   |
-
-**Note:** Postman's OpenAPI sync has limitations (doesn't delete removed endpoints, can overwrite team customizations). The Postman Collection Manager skill handles incremental updates rather than full collection sync.
-
-### When to Skip
-
-- The feature doesn't involve new API endpoints
-- The endpoints already exist in Postman
-- The user prefers to add them manually later
-
-**Ask the user**: "This feature includes [N] new endpoint(s). Would you like me to add them to Postman?"
-
-### If Yes, Add Endpoints
-
-**The Postman Collection Manager skill** will activate with "Add Endpoints from Spec" operation:
-
-1. The skill will read the spec file created in Phase 6
-2. Extract API endpoints from the spec
-3. Add each endpoint to the Postman collection with proper folder organization
-4. Report success/failure for each endpoint
-
-The skill also supports "Add Single Endpoint" for manual additions.
-
-See `.claude/skills/postman/SKILL.md` for all operations.
-
-If no or no endpoints to add, skip to Phase 7b.
-
-**Checkpoint:** Update Current Phase to "7b - Approve Spec", add Phase 7 summary (Added N endpoints / Skipped).
-
----
-
-## Phase 7b: Approve Spec
+## Phase 7: Approve Spec
 
 Before starting implementation, get explicit user approval on the spec document.
 
@@ -367,7 +324,7 @@ Update the spec document status:
 
 **Note**: Do not proceed to Phase 8 until user explicitly approves.
 
-**Checkpoint:** Update Current Phase to "8 - Implementation", add Phase 7b summary (Approved: Yes, timestamp).
+**Checkpoint:** Update Current Phase to "8 - Implementation", add Phase 7 summary (Approved: Yes, timestamp).
 
 ---
 
@@ -407,13 +364,41 @@ After implementation:
 3. **Run `task swagger`** to regenerate API documentation
 4. Verify the feature works as expected
 
-**Checkpoint:** Update Current Phase to "9 - Quality Review", add Phase 8 summary with implementation status and completed layers checklist.
+**Checkpoint:** Update Current Phase to "9 - Finalization", add Phase 8 summary with implementation status and completed layers checklist.
 
 ---
 
-## Phase 9: Quality Review & Fix
+## Phase 9: Finalization
 
-### Step 1: Code Review
+This is the **final phase** that covers quality review, documentation, Postman updates, PR creation, and CI review handling.
+
+### Step 1: Local Code Review Loop (Iterative)
+
+**IMPORTANT:** This step repeats until the code review passes with no critical/high issues.
+
+```
+┌─────────────────────────────────────┐
+│  Run code-reviewer agent            │
+└────────────────┬────────────────────┘
+                 ▼
+         ┌───────────────┐
+         │ Issues found? │
+         └───────┬───────┘
+                 │
+     ┌───────────┴───────────┐
+     │ Yes                   │ No
+     ▼                       ▼
+┌────────────────┐    ┌─────────────────┐
+│ Run /pr-fix    │    │ Proceed to      │
+│ (Local mode)   │    │ Step 2          │
+└───────┬────────┘    └─────────────────┘
+        │
+        ▼
+┌────────────────┐
+│ Loop back to   │
+│ code-reviewer  │
+└────────────────┘
+```
 
 **Use the Task tool with `subagent_type: "code-reviewer"`** to review the implementation.
 
@@ -424,87 +409,51 @@ The code reviewer checks for:
 - Adherence to project conventions (CLAUDE.md)
 - Proper error handling
 
-Review output format:
-```markdown
-## Code Review Results
-
-### Issues Found
-- [Issue 1]: [severity] - [description] - [file:line]
-- [Issue 2]: [severity] - [description] - [file:line]
-
-### Suggestions
-- [Suggestion 1]
-- [Suggestion 2]
-
-### Overall Assessment
-[Pass/Needs Changes] - [summary]
-```
-
-### Step 2: Fix Review Issues
-
-If issues are found (especially Critical/High severity):
-
-**IMPORTANT: Always use the pr-fix skill to fix issues. Do NOT fix issues directly without user approval.**
-
-Run `/pr-fix` in Local mode to address issues one by one:
-
-1. Present each issue with context and severity
-2. User decides: Fix / Skip / Need more context
-3. Apply fixes **only after user approval**
-4. Track all changes made
+If issues are found:
+1. Run `/pr-fix` in **Local mode**
+2. Present each issue with context and severity
+3. User decides: Fix / Skip / Need more context
+4. Apply fixes **only after user approval**
+5. **Re-run code-reviewer** to verify fixes
+6. Repeat until all critical/high issues resolved
 
 See `.claude/skills/pr-fix/SKILL.md` for the full process.
 
-**Why this matters:** The pr-fix skill ensures user oversight on all code changes, prevents unwanted modifications, and maintains a clear audit trail of what was fixed and why.
+### Step 2: Update Spec Status
 
-### Step 3: Re-review if Needed
-
-If critical fixes were made:
-- Re-run code reviewer to verify fixes
-- Ensure no new issues introduced
-
-Proceed to Step 4 when:
-- All critical/high severity issues are resolved
-- Or user explicitly approves to proceed with remaining issues
-
-### Step 4: Update Spec Status to Implemented
-
-After quality review passes, update the spec document:
+After local review passes, update the spec document:
 
 1. Change `**Status**: Approved` to `**Status**: Implemented`
 2. Mark all implementation checklist items as complete (`[x]`)
-3. Mark testing checklist items as complete (if applicable)
-4. Confirm: "Spec status updated to 'Implemented'. All checklist items marked complete."
+3. Confirm: "Spec status updated to 'Implemented'."
 
-**Note**: This ensures the spec document accurately reflects the current state of the feature.
+### Step 3: Update Documentation
 
-**Checkpoint:** Update Current Phase to "10 - Documentation & PR", add Phase 9 summary with review status and issues fixed.
-
----
-
-## Phase 10: Documentation & Completion
-
-### Documentation Update Check
-
-**The Documentation Updater skill** will automatically activate to analyze changes and update documentation.
-
-The skill will:
-1. Identify what changed during implementation
-2. Map changes to documentation files using decision matrix
-3. Check each documentation file for required updates
-4. Propose specific updates for user approval
-5. Apply updates after approval
+**The Documentation Updater skill** will analyze changes and update documentation.
 
 **Files checked:**
 - `CLAUDE.md` - Project structure, conventions
 - `docs/architecture.md` - Layer conventions, DTOs
 - `docs/design-patterns.md` - Design patterns, caching, tokens
 - `.env.example` - Environment variables
-- `swagger/swagger.yaml` - API docs (via `task swagger`)
 
-See `.claude/skills/docs/SKILL.md` for the full decision matrix and update process.
+See `.claude/skills/docs/SKILL.md` for the decision matrix.
 
-### Commit, Push & Create PR
+### Step 4: Add Endpoints to Postman (Optional)
+
+If the feature includes new API endpoints:
+
+**Ask the user**: "This feature includes [N] new endpoint(s). Would you like me to add them to Postman?"
+
+If yes, **the Postman Collection Manager skill** will:
+1. Read the spec file from Phase 6
+2. Extract API endpoints
+3. Add each endpoint to the Postman collection
+4. Report success/failure
+
+See `.claude/skills/postman/SKILL.md` for details.
+
+### Step 5: Commit, Push & Create PR
 
 **Ask the user**: "Would you like me to commit, push, and create a PR?"
 
@@ -514,22 +463,50 @@ If yes, run `/commit-push-pr` which will:
 3. Push to remote
 4. Create PR via `gh pr create`
 
-The PR description will include:
-- Feature summary from Phase 4
-- Implementation details
-- Files changed
-- Test plan
+### Step 6: Address CI Review Comments (Iterative)
 
-**Note**: After the PR is created, GitHub Actions will run automated code review. When review comments arrive, use the Review Comments Fixer skill manually to address them.
+After the PR is created, GitHub Actions runs automated code review (claude-reviewer).
 
-### Archive Checkpoint
+**IMPORTANT:** This step repeats until CI review passes with no issues.
 
-After successful completion:
-1. Create `.claude/dev-checkpoints/` directory if it doesn't exist
+```
+┌─────────────────────────────────────┐
+│  Wait for CI review comments        │
+└────────────────┬────────────────────┘
+                 ▼
+         ┌───────────────┐
+         │ Comments?     │
+         └───────┬───────┘
+                 │
+     ┌───────────┴───────────┐
+     │ Yes                   │ No
+     ▼                       ▼
+┌────────────────┐    ┌─────────────────┐
+│ Run /pr-fix    │    │ Proceed to      │
+│ (Remote mode)  │    │ Step 7          │
+└───────┬────────┘    └─────────────────┘
+        │
+        ▼
+┌────────────────┐
+│ Push fixes,    │
+│ loop back      │
+└────────────────┘
+```
+
+When CI review comments arrive:
+1. Run `/pr-fix` in **Remote mode**
+2. Present each comment with context
+3. User decides: Fix / Skip / Need more context
+4. Apply fixes, commit, push
+5. Wait for CI to re-run
+6. Repeat until CI review passes
+
+### Step 7: Archive Checkpoint & Summary
+
+After CI review passes:
+1. Create `.claude/dev-checkpoints/` directory if needed
 2. Move `.claude/dev-checkpoint.md` to `.claude/dev-checkpoints/[feature-name]-[timestamp].md`
-3. Confirm: "Dev session archived to `.claude/dev-checkpoints/[feature-name]-[timestamp].md`"
-
-### Final Summary
+3. Confirm: "Dev session archived."
 
 Present final summary:
 
@@ -538,44 +515,30 @@ Present final summary:
 
 ### Spec Document
 - Created: `spec/[feature-name].md`
-- Status: [Draft → Approved → Implemented]
+- Status: Draft → Approved → Implemented
 
-### Swagger Documentation
-- [Updated via `task swagger`] / [Skipped - no implementation]
-
-### Postman Endpoints (if added)
-- [Endpoint 1]: [METHOD] [URL]
-- [Endpoint 2]: [METHOD] [URL]
-- Or: "Skipped - no new endpoints" / "Skipped - user preference"
+### Local Review
+- Iterations: [N]
+- Issues Fixed: [list or N/A]
 
 ### Documentation Updates
 - `CLAUDE.md`: [Updated: section] / [No updates needed]
 - `docs/architecture.md`: [Updated: section] / [No updates needed]
-- `docs/design-patterns.md`: [No updates needed]
 
-### Source of Truth Files
-- `swagger/swagger.yaml`: [Regenerated via `task swagger`] / [No changes]
-- `.env.example`: [Updated] / [No updates needed]
-- `docker-compose.yml`: [No updates needed]
-- `Taskfile.yml`: [No updates needed]
+### Postman Endpoints
+- [Added N endpoints] / [Skipped]
 
-### Implementation Status
-- [Completed / Skipped / Pending]
-
-### Files Changed (if implemented)
-- `path/to/file.go` - [created/modified]
-
-### PR Status (if created)
+### PR
 - PR: #[number] - [title]
 - URL: [link]
-- Status: Awaiting review
 
-### Next Steps
-- [ ] Wait for GitHub Action code review
-- [ ] Use "fix PR comments" to address review feedback when ready
+### CI Review
+- Iterations: [N]
+- Issues Fixed: [list or N/A]
+- Status: Passed
 ```
 
-Ask if the user wants to make any changes.
+**Checkpoint:** Mark Phase 9 complete. Archive checkpoint file.
 
 ---
 
@@ -585,6 +548,7 @@ Ask if the user wants to make any changes.
 - Use existing codebase conventions (camelCase for JSON fields)
 - Reference existing patterns discovered during exploration
 - Keep specs focused on WHAT, not HOW (until architecture phase)
-- Always wait for user approval at key decision points (Phase 4, Phase 5, Phase 8)
+- Always wait for user approval at key decision points (Phase 4, Phase 5, Phase 7)
 - Use specialized agents for exploration, architecture, and review
 - Confidence threshold for code review issues: only report issues with ≥80% confidence
+- Phase 9 loops are iterative - keep running until clean (local review, CI review)
