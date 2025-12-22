@@ -1,6 +1,6 @@
 package main
 
-// CI pipeline test - this comment can be removed after testing
+// CI pipeline test - triggered at 2025-12-23
 
 import (
 	"context"
