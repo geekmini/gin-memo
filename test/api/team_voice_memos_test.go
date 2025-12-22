@@ -27,6 +27,8 @@ func TestCreateTeamVoiceMemo(t *testing.T) {
 	teamHelper := testserver.NewTeamHelper(testServer)
 
 	t.Run("success - owner creates team voice memo", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
 		_, ownerToken := authHelper.CreateAuthenticatedUser(t, "Team Owner", "owner@example.com", "password123")
 		teamData := teamHelper.CreateTeam(t, ownerToken, "Voice Memo Team")
 		teamID := testserver.GetIDFromResponse(t, teamData)
@@ -199,6 +201,8 @@ func TestListTeamVoiceMemos(t *testing.T) {
 	teamHelper := testserver.NewTeamHelper(testServer)
 
 	t.Run("success - returns empty list when no memos", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
 		_, ownerToken := authHelper.CreateAuthenticatedUser(t, "Owner", "owner@example.com", "password123")
 		teamData := teamHelper.CreateTeam(t, ownerToken, "Empty Memos Team")
 		teamID := testserver.GetIDFromResponse(t, teamData)
@@ -353,6 +357,8 @@ func TestGetTeamVoiceMemo(t *testing.T) {
 	teamHelper := testserver.NewTeamHelper(testServer)
 
 	t.Run("success - owner gets team memo", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
 		_, ownerToken := authHelper.CreateAuthenticatedUser(t, "Owner", "owner@example.com", "password123")
 		teamData := teamHelper.CreateTeam(t, ownerToken, "Get Memo Team")
 		teamID := testserver.GetIDFromResponse(t, teamData)
@@ -494,6 +500,8 @@ func TestDeleteTeamVoiceMemo(t *testing.T) {
 	teamHelper := testserver.NewTeamHelper(testServer)
 
 	t.Run("success - owner deletes team memo", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
 		_, ownerToken := authHelper.CreateAuthenticatedUser(t, "Owner", "owner@example.com", "password123")
 		teamData := teamHelper.CreateTeam(t, ownerToken, "Delete Memo Team")
 		teamID := testserver.GetIDFromResponse(t, teamData)
@@ -661,6 +669,8 @@ func TestConfirmTeamUpload(t *testing.T) {
 	teamHelper := testserver.NewTeamHelper(testServer)
 
 	t.Run("success - confirms team upload", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
 		_, ownerToken := authHelper.CreateAuthenticatedUser(t, "Owner", "owner@example.com", "password123")
 		teamData := teamHelper.CreateTeam(t, ownerToken, "Confirm Upload Team")
 		teamID := testserver.GetIDFromResponse(t, teamData)
@@ -787,6 +797,8 @@ func TestRetryTeamTranscription(t *testing.T) {
 	teamHelper := testserver.NewTeamHelper(testServer)
 
 	t.Run("error - cannot retry for non-failed memo", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
 		_, ownerToken := authHelper.CreateAuthenticatedUser(t, "Owner", "owner@example.com", "password123")
 		teamData := teamHelper.CreateTeam(t, ownerToken, "Retry Team")
 		teamID := testserver.GetIDFromResponse(t, teamData)
@@ -872,6 +884,8 @@ func TestTeamVoiceMemoWorkflow(t *testing.T) {
 	teamHelper := testserver.NewTeamHelper(testServer)
 
 	t.Run("full workflow - create, upload, confirm, transcribe", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
 		_, ownerToken := authHelper.CreateAuthenticatedUser(t, "Owner", "owner@example.com", "password123")
 		teamData := teamHelper.CreateTeam(t, ownerToken, "Workflow Team")
 		teamID := testserver.GetIDFromResponse(t, teamData)
