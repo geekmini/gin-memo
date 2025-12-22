@@ -91,10 +91,13 @@ Location: `.claude/dev-checkpoint.md`
 - [ ] Handler
 - [ ] Router
 
-### Phase 9: Finalization
+### Phase 9: Documentation
+**Docs Updated:** [Yes/No]
+**Files:** [list of updated files]
+
+### Phase 10: Review & PR
 **Local Review:** [Passed / Issues Found]
 **Issues Fixed:** [N/A / List]
-**Docs Updated:** [Yes/No]
 **Postman:** [Added N endpoints / Skipped]
 **PR:** [#number or N/A]
 **CI Review:** [Pending / Passed / Issues Fixed]
@@ -123,7 +126,7 @@ Update the checkpoint file:
 
 ### Session Completion
 
-When Phase 9 completes successfully:
+When Phase 10 completes successfully:
 1. Archive checkpoint to `.claude/dev-checkpoints/[feature]-[timestamp].md`
 2. Delete `.claude/dev-checkpoint.md`
 3. Confirm: "Dev session complete. Checkpoint archived."
@@ -141,7 +144,8 @@ When Phase 9 completes successfully:
 6. Generate Spec      → Create spec document (skill) [Status: Draft]
 7. Approve Spec       → User approves spec [Status: Draft → Approved]
 8. Implementation     → Build the feature + regenerate Swagger
-9. Finalization       → Review, fix, docs, Postman, PR (LAST PHASE)
+9. Documentation      → Update docs (skill)
+10. Review & PR       → Iterative review/fix, Postman, PR, CI review (LAST PHASE)
 ```
 
 ---
@@ -364,13 +368,38 @@ After implementation:
 3. **Run `task swagger`** to regenerate API documentation
 4. Verify the feature works as expected
 
-**Checkpoint:** Update Current Phase to "9 - Finalization", add Phase 8 summary with implementation status and completed layers checklist.
+**Checkpoint:** Update Current Phase to "9 - Documentation", add Phase 8 summary with implementation status and completed layers checklist.
 
 ---
 
-## Phase 9: Finalization
+## Phase 9: Documentation
 
-This is the **final phase** that covers quality review, documentation, Postman updates, PR creation, and CI review handling.
+Update project documentation based on implementation changes.
+
+**The Documentation Updater skill** will analyze changes and update documentation.
+
+**Files checked:**
+- `CLAUDE.md` - Project structure, conventions
+- `docs/architecture.md` - Layer conventions, DTOs
+- `docs/design-patterns.md` - Design patterns, caching, tokens
+- `.env.example` - Environment variables
+
+The skill will:
+1. Identify what changed during implementation
+2. Map changes to documentation files using decision matrix
+3. Check each documentation file for required updates
+4. Propose specific updates for user approval
+5. Apply updates after approval
+
+See `.claude/skills/docs/SKILL.md` for the decision matrix.
+
+**Checkpoint:** Update Current Phase to "10 - Review & PR", add Phase 9 summary with docs updated and files list.
+
+---
+
+## Phase 10: Review & PR
+
+This is the **final phase** that covers quality review, Postman updates, PR creation, and CI review handling.
 
 ### Step 1: Local Code Review Loop (Iterative)
 
@@ -427,19 +456,7 @@ After local review passes, update the spec document:
 2. Mark all implementation checklist items as complete (`[x]`)
 3. Confirm: "Spec status updated to 'Implemented'."
 
-### Step 3: Update Documentation
-
-**The Documentation Updater skill** will analyze changes and update documentation.
-
-**Files checked:**
-- `CLAUDE.md` - Project structure, conventions
-- `docs/architecture.md` - Layer conventions, DTOs
-- `docs/design-patterns.md` - Design patterns, caching, tokens
-- `.env.example` - Environment variables
-
-See `.claude/skills/docs/SKILL.md` for the decision matrix.
-
-### Step 4: Add Endpoints to Postman (Optional)
+### Step 3: Add Endpoints to Postman (Optional)
 
 If the feature includes new API endpoints:
 
@@ -453,7 +470,7 @@ If yes, **the Postman Collection Manager skill** will:
 
 See `.claude/skills/postman/SKILL.md` for details.
 
-### Step 5: Commit, Push & Create PR
+### Step 4: Commit, Push & Create PR
 
 **Ask the user**: "Would you like me to commit, push, and create a PR?"
 
@@ -463,7 +480,7 @@ If yes, run `/commit-push-pr` which will:
 3. Push to remote
 4. Create PR via `gh pr create`
 
-### Step 6: Address CI Review Comments (Iterative)
+### Step 5: Address CI Review Comments (Iterative)
 
 After the PR is created, GitHub Actions runs automated code review (claude-reviewer).
 
@@ -501,7 +518,7 @@ When CI review comments arrive:
 5. Wait for CI to re-run
 6. Repeat until CI review passes
 
-### Step 7: Archive Checkpoint & Summary
+### Step 6: Archive Checkpoint & Summary
 
 After CI review passes:
 1. Create `.claude/dev-checkpoints/` directory if needed
@@ -517,13 +534,12 @@ Present final summary:
 - Created: `spec/[feature-name].md`
 - Status: Draft → Approved → Implemented
 
+### Documentation (Phase 9)
+- Files Updated: [list or "No updates needed"]
+
 ### Local Review
 - Iterations: [N]
 - Issues Fixed: [list or N/A]
-
-### Documentation Updates
-- `CLAUDE.md`: [Updated: section] / [No updates needed]
-- `docs/architecture.md`: [Updated: section] / [No updates needed]
 
 ### Postman Endpoints
 - [Added N endpoints] / [Skipped]
@@ -538,7 +554,7 @@ Present final summary:
 - Status: Passed
 ```
 
-**Checkpoint:** Mark Phase 9 complete. Archive checkpoint file.
+**Checkpoint:** Mark Phase 10 complete. Archive checkpoint file.
 
 ---
 
@@ -551,4 +567,4 @@ Present final summary:
 - Always wait for user approval at key decision points (Phase 4, Phase 5, Phase 7)
 - Use specialized agents for exploration, architecture, and review
 - Confidence threshold for code review issues: only report issues with ≥80% confidence
-- Phase 9 loops are iterative - keep running until clean (local review, CI review)
+- Phase 10 loops are iterative - keep running until clean (local review, CI review)
