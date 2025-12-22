@@ -628,7 +628,7 @@ After the PR is created, GitHub Actions runs automated code review (claude-revie
      ▼                       ▼
 ┌────────────────┐    ┌─────────────────┐
 │ Run /pr-fix    │    │ Proceed to      │
-│ (Remote mode)  │    │ Step 7          │
+│ (Remote mode)  │    │ Step 5          │
 └───────┬────────┘    └─────────────────┘
         │
         ▼
