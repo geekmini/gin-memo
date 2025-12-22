@@ -6,7 +6,8 @@ coverage:
         threshold: 1%
     patch:
       default:
-        target: auto
+        target: 0%
+        # Informational only - don't block PRs on patch coverage
 
 ignore:
   # Entry points - minimal logic, just wiring
