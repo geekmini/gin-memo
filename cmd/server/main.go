@@ -1,5 +1,7 @@
 package main
 
+// CI pipeline test - this comment can be removed after testing
+
 import (
 	"context"
 	"fmt"
