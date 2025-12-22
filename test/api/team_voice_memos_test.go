@@ -966,7 +966,8 @@ func TestTeamVoiceMemoWorkflow(t *testing.T) {
 		testServer.StopTranscriptionProcessor()
 
 		// 6. Verify memo status is ready
-		memoOID, _ := primitive.ObjectIDFromHex(memoID)
+		memoOID, err := primitive.ObjectIDFromHex(memoID)
+		require.NoError(t, err)
 		updatedMemo, err := testServer.VoiceMemoRepo.FindByID(ctx, memoOID)
 		require.NoError(t, err)
 		assert.Equal(t, models.StatusReady, updatedMemo.Status)
