@@ -87,9 +87,8 @@ If `Current Phase` is any phase from 1-9 (not completed):
 | 4 | Summary & Approval |
 | 5 | Architecture Design |
 | 6 | Generate Spec |
-| 7 | Add to Postman |
-| 7b | Approve Spec |
+| 7 | Approve Spec |
 | 8 | Implementation |
-| 9 | Quality Review & Fix |
-| 10 | Documentation & PR |
+| 9 | Documentation |
+| 10 | Review & PR |
 | COMPLETED | All phases finished |

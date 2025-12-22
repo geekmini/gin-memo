@@ -11,20 +11,12 @@ description: Fix review comments from local code review or GitHub PR
 
 ## Your task
 
-Address review comments using the `pr-fix` skill.
+Address review comments using `@pr-fix-agent`.
 
 **Modes:**
 1. **Remote mode** (default): Fetch and fix comments from the current branch's GitHub PR
 2. **Local mode**: If user provides code review output, process those issues instead
 
-**Process:**
-1. Identify the source (PR comments or local review output)
-2. Fetch all unresolved comments/issues
-3. Present each issue ONE AT A TIME
-4. Wait for user decision: Fix / Skip / Need context
-5. Apply fix only after user approval
-6. After all issues processed, show summary
+**Critical:** The agent will present issues one at a time and wait for your decision on each.
 
-**Critical:** Never batch fix. Always present issues individually and wait for user input.
-
-Use the Skill tool to invoke `pr-fix` now.
+Launch `@pr-fix-agent` now to process review comments.

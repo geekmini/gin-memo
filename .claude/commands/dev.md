@@ -14,12 +14,16 @@ Main Context (orchestrator)
 ├─ Phase 3: Questions ────────────────── [main] Interactive Q&A
 ├─ Phase 4: Approval ─────────────────── [main] User decision
 ├─ Phase 5: Architecture ─────────────── [sub-agent: code-architect]
-├─ Phase 6: Spec Gen ─────────────────── [sub-agent: general-purpose]
+├─ Phase 6: Spec Gen ─────────────────── [agent: @spec-gen-agent]
 ├─ Phase 7: Approval ─────────────────── [main] User decision
 ├─ Phase 8: Implementation ───────────── [main] File editing
-├─ Phase 9: Documentation ────────────── [sub-agent: general-purpose]
-└─ Phase 10: Review & PR ─────────────── [sub-agent: code-reviewer] + [main] PR
+├─ Phase 9: Documentation ────────────── [agent: @docs-agent + @postman-agent]
+└─ Phase 10: Review & PR ─────────────── [sub-agent: code-reviewer] + [agent: @pr-fix-agent]
 ```
+
+**Agent Types:**
+- `code-explorer`, `code-architect`, `code-reviewer` - Built-in sub-agent types (Task tool)
+- `@spec-gen-agent`, `@docs-agent`, `@postman-agent`, `@pr-fix-agent` - Custom agents (`.claude/agents/`)
 
 **Why sub-agents?**
 - Exploration/analysis generates lots of file reads → offload to sub-agent
@@ -349,36 +353,29 @@ I recommend **Option [X]** because [reasoning based on codebase patterns].
 
 ## Phase 6: Generate Spec Document
 
-**[SUB-AGENT: general-purpose]** - Generates spec file, returns path.
+**[AGENT: @spec-gen-agent]** - Generates spec file, returns path.
 
-### Launch Sub-agent
+### Launch Agent
 
 ```
-Task tool:
-  subagent_type: "general-purpose"
-  prompt: |
-    Generate a specification document for: [feature name]
+@spec-gen-agent
 
-    Use the spec-gen skill instructions from: .claude/skills/spec-gen/SKILL.md
+Feature: [feature name from Phase 1]
 
-    Inputs:
-    - Feature: [from Phase 1]
-    - Codebase patterns: [from Phase 2 checkpoint]
-    - Requirements: [from Phase 3-4 checkpoint]
-    - Architecture: [from Phase 5 checkpoint - chosen option]
-
-    Tasks:
-    1. Read the spec-gen skill template
-    2. Generate spec at: spec/[feature-name-kebab-case].md
-    3. Set status to "Draft"
-    4. Return the file path
-
-    Do NOT proceed to implementation. Just generate the spec file.
+Inputs:
+- Codebase patterns: [from Phase 2 checkpoint]
+- Requirements: [from Phase 3-4 checkpoint]
+- Architecture: [from Phase 5 checkpoint - chosen option]
 ```
+
+The agent will:
+1. Read the spec-gen skill template
+2. Generate spec at: `spec/[feature-name-kebab-case].md`
+3. Set status to "Draft"
+4. Return the file path
 
 ### Expected Output (to main context)
 
-The sub-agent returns:
 ```
 Spec generated: spec/[feature-name].md
 Status: Draft
@@ -457,43 +454,40 @@ After implementation:
 
 ## Phase 9: Documentation
 
-**[SUB-AGENT: general-purpose]** - Updates docs and Postman, returns summary.
+**[AGENTS: @docs-agent + @postman-agent]** - Updates docs and Postman, returns summary.
 
-### Launch Sub-agent
+### Step 1: Update Project Documentation
 
 ```
-Task tool:
-  subagent_type: "general-purpose"
-  prompt: |
-    Update documentation for completed feature: [feature name]
+@docs-agent
 
-    Read skill instructions from:
-    - .claude/skills/docs/SKILL.md (documentation updates)
-    - .claude/skills/postman/SKILL.md (Postman collection)
-
-    Implementation context:
-    - Spec file: [from Phase 6 checkpoint]
-    - Files changed: [from Phase 8 - list files created/modified]
-
-    Tasks:
-    1. Check and update project docs:
-       - CLAUDE.md - Project structure, conventions
-       - docs/architecture.md - Layer conventions, DTOs
-       - docs/design-patterns.md - Design patterns
-       - .env.example - Environment variables
-
-    2. Add API endpoints to Postman (if new endpoints exist)
-
-    3. Return summary of:
-       - Which doc files were updated (and what changed)
-       - Postman status (added N endpoints / skipped)
-
-    Ask user for approval before making changes.
+Feature: [feature name]
+Spec file: [from Phase 6 checkpoint]
+Files changed: [from Phase 8 - list files created/modified]
 ```
+
+The agent will:
+1. Check and propose updates to project docs (CLAUDE.md, docs/, .env.example)
+2. Ask for approval before making changes
+3. Return summary of updates
+
+### Step 2: Update Postman Collection
+
+```
+@postman-agent
+
+Feature: [feature name]
+Spec file: [from Phase 6 checkpoint]
+Operation: Add endpoints from spec
+```
+
+The agent will:
+1. Extract API endpoints from spec
+2. Add to Postman collection
+3. Return summary of endpoints added
 
 ### Expected Output (to main context)
 
-The sub-agent returns:
 ```markdown
 ## Documentation Summary
 
@@ -580,14 +574,21 @@ The sub-agent returns:
 
 ### Fix Issues (in main context)
 
-If issues found, run `/pr-fix` in **Local mode**:
+If issues found, launch `@pr-fix-agent` in **Local mode**:
+
+```
+@pr-fix-agent
+
+Mode: Local
+Review output: [paste code-reviewer output above]
+```
+
+The agent will:
 1. Present each issue with context
-2. User decides: Fix / Skip / Need context
+2. Wait for user decision: Fix / Skip / Need context
 3. Apply fixes after approval
 4. **Re-run code-reviewer sub-agent** to verify
 5. Repeat until clean
-
-See `.claude/skills/pr-fix/SKILL.md` for the full process.
 
 ### Step 2: Update Spec Status
 
@@ -637,10 +638,19 @@ After the PR is created, GitHub Actions runs automated code review (claude-revie
 └────────────────┘
 ```
 
-When CI review comments arrive:
-1. Run `/pr-fix` in **Remote mode**
+When CI review comments arrive, launch `@pr-fix-agent` in **Remote mode**:
+
+```
+@pr-fix-agent
+
+Mode: Remote
+PR: #[number]
+```
+
+The agent will:
+1. Fetch comments from the PR
 2. Present each comment with context
-3. User decides: Fix / Skip / Need more context
+3. Wait for user decision: Fix / Skip / Need more context
 4. Apply fixes, commit, push
 5. Wait for CI to re-run
 6. Repeat until CI review passes
