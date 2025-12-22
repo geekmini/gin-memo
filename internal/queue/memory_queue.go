@@ -73,6 +73,14 @@ func (q *MemoryQueue) Close() {
 	}
 }
 
+// Reset resets the queue to a fresh state. This is primarily for testing.
+func (q *MemoryQueue) Reset() {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.closed = false
+	q.jobs = make(chan TranscriptionJob, q.capacity)
+}
+
 // Len returns the current number of jobs in the queue.
 func (q *MemoryQueue) Len() int {
 	return len(q.jobs)

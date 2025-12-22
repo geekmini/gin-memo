@@ -12,6 +12,8 @@ type Queue interface {
 	Dequeue(ctx context.Context) (TranscriptionJob, error)
 	// Close closes the queue.
 	Close()
+	// Reset resets the queue to a fresh state (for testing).
+	Reset()
 	// Len returns the current number of jobs in the queue.
 	Len() int
 	// Capacity returns the queue capacity.

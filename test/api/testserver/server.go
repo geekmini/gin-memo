@@ -63,8 +63,9 @@ type TestServer struct {
 	JWTManager *auth.JWTManager
 
 	// Queue
-	TranscriptionQueue     queue.Queue
+	TranscriptionQueue     *queue.MemoryQueue
 	TranscriptionProcessor *queue.Processor
+	transcriptionService   transcription.Service
 }
 
 // New creates a new test server with all dependencies wired up.
@@ -178,6 +179,7 @@ func New(ctx context.Context) (*TestServer, error) {
 		JWTManager:             jwtManager,
 		TranscriptionQueue:     transcriptionQueue,
 		TranscriptionProcessor: transcriptionProcessor,
+		transcriptionService:   transcriptionService,
 	}, nil
 }
 
@@ -199,7 +201,12 @@ func (ts *TestServer) StartTranscriptionProcessor(ctx context.Context) {
 	ts.TranscriptionProcessor.Start(ctx)
 }
 
-// StopTranscriptionProcessor stops the transcription processor.
+// StopTranscriptionProcessor stops the transcription processor and resets the queue.
+// This ensures the queue can be used by subsequent tests.
 func (ts *TestServer) StopTranscriptionProcessor() {
 	ts.TranscriptionProcessor.Stop()
+	// Reset the queue so it can be used again
+	ts.TranscriptionQueue.Reset()
+	// Create a new processor since the old one has shutdown state
+	ts.TranscriptionProcessor = queue.NewProcessor(ts.TranscriptionQueue, ts.transcriptionService, ts.VoiceMemoRepo, 2)
 }
