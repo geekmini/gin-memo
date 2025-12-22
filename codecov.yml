@@ -33,3 +33,7 @@ ignore:
 
   # Mock implementations
   - "**/mocks/**/*"
+
+  # Interface definitions - no executable code
+  - "**/interface.go"
+  - "**/interfaces.go"
