@@ -169,10 +169,10 @@ When Phase 10 completes successfully:
 3. Clarifying Questions → Resolve ambiguities
 4. Summary & Approval  → Confirm understanding
 5. Architecture Design → Propose 2-3 approaches (agents)
-6. Generate Spec      → Create spec document (skill) [Status: Draft]
+6. Generate Spec      → Create spec document (agent) [Status: Draft]
 7. Approve Spec       → User approves spec [Status: Draft → Approved]
 8. Implementation     → Build the feature + regenerate Swagger
-9. Documentation      → Update docs, Postman (skills)
+9. Documentation      → Update docs, Postman (agents)
 10. Review & PR       → Iterative review/fix, PR, CI review (LAST PHASE)
 ```
 
