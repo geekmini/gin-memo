@@ -184,6 +184,15 @@ Integration tests run automatically on every PR via GitHub Actions:
 - **Services**: MongoDB via testcontainers (auto-managed)
 - **Steps**: Checkout → Setup Go → Download deps → Run tests → Codecov upload
 
+### API Tests
+
+API tests run automatically on every PR via GitHub Actions:
+- **Workflow**: `.github/workflows/api-tests.yml`
+- **Triggers**: PR to main (only on Go file changes)
+- **Scope**: Full API tests (`test/api/...`) with `-tags=api`
+- **Services**: MongoDB, Redis, MinIO via testcontainers (auto-managed)
+- **Steps**: Checkout → Setup Go → Download deps → Run tests → Codecov upload
+
 ## API Endpoints
 
 See Swagger for complete API documentation:

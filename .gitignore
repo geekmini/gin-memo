@@ -36,3 +36,7 @@ tmp/
 
 # macOS
 .DS_Store
+
+# Claude Code dev session state
+.claude/dev-checkpoint.md
+.claude/dev-checkpoints/
