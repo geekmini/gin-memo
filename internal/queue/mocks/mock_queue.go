@@ -109,15 +109,3 @@ func (mr *MockQueueMockRecorder) Len() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Len", reflect.TypeOf((*MockQueue)(nil).Len))
 }
-
-// Reset mocks base method.
-func (m *MockQueue) Reset() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Reset")
-}
-
-// Reset indicates an expected call of Reset.
-func (mr *MockQueueMockRecorder) Reset() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reset", reflect.TypeOf((*MockQueue)(nil).Reset))
-}
