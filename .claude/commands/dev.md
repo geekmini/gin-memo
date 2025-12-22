@@ -2,6 +2,30 @@
 
 A comprehensive workflow that combines structured requirements gathering, codebase exploration, architecture design, spec documentation, Postman integration, implementation, and quality review.
 
+## Sub-agent Architecture
+
+This workflow uses sub-agents to minimize main context size. Heavy exploration and analysis runs in sub-agents, returning only summaries to the main conversation.
+
+```
+Main Context (orchestrator)
+│
+├─ Phase 1: Discovery ────────────────── [main] User input
+├─ Phase 2: Exploration ──────────────── [sub-agent: code-explorer]
+├─ Phase 3: Questions ────────────────── [main] Interactive Q&A
+├─ Phase 4: Approval ─────────────────── [main] User decision
+├─ Phase 5: Architecture ─────────────── [sub-agent: code-architect]
+├─ Phase 6: Spec Gen ─────────────────── [sub-agent: general-purpose]
+├─ Phase 7: Approval ─────────────────── [main] User decision
+├─ Phase 8: Implementation ───────────── [main] File editing
+├─ Phase 9: Documentation ────────────── [sub-agent: general-purpose]
+└─ Phase 10: Review & PR ─────────────── [sub-agent: code-reviewer] + [main] PR
+```
+
+**Why sub-agents?**
+- Exploration/analysis generates lots of file reads → offload to sub-agent
+- Main context only keeps summaries and decisions
+- Checkpoint file persists full state for resumability
+
 ---
 
 ## Session Management
@@ -163,17 +187,33 @@ When the user describes a feature or requirement:
 
 ## Phase 2: Codebase Exploration
 
-**Use the Task tool with `subagent_type: "code-explorer"`** to understand existing patterns.
+**[SUB-AGENT: code-explorer]** - Runs in separate context, returns summary.
 
-Launch parallel code-explorer agents to investigate:
-- Similar features already implemented
-- Existing patterns for the feature type (handlers, services, repositories)
-- Related data models and their relationships
-- Authentication/authorization patterns used
-- Error handling conventions
+### Launch Sub-agent
 
-Present findings to the user:
 ```
+Task tool:
+  subagent_type: "code-explorer"
+  prompt: |
+    Explore the codebase to understand patterns for implementing: [feature from Phase 1]
+
+    Investigate:
+    - Similar features already implemented
+    - Existing patterns (handlers, services, repositories)
+    - Related data models and relationships
+    - Authentication/authorization patterns
+    - Error handling conventions
+
+    Return a structured summary with:
+    1. Relevant patterns found (with file paths)
+    2. Related components
+    3. Recommended approach based on existing patterns
+```
+
+### Expected Output (to main context)
+
+The sub-agent returns a summary like:
+```markdown
 ## Codebase Analysis
 
 ### Relevant Existing Patterns
@@ -187,7 +227,9 @@ Present findings to the user:
 Based on existing patterns, this feature should follow [approach]
 ```
 
-**Checkpoint:** Update Current Phase to "3 - Clarifying Questions", add Phase 2 summary with key patterns and files found.
+**Store this summary in checkpoint**, then present to user.
+
+**Checkpoint:** Update Current Phase to "3 - Clarifying Questions", add Phase 2 summary.
 
 ---
 
@@ -246,10 +288,32 @@ After gathering all information, present a summary:
 
 ## Phase 5: Architecture Design
 
-**Use the Task tool with `subagent_type: "code-architect"`** to design the implementation.
+**[SUB-AGENT: code-architect]** - Runs in separate context, returns options.
 
-Present **2-3 implementation approaches** with trade-offs:
+### Launch Sub-agent
 
+```
+Task tool:
+  subagent_type: "code-architect"
+  prompt: |
+    Design implementation for: [feature from Phase 1]
+
+    Context from Phase 2:
+    [paste codebase analysis summary from checkpoint]
+
+    Requirements from Phase 3-4:
+    [paste confirmed requirements from checkpoint]
+
+    Provide 2-3 implementation approaches with:
+    - Description
+    - Files to create/modify
+    - Pros and cons
+    - Recommendation with reasoning
+```
+
+### Expected Output (to main context)
+
+The sub-agent returns:
 ```markdown
 ## Architecture Options
 
@@ -277,7 +341,7 @@ Present **2-3 implementation approaches** with trade-offs:
 I recommend **Option [X]** because [reasoning based on codebase patterns].
 ```
 
-**Wait for user to choose an approach before proceeding.**
+**Store in checkpoint**, present to user, **wait for user to choose**.
 
 **Checkpoint:** Update Current Phase to "6 - Generate Spec", add Phase 5 summary with decision and rationale.
 
@@ -285,23 +349,42 @@ I recommend **Option [X]** because [reasoning based on codebase patterns].
 
 ## Phase 6: Generate Spec Document
 
-**The Spec Generator skill** will automatically activate to generate the specification document.
+**[SUB-AGENT: general-purpose]** - Generates spec file, returns path.
 
-The skill will:
-1. Validate all required inputs from previous phases
-2. Determine file path: `spec/[feature-name-kebab-case].md`
-3. Generate structured spec using the standard template
-4. Write the file and confirm creation
+### Launch Sub-agent
 
-**Inputs gathered from previous phases:**
-- Feature name and description (from Phase 1)
-- Data model and endpoints (from Phase 3)
-- Architecture decision and file changes (from Phase 5)
-- Business rules and out of scope items (from Phase 3-4)
+```
+Task tool:
+  subagent_type: "general-purpose"
+  prompt: |
+    Generate a specification document for: [feature name]
 
-See `.claude/skills/spec-gen/SKILL.md` for the full template structure.
+    Use the spec-gen skill instructions from: .claude/skills/spec-gen/SKILL.md
 
-**Checkpoint:** Update Current Phase to "7 - Approve Spec", add Phase 6 summary with spec file path, update Spec File field.
+    Inputs:
+    - Feature: [from Phase 1]
+    - Codebase patterns: [from Phase 2 checkpoint]
+    - Requirements: [from Phase 3-4 checkpoint]
+    - Architecture: [from Phase 5 checkpoint - chosen option]
+
+    Tasks:
+    1. Read the spec-gen skill template
+    2. Generate spec at: spec/[feature-name-kebab-case].md
+    3. Set status to "Draft"
+    4. Return the file path
+
+    Do NOT proceed to implementation. Just generate the spec file.
+```
+
+### Expected Output (to main context)
+
+The sub-agent returns:
+```
+Spec generated: spec/[feature-name].md
+Status: Draft
+```
+
+**Checkpoint:** Update Current Phase to "7 - Approve Spec", add Phase 6 summary with spec file path.
 
 ---
 
@@ -374,56 +457,71 @@ After implementation:
 
 ## Phase 9: Documentation
 
-Update project documentation and API docs based on implementation changes.
+**[SUB-AGENT: general-purpose]** - Updates docs and Postman, returns summary.
 
-### Step 1: Update Project Documentation
+### Launch Sub-agent
 
-**The Documentation Updater skill** will analyze changes and update documentation.
+```
+Task tool:
+  subagent_type: "general-purpose"
+  prompt: |
+    Update documentation for completed feature: [feature name]
 
-**Files checked:**
-- `CLAUDE.md` - Project structure, conventions
-- `docs/architecture.md` - Layer conventions, DTOs
-- `docs/design-patterns.md` - Design patterns, caching, tokens
-- `.env.example` - Environment variables
+    Read skill instructions from:
+    - .claude/skills/docs/SKILL.md (documentation updates)
+    - .claude/skills/postman/SKILL.md (Postman collection)
 
-The skill will:
-1. Identify what changed during implementation
-2. Map changes to documentation files using decision matrix
-3. Check each documentation file for required updates
-4. Propose specific updates for user approval
-5. Apply updates after approval
+    Implementation context:
+    - Spec file: [from Phase 6 checkpoint]
+    - Files changed: [from Phase 8 - list files created/modified]
 
-See `.claude/skills/docs/SKILL.md` for the decision matrix.
+    Tasks:
+    1. Check and update project docs:
+       - CLAUDE.md - Project structure, conventions
+       - docs/architecture.md - Layer conventions, DTOs
+       - docs/design-patterns.md - Design patterns
+       - .env.example - Environment variables
 
-### Step 2: Add Endpoints to Postman (Optional)
+    2. Add API endpoints to Postman (if new endpoints exist)
 
-If the feature includes new API endpoints:
+    3. Return summary of:
+       - Which doc files were updated (and what changed)
+       - Postman status (added N endpoints / skipped)
 
-**Ask the user**: "This feature includes [N] new endpoint(s). Would you like me to add them to Postman?"
+    Ask user for approval before making changes.
+```
 
-If yes, **the Postman Collection Manager skill** will:
-1. Read the spec file from Phase 6
-2. Extract API endpoints
-3. Add each endpoint to the Postman collection
-4. Report success/failure
+### Expected Output (to main context)
 
-See `.claude/skills/postman/SKILL.md` for details.
+The sub-agent returns:
+```markdown
+## Documentation Summary
 
-**Checkpoint:** Update Current Phase to "10 - Review & PR", add Phase 9 summary with docs updated, files list, and Postman status.
+### Files Updated
+- `CLAUDE.md`: Added [section] for [feature]
+- `.env.example`: No changes needed
+
+### Postman
+- Added 3 endpoints to collection
+```
+
+**Checkpoint:** Update Current Phase to "10 - Review & PR", add Phase 9 summary.
 
 ---
 
 ## Phase 10: Review & PR
 
-This is the **final phase** that covers quality review, Postman updates, PR creation, and CI review handling.
+This is the **final phase** that covers quality review, PR creation, and CI review handling.
 
 ### Step 1: Local Code Review Loop (Iterative)
+
+**[SUB-AGENT: code-reviewer]** - Reviews code, returns issues list.
 
 **IMPORTANT:** This step repeats until the code review passes with no critical/high issues.
 
 ```
 ┌─────────────────────────────────────┐
-│  Run code-reviewer agent            │
+│  Run code-reviewer sub-agent        │
 └────────────────┬────────────────────┘
                  ▼
          ┌───────────────┐
@@ -445,22 +543,49 @@ This is the **final phase** that covers quality review, Postman updates, PR crea
 └────────────────┘
 ```
 
-**Use the Task tool with `subagent_type: "code-reviewer"`** to review the implementation.
+### Launch Sub-agent
 
-The code reviewer checks for:
-- Bugs and logic errors
-- Security vulnerabilities
-- Code quality (DRY, simplicity)
-- Adherence to project conventions (CLAUDE.md)
-- Proper error handling
+```
+Task tool:
+  subagent_type: "code-reviewer"
+  prompt: |
+    Review implementation for: [feature name]
 
-If issues are found:
-1. Run `/pr-fix` in **Local mode**
-2. Present each issue with context and severity
-3. User decides: Fix / Skip / Need more context
-4. Apply fixes **only after user approval**
-5. **Re-run code-reviewer** to verify fixes
-6. Repeat until all critical/high issues resolved
+    Files to review: [list from Phase 8 checkpoint]
+    Spec file: [from Phase 6 checkpoint]
+
+    Check for:
+    - Bugs and logic errors
+    - Security vulnerabilities
+    - Code quality (DRY, simplicity)
+    - Adherence to project conventions (CLAUDE.md)
+    - Proper error handling
+
+    Return issues list with severity and file:line references.
+    Only report issues with ≥80% confidence.
+```
+
+### Expected Output (to main context)
+
+The sub-agent returns:
+```markdown
+## Code Review Results
+
+### Issues Found
+- [Critical] Missing error check - `internal/handler/user.go:45`
+- [High] SQL injection risk - `internal/repository/user.go:123`
+
+### Overall: Needs Changes
+```
+
+### Fix Issues (in main context)
+
+If issues found, run `/pr-fix` in **Local mode**:
+1. Present each issue with context
+2. User decides: Fix / Skip / Need context
+3. Apply fixes after approval
+4. **Re-run code-reviewer sub-agent** to verify
+5. Repeat until clean
 
 See `.claude/skills/pr-fix/SKILL.md` for the full process.
 
