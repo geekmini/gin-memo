@@ -3,9 +3,7 @@
 package api
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -691,7 +689,7 @@ func TestConfirmTeamUpload(t *testing.T) {
 		uploadURL := createResp.Data["uploadUrl"].(string)
 
 		// Upload test audio
-		uploadTeamTestAudio(t, uploadURL)
+		uploadTestAudio(t, uploadURL)
 
 		// Confirm upload
 		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID+"/confirm-upload", ownerToken, nil)
@@ -725,7 +723,7 @@ func TestConfirmTeamUpload(t *testing.T) {
 		memoID := memo["id"].(string)
 		uploadURL := createResp.Data["uploadUrl"].(string)
 
-		uploadTeamTestAudio(t, uploadURL)
+		uploadTestAudio(t, uploadURL)
 
 		// First confirm
 		w1 := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID+"/confirm-upload", ownerToken, nil)
@@ -795,6 +793,52 @@ func TestRetryTeamTranscription(t *testing.T) {
 
 	authHelper := testserver.NewAuthHelper(testServer)
 	teamHelper := testserver.NewTeamHelper(testServer)
+
+	t.Run("success - retries failed transcription", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
+		_, ownerToken := authHelper.CreateAuthenticatedUser(t, "Owner", "owner@example.com", "password123")
+		teamData := teamHelper.CreateTeam(t, ownerToken, "Retry Success Team")
+		teamID := testserver.GetIDFromResponse(t, teamData)
+
+		// Create a memo
+		createReq := models.CreateVoiceMemoRequest{
+			Title:       "Failed Memo",
+			Duration:    60,
+			FileSize:    512000,
+			AudioFormat: "mp3",
+		}
+		createW := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/teams/"+teamID+"/voice-memos", ownerToken, createReq)
+		require.Equal(t, http.StatusCreated, createW.Code)
+
+		createResp := testutil.ParseAPIResponse(t, createW)
+		memo, _ := createResp.Data["memo"].(map[string]interface{})
+		memoID := memo["id"].(string)
+		uploadURL := createResp.Data["uploadUrl"].(string)
+
+		// Upload test audio
+		uploadTestAudio(t, uploadURL)
+
+		// Set memo status to failed directly via repository
+		memoOID, err := primitive.ObjectIDFromHex(memoID)
+		require.NoError(t, err)
+		err = testServer.VoiceMemoRepo.UpdateStatus(context.Background(), memoOID, models.StatusFailed)
+		require.NoError(t, err)
+
+		// Retry transcription
+		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID+"/retry-transcription", ownerToken, nil)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		resp := testutil.ParseAPIResponse(t, w)
+		assert.True(t, resp.Success)
+		assert.Contains(t, resp.Data["message"], "transcription retry started")
+
+		// Verify memo status changed to transcribing
+		updatedMemo, err := testServer.VoiceMemoRepo.FindByID(context.Background(), memoOID)
+		require.NoError(t, err)
+		assert.Equal(t, models.StatusTranscribing, updatedMemo.Status)
+	})
 
 	t.Run("error - cannot retry for non-failed memo", func(t *testing.T) {
 		testServer.CleanupBetweenTests(t)
@@ -907,7 +951,7 @@ func TestTeamVoiceMemoWorkflow(t *testing.T) {
 		assert.Equal(t, string(models.StatusPendingUpload), memo["status"])
 
 		// 2. Upload audio
-		uploadTeamTestAudio(t, uploadURL)
+		uploadTestAudio(t, uploadURL)
 
 		// 3. Confirm upload
 		confirmW := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID+"/confirm-upload", ownerToken, nil)
@@ -969,26 +1013,4 @@ func TestTeamVoiceMemoWorkflow(t *testing.T) {
 		getW := testutil.MakeAuthRequest(t, testServer.Router, http.MethodGet, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID, memberToken, nil)
 		assert.Equal(t, http.StatusOK, getW.Code)
 	})
-}
-
-// uploadTeamTestAudio uploads test audio content to the given pre-signed URL.
-func uploadTeamTestAudio(t *testing.T, uploadURL string) {
-	t.Helper()
-
-	content := []byte("test audio content for team memo")
-	req, err := http.NewRequest(http.MethodPut, uploadURL, bytes.NewReader(content))
-	require.NoError(t, err)
-
-	req.Header.Set("Content-Type", "audio/mpeg")
-	req.ContentLength = int64(len(content))
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	require.NoError(t, err)
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		t.Fatalf("upload failed with status %d: %s", resp.StatusCode, string(body))
-	}
 }
