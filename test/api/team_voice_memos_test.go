@@ -213,11 +213,11 @@ func TestListTeamVoiceMemos(t *testing.T) {
 		assert.True(t, resp.Success)
 
 		items, ok := resp.Data["items"].([]interface{})
-		assert.True(t, ok)
+		require.True(t, ok, "items should be []interface{}")
 		assert.Empty(t, items)
 
 		pagination, ok := resp.Data["pagination"].(map[string]interface{})
-		assert.True(t, ok)
+		require.True(t, ok, "pagination should be map[string]interface{}")
 		assert.Equal(t, float64(0), pagination["totalItems"])
 	})
 
@@ -248,7 +248,7 @@ func TestListTeamVoiceMemos(t *testing.T) {
 		assert.True(t, resp.Success)
 
 		items, ok := resp.Data["items"].([]interface{})
-		assert.True(t, ok)
+		require.True(t, ok, "items should be []interface{}")
 		assert.Len(t, items, 3)
 	})
 
