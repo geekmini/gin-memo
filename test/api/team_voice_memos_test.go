@@ -377,7 +377,8 @@ func TestGetTeamVoiceMemo(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
 
 		// Get the memo
 		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodGet, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID, ownerToken, nil)
@@ -422,7 +423,8 @@ func TestGetTeamVoiceMemo(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
 
 		// Member gets the memo
 		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodGet, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID, memberToken, nil)
@@ -452,7 +454,8 @@ func TestGetTeamVoiceMemo(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
 
 		// Non-member tries to get memo
 		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodGet, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID, nonMemberToken, nil)
@@ -523,7 +526,8 @@ func TestDeleteTeamVoiceMemo(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
 
 		// Delete the memo
 		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodDelete, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID, ownerToken, nil)
@@ -567,7 +571,8 @@ func TestDeleteTeamVoiceMemo(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
 
 		// Admin deletes the memo
 		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodDelete, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID, adminToken, nil)
@@ -607,7 +612,8 @@ func TestDeleteTeamVoiceMemo(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
 
 		// Member deletes the memo (allowed per authorization rules)
 		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodDelete, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID, memberToken, nil)
@@ -637,7 +643,8 @@ func TestDeleteTeamVoiceMemo(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
 
 		// Non-member tries to delete
 		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodDelete, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID, nonMemberToken, nil)
@@ -696,8 +703,10 @@ func TestConfirmTeamUpload(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
-		uploadURL := createResp.Data["uploadUrl"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
+		uploadURL, ok := createResp.Data["uploadUrl"].(string)
+		require.True(t, ok, "uploadUrl should be a string")
 
 		// Upload test audio
 		uploadTestAudio(t, uploadURL)
@@ -732,8 +741,10 @@ func TestConfirmTeamUpload(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
-		uploadURL := createResp.Data["uploadUrl"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
+		uploadURL, ok := createResp.Data["uploadUrl"].(string)
+		require.True(t, ok, "uploadUrl should be a string")
 
 		uploadTestAudio(t, uploadURL)
 
@@ -768,7 +779,8 @@ func TestConfirmTeamUpload(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
 
 		// Non-member tries to confirm
 		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID+"/confirm-upload", nonMemberToken, nil)
@@ -827,8 +839,10 @@ func TestRetryTeamTranscription(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
-		uploadURL := createResp.Data["uploadUrl"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
+		uploadURL, ok := createResp.Data["uploadUrl"].(string)
+		require.True(t, ok, "uploadUrl should be a string")
 
 		// Upload test audio
 		uploadTestAudio(t, uploadURL)
@@ -874,7 +888,8 @@ func TestRetryTeamTranscription(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
 
 		// Try to retry (should fail - not in failed state)
 		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID+"/retry-transcription", ownerToken, nil)
@@ -904,7 +919,8 @@ func TestRetryTeamTranscription(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
 
 		// Non-member tries to retry
 		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID+"/retry-transcription", nonMemberToken, nil)
@@ -963,8 +979,10 @@ func TestTeamVoiceMemoWorkflow(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
-		uploadURL := createResp.Data["uploadUrl"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
+		uploadURL, ok := createResp.Data["uploadUrl"].(string)
+		require.True(t, ok, "uploadUrl should be a string")
 		assert.Equal(t, string(models.StatusPendingUpload), memo["status"])
 
 		// 2. Upload audio
@@ -1030,7 +1048,8 @@ func TestTeamVoiceMemoWorkflow(t *testing.T) {
 		createResp := testutil.ParseAPIResponse(t, createW)
 		memo, ok := createResp.Data["memo"].(map[string]interface{})
 		require.True(t, ok, "memo should be map[string]interface{}")
-		memoID := memo["id"].(string)
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
 
 		// Member can list and get the memo
 		listW := testutil.MakeAuthRequest(t, testServer.Router, http.MethodGet, "/api/v1/teams/"+teamID+"/voice-memos", memberToken, nil)
