@@ -94,11 +94,11 @@ Location: `.claude/dev-checkpoint.md`
 ### Phase 9: Documentation
 **Docs Updated:** [Yes/No]
 **Files:** [list of updated files]
+**Postman:** [Added N endpoints / Skipped]
 
 ### Phase 10: Review & PR
 **Local Review:** [Passed / Issues Found]
 **Issues Fixed:** [N/A / List]
-**Postman:** [Added N endpoints / Skipped]
 **PR:** [#number or N/A]
 **CI Review:** [Pending / Passed / Issues Fixed]
 
@@ -144,8 +144,8 @@ When Phase 10 completes successfully:
 6. Generate Spec      → Create spec document (skill) [Status: Draft]
 7. Approve Spec       → User approves spec [Status: Draft → Approved]
 8. Implementation     → Build the feature + regenerate Swagger
-9. Documentation      → Update docs (skill)
-10. Review & PR       → Iterative review/fix, Postman, PR, CI review (LAST PHASE)
+9. Documentation      → Update docs, Postman (skills)
+10. Review & PR       → Iterative review/fix, PR, CI review (LAST PHASE)
 ```
 
 ---
@@ -374,7 +374,9 @@ After implementation:
 
 ## Phase 9: Documentation
 
-Update project documentation based on implementation changes.
+Update project documentation and API docs based on implementation changes.
+
+### Step 1: Update Project Documentation
 
 **The Documentation Updater skill** will analyze changes and update documentation.
 
@@ -393,7 +395,21 @@ The skill will:
 
 See `.claude/skills/docs/SKILL.md` for the decision matrix.
 
-**Checkpoint:** Update Current Phase to "10 - Review & PR", add Phase 9 summary with docs updated and files list.
+### Step 2: Add Endpoints to Postman (Optional)
+
+If the feature includes new API endpoints:
+
+**Ask the user**: "This feature includes [N] new endpoint(s). Would you like me to add them to Postman?"
+
+If yes, **the Postman Collection Manager skill** will:
+1. Read the spec file from Phase 6
+2. Extract API endpoints
+3. Add each endpoint to the Postman collection
+4. Report success/failure
+
+See `.claude/skills/postman/SKILL.md` for details.
+
+**Checkpoint:** Update Current Phase to "10 - Review & PR", add Phase 9 summary with docs updated, files list, and Postman status.
 
 ---
 
@@ -456,21 +472,7 @@ After local review passes, update the spec document:
 2. Mark all implementation checklist items as complete (`[x]`)
 3. Confirm: "Spec status updated to 'Implemented'."
 
-### Step 3: Add Endpoints to Postman (Optional)
-
-If the feature includes new API endpoints:
-
-**Ask the user**: "This feature includes [N] new endpoint(s). Would you like me to add them to Postman?"
-
-If yes, **the Postman Collection Manager skill** will:
-1. Read the spec file from Phase 6
-2. Extract API endpoints
-3. Add each endpoint to the Postman collection
-4. Report success/failure
-
-See `.claude/skills/postman/SKILL.md` for details.
-
-### Step 4: Commit, Push & Create PR
+### Step 3: Commit, Push & Create PR
 
 **Ask the user**: "Would you like me to commit, push, and create a PR?"
 
@@ -480,7 +482,7 @@ If yes, run `/commit-push-pr` which will:
 3. Push to remote
 4. Create PR via `gh pr create`
 
-### Step 5: Address CI Review Comments (Iterative)
+### Step 4: Address CI Review Comments (Iterative)
 
 After the PR is created, GitHub Actions runs automated code review (claude-reviewer).
 
@@ -518,7 +520,7 @@ When CI review comments arrive:
 5. Wait for CI to re-run
 6. Repeat until CI review passes
 
-### Step 6: Archive Checkpoint & Summary
+### Step 5: Archive Checkpoint & Summary
 
 After CI review passes:
 1. Create `.claude/dev-checkpoints/` directory if needed
@@ -536,13 +538,11 @@ Present final summary:
 
 ### Documentation (Phase 9)
 - Files Updated: [list or "No updates needed"]
+- Postman: [Added N endpoints / Skipped]
 
 ### Local Review
 - Iterations: [N]
 - Issues Fixed: [list or N/A]
-
-### Postman Endpoints
-- [Added N endpoints] / [Skipped]
 
 ### PR
 - PR: #[number] - [title]
