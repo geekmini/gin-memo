@@ -166,6 +166,13 @@ task test         # Run all tests
 go test ./...     # Same thing
 ```
 
+## Continuous Integration
+
+Unit tests run automatically on every PR via GitHub Actions:
+- **Workflow**: `.github/workflows/unit-tests.yml`
+- **Triggers**: PR to main (only on Go file changes)
+- **Steps**: Build → Vet → Test (with race detection) → Codecov upload
+
 ## API Endpoints
 
 See Swagger for complete API documentation:
