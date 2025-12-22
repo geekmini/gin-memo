@@ -48,7 +48,7 @@ If `Current Phase` contains "COMPLETED":
 
 ### Case B: Session is IN PROGRESS
 
-If `Current Phase` is any phase from 1-9 (not completed):
+If `Current Phase` is any phase from 1-10 (not completed):
 
 1. Show current status:
    ```
