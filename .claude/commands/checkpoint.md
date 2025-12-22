@@ -26,7 +26,7 @@ Read `.claude/dev-checkpoint.md` and check the **Current Phase** field.
 
 ### Case A: Session is COMPLETED
 
-If `Current Phase` contains "COMPLETED" or "10" (Phase 10 finished):
+If `Current Phase` contains "COMPLETED":
 
 1. Show summary:
    ```

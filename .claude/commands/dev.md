@@ -689,7 +689,7 @@ Present final summary:
 - Status: Passed
 ```
 
-**Checkpoint:** Mark Phase 10 complete. Archive checkpoint file.
+**Checkpoint:** Update Current Phase to "COMPLETED". Archive checkpoint file.
 
 ---
 
