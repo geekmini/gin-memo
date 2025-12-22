@@ -209,9 +209,9 @@ jobs:
 ## Quick Wins Checklist
 
 - [ ] Add `on: merge_group` trigger for heavy tests
-- [ ] Use `-short` flag for unit tests on PR, full tests in queue
+- [x] Use `-short` flag for unit tests on PR, full tests in queue
 - [ ] Enable merge queue batching (batch_size: 3-5)
-- [ ] Cache go modules in CI
+- [x] Cache go modules in CI
 - [ ] Add parallel test sharding for slow test suites
 - [ ] Configure skip-duplicate-actions for redundant runs
 
