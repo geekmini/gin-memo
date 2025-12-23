@@ -1,5 +1,7 @@
 # gin-memos
 
+[![codecov](https://codecov.io/gh/geekmini/gin-memo/graph/badge.svg?token=LC4FETF2G2)](https://codecov.io/gh/geekmini/gin-memo)
+
 A REST API for user management and voice memos.
 
 ## Setup project

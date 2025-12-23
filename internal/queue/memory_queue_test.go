@@ -211,6 +211,47 @@ func TestMemoryQueue_Close(t *testing.T) {
 	})
 }
 
+func TestMemoryQueue_Reset(t *testing.T) {
+	t.Run("resets closed queue to usable state", func(t *testing.T) {
+		q := NewMemoryQueue(10)
+
+		// Close the queue
+		q.Close()
+		err := q.Enqueue(TranscriptionJob{MemoID: primitive.NewObjectID()})
+		assert.Equal(t, ErrQueueClosed, err)
+
+		// Reset the queue
+		q.Reset()
+
+		// Should be able to enqueue again
+		err = q.Enqueue(TranscriptionJob{MemoID: primitive.NewObjectID()})
+		assert.NoError(t, err)
+		assert.Equal(t, 1, q.Len())
+	})
+
+	t.Run("clears existing jobs", func(t *testing.T) {
+		q := NewMemoryQueue(10)
+
+		// Add some jobs
+		_ = q.Enqueue(TranscriptionJob{MemoID: primitive.NewObjectID()})
+		_ = q.Enqueue(TranscriptionJob{MemoID: primitive.NewObjectID()})
+		assert.Equal(t, 2, q.Len())
+
+		// Reset clears all jobs
+		q.Reset()
+
+		assert.Equal(t, 0, q.Len())
+	})
+
+	t.Run("preserves capacity after reset", func(t *testing.T) {
+		q := NewMemoryQueue(5)
+
+		q.Reset()
+
+		assert.Equal(t, 5, q.Capacity())
+	})
+}
+
 func TestMemoryQueue_Len(t *testing.T) {
 	t.Run("returns correct length", func(t *testing.T) {
 		q := NewMemoryQueue(10)
