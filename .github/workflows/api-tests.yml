@@ -34,7 +34,17 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
       - name: Run API tests
-        run: go test -tags=api -v -race ./test/api/...
-        # Note: API test coverage is not uploaded to Codecov
-        # Only unit tests and integration tests contribute to coverage metrics
+        run: gotestsum --junitfile junit.xml -- -tags=api -v -race ./test/api/...
+
+      - name: Upload test results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./junit.xml
+          flags: api
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
