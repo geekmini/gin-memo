@@ -41,18 +41,11 @@ jobs:
         run: gotestsum --junitfile junit.xml -- -v -race -coverprofile=coverage.out -covermode=atomic ./internal/repository/...
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage.out
           flags: integration
           token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
+          fail_ci_if_error: true
           verbose: true
 
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          files: ./junit.xml
-          flags: integration
-          token: ${{ secrets.CODECOV_TOKEN }}

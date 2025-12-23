@@ -39,13 +39,12 @@ jobs:
 
       - name: Run API tests
         run: gotestsum --junitfile junit.xml -- -tags=api -v -race ./test/api/...
-        # Note: API test coverage is not uploaded to Codecov
-        # Only unit tests and integration tests contribute to coverage metrics
 
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
+        uses: codecov/codecov-action@v5
         with:
           files: ./junit.xml
           flags: api
           token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
