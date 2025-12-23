@@ -40,8 +40,11 @@ jobs:
       - name: Run go vet
         run: go vet ./...
 
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
       - name: Run tests with race detection
-        run: go test -v -short -race -coverprofile=coverage.out -covermode=atomic $(go list ./... | grep -v '/mocks')
+        run: gotestsum --junitfile junit.xml -- -v -short -race -coverprofile=coverage.out -covermode=atomic $(go list ./... | grep -v '/mocks')
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -50,3 +53,10 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
           verbose: true
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          files: ./junit.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
