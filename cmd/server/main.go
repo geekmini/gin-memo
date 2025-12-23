@@ -1,6 +1,6 @@
 package main
 
-// CI pipeline test - triggered at 2025-12-23
+// CI pipeline test - triggered at 2025-12-23 for Codecov Test Analytics
 
 import (
 	"context"
