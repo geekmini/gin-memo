@@ -29,25 +29,18 @@ func NewS3Client(endpoint, accessKey, secretKey, bucket string, useSSL bool) *S3
 	}
 	endpointURL := protocol + "://" + endpoint
 
-	// Create custom resolver for MinIO/S3-compatible endpoints
-	customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-		return aws.Endpoint{
-			URL:               endpointURL,
-			HostnameImmutable: true,
-		}, nil
-	})
-
-	// Load config with custom credentials and endpoint
+	// Load config with custom credentials
 	cfg, err := config.LoadDefaultConfig(context.Background(),
 		config.WithRegion("us-east-1"), // MinIO requires a region
-		config.WithEndpointResolverWithOptions(customResolver),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
 	)
 	if err != nil {
 		log.Fatalf("Failed to load S3 config: %v", err)
 	}
 
+	// Create S3 client with service-specific endpoint configuration (non-deprecated approach)
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String(endpointURL)
 		o.UsePathStyle = true // Required for MinIO
 	})
 
@@ -96,4 +89,13 @@ func (s *S3Client) GetPresignedPutURL(ctx context.Context, key, contentType stri
 	}
 
 	return request.URL, nil
+}
+
+// DeleteObject deletes an object from S3.
+func (s *S3Client) DeleteObject(ctx context.Context, key string) error {
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+	return err
 }

@@ -328,53 +328,53 @@ Same as Retry Transcription (Private).
 ## Implementation Steps
 
 ### Phase 1: Foundation (Infrastructure)
-1. [ ] Add `Status` field to `VoiceMemo` model in `internal/models/voice_memo.go`
-2. [ ] Add `CreateVoiceMemoRequest` struct with validation tags
-3. [ ] Add `CreateVoiceMemoResponse` struct
-4. [ ] Add `ErrVoiceMemoInvalidStatus` to `internal/errors/errors.go`
-5. [ ] Create `internal/transcription/service.go` with interface + mock
-6. [ ] Create `internal/queue/memory_queue.go` with worker pool
-7. [ ] Create `internal/queue/processor.go` with retry logic
-8. [ ] Add `GetPresignedPutURL()` to `internal/storage/s3.go`
+1. [x] Add `Status` field to `VoiceMemo` model in `internal/models/voice_memo.go`
+2. [x] Add `CreateVoiceMemoRequest` struct with validation tags
+3. [x] Add `CreateVoiceMemoResponse` struct
+4. [x] Add `ErrVoiceMemoInvalidStatus` to `internal/errors/errors.go`
+5. [x] Create `internal/transcription/service.go` with interface + mock
+6. [x] Create `internal/queue/memory_queue.go` with worker pool
+7. [x] Create `internal/queue/processor.go` with retry logic
+8. [x] Add `GetPresignedPutURL()` to `internal/storage/s3.go`
 
 ### Phase 2: Data Layer
-9. [ ] Add `Create()` method to `VoiceMemoRepository` interface and implementation
-10. [ ] Add `UpdateStatus()` method to repository
-11. [ ] Add `UpdateStatusWithOwnership()` method to repository
-12. [ ] Add `UpdateStatusWithTeam()` method to repository
-13. [ ] Add `UpdateTranscriptionAndStatus()` method to repository
+9. [x] Add `Create()` method to `VoiceMemoRepository` interface and implementation
+10. [x] Add `UpdateStatus()` method to repository
+11. [x] Add `UpdateStatusWithOwnership()` method to repository
+12. [x] Add `UpdateStatusWithTeam()` method to repository
+13. [x] Add `UpdateTranscriptionAndStatus()` method to repository
 
 ### Phase 3: Service Layer
-14. [ ] Update `VoiceMemoService` constructor to accept queue dependency
-15. [ ] Implement `CreateVoiceMemo()` method
-16. [ ] Implement `CreateTeamVoiceMemo()` method
-17. [ ] Implement `ConfirmUpload()` method
-18. [ ] Implement `ConfirmTeamUpload()` method
-19. [ ] Implement `RetryTranscription()` method
-20. [ ] Implement `RetryTeamTranscription()` method
+14. [x] Update `VoiceMemoService` constructor to accept queue dependency
+15. [x] Implement `CreateVoiceMemo()` method
+16. [x] Implement `CreateTeamVoiceMemo()` method
+17. [x] Implement `ConfirmUpload()` method
+18. [x] Implement `ConfirmTeamUpload()` method
+19. [x] Implement `RetryTranscription()` method
+20. [x] Implement `RetryTeamTranscription()` method
 
 ### Phase 4: Handler Layer
-21. [ ] Implement `CreateVoiceMemo` handler with Swagger annotations
-22. [ ] Implement `CreateTeamVoiceMemo` handler with Swagger annotations
-23. [ ] Implement `ConfirmUpload` handler with Swagger annotations
-24. [ ] Implement `ConfirmTeamUpload` handler with Swagger annotations
-25. [ ] Implement `RetryTranscription` handler with Swagger annotations
-26. [ ] Implement `RetryTeamTranscription` handler with Swagger annotations
+21. [x] Implement `CreateVoiceMemo` handler with Swagger annotations
+22. [x] Implement `CreateTeamVoiceMemo` handler with Swagger annotations
+23. [x] Implement `ConfirmUpload` handler with Swagger annotations
+24. [x] Implement `ConfirmTeamUpload` handler with Swagger annotations
+25. [x] Implement `RetryTranscription` handler with Swagger annotations
+26. [x] Implement `RetryTeamTranscription` handler with Swagger annotations
 
 ### Phase 5: Integration
-27. [ ] Wire queue, processor, transcription service in `cmd/server/main.go`
-28. [ ] Start queue workers with context cancellation
-29. [ ] Update `VoiceMemoService` instantiation with queue dependency
-30. [ ] Add private memo routes to `internal/router/router.go`
-31. [ ] Add team memo routes with TeamAuthz middleware
+27. [x] Wire queue, processor, transcription service in `cmd/server/main.go`
+28. [x] Start queue workers with context cancellation
+29. [x] Update `VoiceMemoService` instantiation with queue dependency
+30. [x] Add private memo routes to `internal/router/router.go`
+31. [x] Add team memo routes with TeamAuthz middleware
 
 ### Phase 6: Testing & Verification
-32. [ ] Run `task swagger` to regenerate API docs
-33. [ ] Test private memo creation flow
-34. [ ] Test team memo creation flow
-35. [ ] Test confirm-upload flow
-36. [ ] Test retry-transcription flow
-37. [ ] Test error cases (invalid status, unauthorized, not found)
+32. [x] Run `task swagger` to regenerate API docs
+33. [x] Test private memo creation flow
+34. [x] Test team memo creation flow
+35. [x] Test confirm-upload flow
+36. [x] Test retry-transcription flow
+37. [x] Test error cases (invalid status, unauthorized, not found)
 
 ## Out of Scope
 

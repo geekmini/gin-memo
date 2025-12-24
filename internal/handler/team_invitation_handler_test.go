@@ -395,7 +395,7 @@ func TestTeamInvitationHandler_ListMyInvitations(t *testing.T) {
 			name:   "successful list my invitations",
 			userID: userID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return &models.User{
 						ID:    userID,
 						Email: "user@example.com",
@@ -434,10 +434,16 @@ func TestTeamInvitationHandler_ListMyInvitations(t *testing.T) {
 			expectedStatus: http.StatusUnauthorized,
 		},
 		{
+			name:           "invalid user ID format",
+			userID:         "invalid-user-id",
+			mockSetup:      func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
 			name:   "user not found",
 			userID: userID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return nil, errors.New("user not found")
 				}
 			},
@@ -447,7 +453,7 @@ func TestTeamInvitationHandler_ListMyInvitations(t *testing.T) {
 			name:   "internal server error on list invitations",
 			userID: userID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return &models.User{ID: userID, Email: "user@example.com"}, nil
 				}
 				m.ListMyInvitationsFunc = func(ctx context.Context, email string) (*models.MyInvitationListResponse, error) {
@@ -504,7 +510,7 @@ func TestTeamInvitationHandler_AcceptInvitation(t *testing.T) {
 			userID:       userID.Hex(),
 			invitationID: invitationID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return &models.User{ID: userID, Email: "user@example.com", Name: "Test User"}, nil
 				}
 				m.AcceptInvitationFunc = func(ctx context.Context, iID, uID primitive.ObjectID, email string) (*models.AcceptInvitationResponse, error) {
@@ -538,11 +544,18 @@ func TestTeamInvitationHandler_AcceptInvitation(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
+			name:           "invalid user ID format",
+			userID:         "invalid-user-id",
+			invitationID:   invitationID.Hex(),
+			mockSetup:      func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
 			name:         "user not found",
 			userID:       userID.Hex(),
 			invitationID: invitationID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return nil, errors.New("user not found")
 				}
 			},
@@ -553,7 +566,7 @@ func TestTeamInvitationHandler_AcceptInvitation(t *testing.T) {
 			userID:       userID.Hex(),
 			invitationID: invitationID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return &models.User{ID: userID, Email: "user@example.com"}, nil
 				}
 				m.AcceptInvitationFunc = func(ctx context.Context, iID, uID primitive.ObjectID, email string) (*models.AcceptInvitationResponse, error) {
@@ -567,7 +580,7 @@ func TestTeamInvitationHandler_AcceptInvitation(t *testing.T) {
 			userID:       userID.Hex(),
 			invitationID: invitationID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return &models.User{ID: userID, Email: "wrong@example.com"}, nil
 				}
 				m.AcceptInvitationFunc = func(ctx context.Context, iID, uID primitive.ObjectID, email string) (*models.AcceptInvitationResponse, error) {
@@ -581,7 +594,7 @@ func TestTeamInvitationHandler_AcceptInvitation(t *testing.T) {
 			userID:       userID.Hex(),
 			invitationID: invitationID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return &models.User{ID: userID, Email: "user@example.com"}, nil
 				}
 				m.AcceptInvitationFunc = func(ctx context.Context, iID, uID primitive.ObjectID, email string) (*models.AcceptInvitationResponse, error) {
@@ -595,7 +608,7 @@ func TestTeamInvitationHandler_AcceptInvitation(t *testing.T) {
 			userID:       userID.Hex(),
 			invitationID: invitationID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return &models.User{ID: userID, Email: "user@example.com"}, nil
 				}
 				m.AcceptInvitationFunc = func(ctx context.Context, iID, uID primitive.ObjectID, email string) (*models.AcceptInvitationResponse, error) {
@@ -609,7 +622,7 @@ func TestTeamInvitationHandler_AcceptInvitation(t *testing.T) {
 			userID:       userID.Hex(),
 			invitationID: invitationID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return &models.User{ID: userID, Email: "user@example.com"}, nil
 				}
 				m.AcceptInvitationFunc = func(ctx context.Context, iID, uID primitive.ObjectID, email string) (*models.AcceptInvitationResponse, error) {
@@ -665,7 +678,7 @@ func TestTeamInvitationHandler_DeclineInvitation(t *testing.T) {
 			userID:       userID.Hex(),
 			invitationID: invitationID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return &models.User{ID: userID, Email: "user@example.com", Name: "Test User"}, nil
 				}
 				m.DeclineInvitationFunc = func(ctx context.Context, iID primitive.ObjectID, email string) error {
@@ -696,11 +709,18 @@ func TestTeamInvitationHandler_DeclineInvitation(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
+			name:           "invalid user ID format",
+			userID:         "invalid-user-id",
+			invitationID:   invitationID.Hex(),
+			mockSetup:      func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
 			name:         "user not found",
 			userID:       userID.Hex(),
 			invitationID: invitationID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return nil, errors.New("user not found")
 				}
 			},
@@ -711,7 +731,7 @@ func TestTeamInvitationHandler_DeclineInvitation(t *testing.T) {
 			userID:       userID.Hex(),
 			invitationID: invitationID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return &models.User{ID: userID, Email: "user@example.com"}, nil
 				}
 				m.DeclineInvitationFunc = func(ctx context.Context, iID primitive.ObjectID, email string) error {
@@ -725,7 +745,7 @@ func TestTeamInvitationHandler_DeclineInvitation(t *testing.T) {
 			userID:       userID.Hex(),
 			invitationID: invitationID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return &models.User{ID: userID, Email: "wrong@example.com"}, nil
 				}
 				m.DeclineInvitationFunc = func(ctx context.Context, iID primitive.ObjectID, email string) error {
@@ -739,7 +759,7 @@ func TestTeamInvitationHandler_DeclineInvitation(t *testing.T) {
 			userID:       userID.Hex(),
 			invitationID: invitationID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
-				u.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				u.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return &models.User{ID: userID, Email: "user@example.com"}, nil
 				}
 				m.DeclineInvitationFunc = func(ctx context.Context, iID primitive.ObjectID, email string) error {

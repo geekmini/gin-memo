@@ -2,6 +2,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -24,6 +25,12 @@ type Config struct {
 	S3SecretKey        string
 	S3Bucket           string
 	S3UseSSL           bool
+	// Service configuration
+	PresignedURLExpiry       time.Duration
+	PresignedUploadExpiry    time.Duration
+	UserCacheTTL             time.Duration
+	TranscriptionQueueSize   int
+	TranscriptionWorkerCount int
 }
 
 // Load reads configuration from .env file and environment variables
@@ -45,6 +52,12 @@ func Load() *Config {
 		S3SecretKey:        getEnv("S3_SECRET_KEY", "minioadmin"),
 		S3Bucket:           getEnv("S3_BUCKET", "voice-memos"),
 		S3UseSSL:           getEnv("S3_USE_SSL", "false") == "true",
+		// Service configuration with sensible defaults
+		PresignedURLExpiry:       parseDuration(getEnv("PRESIGNED_URL_EXPIRY", "1h")),
+		PresignedUploadExpiry:    parseDuration(getEnv("PRESIGNED_UPLOAD_EXPIRY", "15m")),
+		UserCacheTTL:             parseDuration(getEnv("USER_CACHE_TTL", "15m")),
+		TranscriptionQueueSize:   parseInt(getEnv("TRANSCRIPTION_QUEUE_SIZE", "100")),
+		TranscriptionWorkerCount: parseInt(getEnv("TRANSCRIPTION_WORKER_COUNT", "2")),
 	}
 
 	return cfg
@@ -74,4 +87,14 @@ func parseDuration(s string) time.Duration {
 		log.Fatalf("Invalid duration format: %s", s)
 	}
 	return d
+}
+
+// parseInt parses an integer string, panics on error
+func parseInt(s string) int {
+	var i int
+	_, err := fmt.Sscanf(s, "%d", &i)
+	if err != nil {
+		log.Fatalf("Invalid integer format: %s", s)
+	}
+	return i
 }

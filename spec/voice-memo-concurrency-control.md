@@ -202,16 +202,16 @@ func (r *voiceMemoRepository) SoftDeleteWithTeam(ctx context.Context, id, teamID
 
 > Source of truth for testing requirements.
 
-- [ ] Delete existing private memo returns 204
-- [ ] Delete already-deleted private memo returns 204 (idempotent)
-- [ ] Delete non-existent private memo returns 404
-- [ ] Delete another user's private memo returns 403
-- [ ] Delete existing team memo returns 204
-- [ ] Delete already-deleted team memo returns 204 (idempotent)
-- [ ] Delete non-existent team memo returns 404
-- [ ] Delete team memo from wrong team returns 404
-- [ ] Version field increments on delete
-- [ ] UpdatedAt field is set on delete
+- [x] Delete existing private memo returns 204
+- [x] Delete already-deleted private memo returns 204 (idempotent)
+- [x] Delete non-existent private memo returns 404
+- [x] Delete another user's private memo returns 403
+- [x] Delete existing team memo returns 204
+- [x] Delete already-deleted team memo returns 204 (idempotent)
+- [x] Delete non-existent team memo returns 404
+- [x] Delete team memo from wrong team returns 404
+- [x] Version field increments on delete
+- [x] UpdatedAt field is set on delete
 
 ## Open Questions
 

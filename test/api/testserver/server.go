@@ -130,8 +130,8 @@ func New(ctx context.Context) (*TestServer, error) {
 		TestAccessTokenExpiry,
 		TestRefreshTokenExpiry,
 	)
-	userService := service.NewUserService(userRepo, redisCache)
-	voiceMemoService := service.NewVoiceMemoService(voiceMemoRepo, s3Client, transcriptionQueue)
+	userService := service.NewUserService(userRepo, redisCache, 5*time.Minute)
+	voiceMemoService := service.NewVoiceMemoService(voiceMemoRepo, s3Client, transcriptionQueue, 15*time.Minute, 15*time.Minute)
 	teamService := service.NewTeamService(teamRepo, teamMemberRepo, teamInvitationRepo, voiceMemoRepo)
 	teamMemberService := service.NewTeamMemberService(teamMemberRepo, userRepo, teamRepo)
 	teamInvitationService := service.NewTeamInvitationService(teamInvitationRepo, teamMemberRepo, teamRepo, userRepo)

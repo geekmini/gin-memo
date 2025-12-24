@@ -4,6 +4,7 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -61,7 +62,7 @@ func (r *Redis) Set(ctx context.Context, key string, value interface{}, ttl time
 func (r *Redis) Get(ctx context.Context, key string, dest interface{}) (bool, error) {
 	data, err := r.client.Get(ctx, key).Bytes()
 	if err != nil {
-		if err == redis.Nil {
+		if errors.Is(err, redis.Nil) {
 			return false, nil // Key doesn't exist
 		}
 		return false, err
@@ -99,7 +100,7 @@ func (r *Redis) SetRefreshToken(ctx context.Context, token string, userID string
 func (r *Redis) GetRefreshToken(ctx context.Context, token string) (string, error) {
 	userID, err := r.client.Get(ctx, RefreshTokenCacheKey(token)).Result()
 	if err != nil {
-		if err == redis.Nil {
+		if errors.Is(err, redis.Nil) {
 			return "", nil // Key doesn't exist
 		}
 		return "", err

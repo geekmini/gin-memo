@@ -20,6 +20,7 @@ type VoiceMemoRepository interface {
 	FindByUserID(ctx context.Context, userID primitive.ObjectID, page, limit int) ([]models.VoiceMemo, int, error)
 	FindByTeamID(ctx context.Context, teamID primitive.ObjectID, page, limit int) ([]models.VoiceMemo, int, error)
 	FindByID(ctx context.Context, id primitive.ObjectID) (*models.VoiceMemo, error)
+	FindByIDIncludingDeleted(ctx context.Context, id primitive.ObjectID) (*models.VoiceMemo, error)
 	UpdateStatus(ctx context.Context, id primitive.ObjectID, status models.VoiceMemoStatus) error
 	UpdateStatusConditional(ctx context.Context, id primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) error
 	UpdateStatusWithOwnership(ctx context.Context, id, userID primitive.ObjectID, fromStatus, toStatus models.VoiceMemoStatus) (*models.VoiceMemo, error)
@@ -303,6 +304,23 @@ func (r *voiceMemoRepository) FindByID(ctx context.Context, id primitive.ObjectI
 		"_id":       id,
 		"deletedAt": bson.M{"$exists": false},
 	}
+
+	var memo models.VoiceMemo
+	err := r.collection.FindOne(ctx, filter).Decode(&memo)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, apperrors.ErrVoiceMemoNotFound
+		}
+		return nil, err
+	}
+
+	return &memo, nil
+}
+
+// FindByIDIncludingDeleted retrieves a voice memo by ID, including soft-deleted records.
+// This is primarily used for testing to verify delete operations.
+func (r *voiceMemoRepository) FindByIDIncludingDeleted(ctx context.Context, id primitive.ObjectID) (*models.VoiceMemo, error) {
+	filter := bson.M{"_id": id}
 
 	var memo models.VoiceMemo
 	err := r.collection.FindOne(ctx, filter).Decode(&memo)

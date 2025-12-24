@@ -23,7 +23,7 @@ func TestNewUserService(t *testing.T) {
 	mockRepo := repomocks.NewMockUserRepository(ctrl)
 	mockCache := cachemocks.NewMockCache(ctrl)
 
-	service := NewUserService(mockRepo, mockCache)
+	service := NewUserService(mockRepo, mockCache, 15*time.Minute)
 
 	assert.NotNil(t, service)
 	assert.Equal(t, mockRepo, service.repo)
@@ -54,8 +54,8 @@ func TestUserService_GetUser(t *testing.T) {
 				return true, nil
 			})
 
-		service := NewUserService(mockRepo, mockCache)
-		user, err := service.GetUser(context.Background(), validUserID.Hex())
+		service := NewUserService(mockRepo, mockCache, 15*time.Minute)
+		user, err := service.GetUser(context.Background(), validUserID)
 
 		require.NoError(t, err)
 		assert.Equal(t, validUser.ID, user.ID)
@@ -81,25 +81,11 @@ func TestUserService_GetUser(t *testing.T) {
 			Set(gomock.Any(), "user:"+validUserID.Hex(), validUser, 15*time.Minute).
 			Return(nil)
 
-		service := NewUserService(mockRepo, mockCache)
-		user, err := service.GetUser(context.Background(), validUserID.Hex())
+		service := NewUserService(mockRepo, mockCache, 15*time.Minute)
+		user, err := service.GetUser(context.Background(), validUserID)
 
 		require.NoError(t, err)
 		assert.Equal(t, validUser.ID, user.ID)
-	})
-
-	t.Run("returns error for invalid user ID format", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		mockRepo := repomocks.NewMockUserRepository(ctrl)
-		mockCache := cachemocks.NewMockCache(ctrl)
-
-		service := NewUserService(mockRepo, mockCache)
-		user, err := service.GetUser(context.Background(), "invalid-id")
-
-		assert.Nil(t, user)
-		assert.Equal(t, apperrors.ErrUserNotFound, err)
 	})
 
 	t.Run("returns error when user not found in database", func(t *testing.T) {
@@ -117,8 +103,8 @@ func TestUserService_GetUser(t *testing.T) {
 			FindByID(gomock.Any(), validUserID).
 			Return(nil, apperrors.ErrUserNotFound)
 
-		service := NewUserService(mockRepo, mockCache)
-		user, err := service.GetUser(context.Background(), validUserID.Hex())
+		service := NewUserService(mockRepo, mockCache, 15*time.Minute)
+		user, err := service.GetUser(context.Background(), validUserID)
 
 		assert.Nil(t, user)
 		assert.Equal(t, apperrors.ErrUserNotFound, err)
@@ -143,8 +129,8 @@ func TestUserService_GetUser(t *testing.T) {
 			Set(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(assert.AnError) // Cache set fails
 
-		service := NewUserService(mockRepo, mockCache)
-		user, err := service.GetUser(context.Background(), validUserID.Hex())
+		service := NewUserService(mockRepo, mockCache, 15*time.Minute)
+		user, err := service.GetUser(context.Background(), validUserID)
 
 		require.NoError(t, err) // Should not fail on cache error
 		assert.Equal(t, validUser.ID, user.ID)
@@ -168,7 +154,7 @@ func TestUserService_GetAllUsers(t *testing.T) {
 			FindAll(gomock.Any()).
 			Return(users, nil)
 
-		service := NewUserService(mockRepo, mockCache)
+		service := NewUserService(mockRepo, mockCache, 15*time.Minute)
 		result, err := service.GetAllUsers(context.Background())
 
 		require.NoError(t, err)
@@ -186,7 +172,7 @@ func TestUserService_GetAllUsers(t *testing.T) {
 			FindAll(gomock.Any()).
 			Return(nil, assert.AnError)
 
-		service := NewUserService(mockRepo, mockCache)
+		service := NewUserService(mockRepo, mockCache, 15*time.Minute)
 		result, err := service.GetAllUsers(context.Background())
 
 		assert.Nil(t, result)
@@ -218,25 +204,11 @@ func TestUserService_UpdateUser(t *testing.T) {
 			Delete(gomock.Any(), "user:"+validUserID.Hex()).
 			Return(nil)
 
-		service := NewUserService(mockRepo, mockCache)
-		user, err := service.UpdateUser(context.Background(), validUserID.Hex(), updateReq)
+		service := NewUserService(mockRepo, mockCache, 15*time.Minute)
+		user, err := service.UpdateUser(context.Background(), validUserID, updateReq)
 
 		require.NoError(t, err)
 		assert.Equal(t, "Updated Name", user.Name)
-	})
-
-	t.Run("returns error for invalid user ID format", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		mockRepo := repomocks.NewMockUserRepository(ctrl)
-		mockCache := cachemocks.NewMockCache(ctrl)
-
-		service := NewUserService(mockRepo, mockCache)
-		user, err := service.UpdateUser(context.Background(), "invalid-id", updateReq)
-
-		assert.Nil(t, user)
-		assert.Equal(t, apperrors.ErrUserNotFound, err)
 	})
 
 	t.Run("returns error when user not found", func(t *testing.T) {
@@ -250,8 +222,8 @@ func TestUserService_UpdateUser(t *testing.T) {
 			Update(gomock.Any(), validUserID, updateReq).
 			Return(nil, apperrors.ErrUserNotFound)
 
-		service := NewUserService(mockRepo, mockCache)
-		user, err := service.UpdateUser(context.Background(), validUserID.Hex(), updateReq)
+		service := NewUserService(mockRepo, mockCache, 15*time.Minute)
+		user, err := service.UpdateUser(context.Background(), validUserID, updateReq)
 
 		assert.Nil(t, user)
 		assert.Equal(t, apperrors.ErrUserNotFound, err)
@@ -276,23 +248,10 @@ func TestUserService_DeleteUser(t *testing.T) {
 			Delete(gomock.Any(), "user:"+validUserID.Hex()).
 			Return(nil)
 
-		service := NewUserService(mockRepo, mockCache)
-		err := service.DeleteUser(context.Background(), validUserID.Hex())
+		service := NewUserService(mockRepo, mockCache, 15*time.Minute)
+		err := service.DeleteUser(context.Background(), validUserID)
 
 		assert.NoError(t, err)
-	})
-
-	t.Run("returns error for invalid user ID format", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		mockRepo := repomocks.NewMockUserRepository(ctrl)
-		mockCache := cachemocks.NewMockCache(ctrl)
-
-		service := NewUserService(mockRepo, mockCache)
-		err := service.DeleteUser(context.Background(), "invalid-id")
-
-		assert.Equal(t, apperrors.ErrUserNotFound, err)
 	})
 
 	t.Run("returns error when delete fails", func(t *testing.T) {
@@ -306,8 +265,8 @@ func TestUserService_DeleteUser(t *testing.T) {
 			Delete(gomock.Any(), validUserID).
 			Return(apperrors.ErrUserNotFound)
 
-		service := NewUserService(mockRepo, mockCache)
-		err := service.DeleteUser(context.Background(), validUserID.Hex())
+		service := NewUserService(mockRepo, mockCache, 15*time.Minute)
+		err := service.DeleteUser(context.Background(), validUserID)
 
 		assert.Equal(t, apperrors.ErrUserNotFound, err)
 	})

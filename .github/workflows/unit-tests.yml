@@ -37,8 +37,11 @@ jobs:
       - name: Build
         run: go build -v ./...
 
-      - name: Run go vet
-        run: go vet ./...
+      - name: Run govulncheck
+        uses: golang/govulncheck-action@v1
+        with:
+          go-version-input: '1.25'
+          go-package: ./...
 
       - name: Install gotestsum
         run: go install gotest.tools/gotestsum@latest

@@ -16,6 +16,8 @@ type Storage interface {
 	GetPresignedPutURL(ctx context.Context, key, contentType string, expiry time.Duration) (string, error)
 	// PutObject uploads an object to storage.
 	PutObject(ctx context.Context, key string, body io.Reader, contentType string) error
+	// DeleteObject deletes an object from storage.
+	DeleteObject(ctx context.Context, key string) error
 }
 
 // Ensure S3Client implements Storage interface

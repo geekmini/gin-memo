@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"log"
 	"strings"
 	"time"
@@ -61,7 +62,7 @@ func (s *TeamInvitationService) CreateInvitation(ctx context.Context, teamID, in
 	if err == nil {
 		return nil, apperrors.ErrPendingInvitation
 	}
-	if err != apperrors.ErrInvitationNotFound {
+	if !errors.Is(err, apperrors.ErrInvitationNotFound) {
 		return nil, err
 	}
 

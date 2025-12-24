@@ -10,6 +10,7 @@ import (
 	"gin-sample/pkg/response"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // UserHandler handles HTTP requests for user operations.
@@ -30,12 +31,18 @@ func NewUserHandler(service service.UserServicer) *UserHandler {
 // @Produce      json
 // @Param        id   path      string  true  "User ID"
 // @Success      200  {object}  response.Response{data=models.User}
+// @Failure      400  {object}  response.Response
 // @Failure      404  {object}  response.Response
 // @Failure      500  {object}  response.Response
 // @Security     BearerAuth
 // @Router       /users/{id} [get]
 func (h *UserHandler) GetUser(c *gin.Context) {
-	id := c.Param("id")
+	idStr := c.Param("id")
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		response.BadRequest(c, "invalid user ID format")
+		return
+	}
 
 	user, err := h.service.GetUser(c.Request.Context(), id)
 	if err != nil {
@@ -86,7 +93,12 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 // @Security     BearerAuth
 // @Router       /users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
-	id := c.Param("id")
+	idStr := c.Param("id")
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		response.BadRequest(c, "invalid user ID format")
+		return
+	}
 
 	var req models.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -119,14 +131,20 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 // @Produce      json
 // @Param        id   path      string  true  "User ID"
 // @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
 // @Failure      404  {object}  response.Response
 // @Failure      500  {object}  response.Response
 // @Security     BearerAuth
 // @Router       /users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
-	id := c.Param("id")
+	idStr := c.Param("id")
+	id, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		response.BadRequest(c, "invalid user ID format")
+		return
+	}
 
-	err := h.service.DeleteUser(c.Request.Context(), id)
+	err = h.service.DeleteUser(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, apperrors.ErrUserNotFound) {
 			response.NotFound(c, err.Error())

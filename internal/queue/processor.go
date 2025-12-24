@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"log"
 	"sync"
 	"time"
@@ -77,7 +78,7 @@ func (p *Processor) worker(ctx context.Context, id int) {
 	for {
 		job, err := p.queue.Dequeue(ctx)
 		if err != nil {
-			if err == ErrQueueClosed || err == context.Canceled {
+			if errors.Is(err, ErrQueueClosed) || errors.Is(err, context.Canceled) {
 				log.Printf("Worker %d shutting down", id)
 				return
 			}

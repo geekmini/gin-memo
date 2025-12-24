@@ -19,10 +19,10 @@ type AuthServicer interface {
 
 // UserServicer defines the interface for user operations.
 type UserServicer interface {
-	GetUser(ctx context.Context, id string) (*models.User, error)
+	GetUser(ctx context.Context, id primitive.ObjectID) (*models.User, error)
 	GetAllUsers(ctx context.Context) ([]models.User, error)
-	UpdateUser(ctx context.Context, id string, req *models.UpdateUserRequest) (*models.User, error)
-	DeleteUser(ctx context.Context, id string) error
+	UpdateUser(ctx context.Context, id primitive.ObjectID, req *models.UpdateUserRequest) (*models.User, error)
+	DeleteUser(ctx context.Context, id primitive.ObjectID) error
 }
 
 // TeamServicer defines the interface for team operations.

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	apperrors "gin-sample/internal/errors"
 	"gin-sample/internal/models"
@@ -49,7 +50,7 @@ func (s *TeamService) CreateTeam(ctx context.Context, userID primitive.ObjectID,
 	if err == nil {
 		return nil, apperrors.ErrTeamSlugTaken
 	}
-	if err != apperrors.ErrTeamNotFound {
+	if !errors.Is(err, apperrors.ErrTeamNotFound) {
 		return nil, err
 	}
 
@@ -134,7 +135,7 @@ func (s *TeamService) UpdateTeam(ctx context.Context, teamID primitive.ObjectID,
 		if err == nil && existing.ID != teamID {
 			return nil, apperrors.ErrTeamSlugTaken
 		}
-		if err != nil && err != apperrors.ErrTeamNotFound {
+		if err != nil && !errors.Is(err, apperrors.ErrTeamNotFound) {
 			return nil, err
 		}
 		team.Slug = *req.Slug
