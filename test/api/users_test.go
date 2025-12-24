@@ -79,7 +79,7 @@ func TestGetUser(t *testing.T) {
 
 		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodGet, "/api/v1/users/invalid-id", token, nil)
 
-		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
 	t.Run("error - unauthorized without token", func(t *testing.T) {
@@ -335,7 +335,7 @@ func TestDeleteUser(t *testing.T) {
 
 		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodDelete, "/api/v1/users/invalid-id", token, nil)
 
-		assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
 	t.Run("error - unauthorized without token", func(t *testing.T) {

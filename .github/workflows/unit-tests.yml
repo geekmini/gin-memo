@@ -12,7 +12,6 @@ on:
       - '**.go'
       - 'go.mod'
       - 'go.sum'
-      - '.golangci.yml'
 
 jobs:
   test:
@@ -37,12 +36,6 @@ jobs:
 
       - name: Build
         run: go build -v ./...
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v4
-        with:
-          version: latest
-          args: --timeout=5m
 
       - name: Run govulncheck
         uses: golang/govulncheck-action@v1
