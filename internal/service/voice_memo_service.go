@@ -16,24 +16,23 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const (
-	presignedURLExpiry    = 1 * time.Hour
-	presignedUploadExpiry = 15 * time.Minute
-)
-
 // VoiceMemoService handles business logic for voice memo operations.
 type VoiceMemoService struct {
-	repo     repository.VoiceMemoRepository
-	s3Client storage.Storage
-	queue    queue.Queue
+	repo                  repository.VoiceMemoRepository
+	s3Client              storage.Storage
+	queue                 queue.Queue
+	presignedURLExpiry    time.Duration
+	presignedUploadExpiry time.Duration
 }
 
 // NewVoiceMemoService creates a new VoiceMemoService.
-func NewVoiceMemoService(repo repository.VoiceMemoRepository, s3Client storage.Storage, queue queue.Queue) *VoiceMemoService {
+func NewVoiceMemoService(repo repository.VoiceMemoRepository, s3Client storage.Storage, queue queue.Queue, presignedURLExpiry, presignedUploadExpiry time.Duration) *VoiceMemoService {
 	return &VoiceMemoService{
-		repo:     repo,
-		s3Client: s3Client,
-		queue:    queue,
+		repo:                  repo,
+		s3Client:              s3Client,
+		queue:                 queue,
+		presignedURLExpiry:    presignedURLExpiry,
+		presignedUploadExpiry: presignedUploadExpiry,
 	}
 }
 
@@ -62,7 +61,7 @@ func (s *VoiceMemoService) ListByUserID(ctx context.Context, userID string, page
 	// Generate pre-signed URLs for each memo
 	for i := range memos {
 		if memos[i].AudioFileKey != "" {
-			url, err := s.s3Client.GetPresignedURL(ctx, memos[i].AudioFileKey, presignedURLExpiry)
+			url, err := s.s3Client.GetPresignedURL(ctx, memos[i].AudioFileKey, s.presignedURLExpiry)
 			if err != nil {
 				// Log error but continue - URL will be empty
 				continue
@@ -116,7 +115,7 @@ func (s *VoiceMemoService) ListByTeamID(ctx context.Context, teamID string, page
 	// Generate pre-signed URLs for each memo
 	for i := range memos {
 		if memos[i].AudioFileKey != "" {
-			url, err := s.s3Client.GetPresignedURL(ctx, memos[i].AudioFileKey, presignedURLExpiry)
+			url, err := s.s3Client.GetPresignedURL(ctx, memos[i].AudioFileKey, s.presignedURLExpiry)
 			if err != nil {
 				continue
 			}
@@ -149,7 +148,7 @@ func (s *VoiceMemoService) GetVoiceMemo(ctx context.Context, memoID primitive.Ob
 
 	// Generate pre-signed URL
 	if memo.AudioFileKey != "" {
-		url, err := s.s3Client.GetPresignedURL(ctx, memo.AudioFileKey, presignedURLExpiry)
+		url, err := s.s3Client.GetPresignedURL(ctx, memo.AudioFileKey, s.presignedURLExpiry)
 		if err == nil {
 			memo.AudioFileURL = url
 		}
@@ -196,7 +195,7 @@ func (s *VoiceMemoService) CreateVoiceMemo(ctx context.Context, userID primitive
 
 	// Generate pre-signed upload URL
 	contentType := getContentType(req.AudioFormat)
-	uploadURL, err := s.s3Client.GetPresignedPutURL(ctx, audioKey, contentType, presignedUploadExpiry)
+	uploadURL, err := s.s3Client.GetPresignedPutURL(ctx, audioKey, contentType, s.presignedUploadExpiry)
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +239,7 @@ func (s *VoiceMemoService) CreateTeamVoiceMemo(ctx context.Context, userID, team
 
 	// Generate pre-signed upload URL
 	contentType := getContentType(req.AudioFormat)
-	uploadURL, err := s.s3Client.GetPresignedPutURL(ctx, audioKey, contentType, presignedUploadExpiry)
+	uploadURL, err := s.s3Client.GetPresignedPutURL(ctx, audioKey, contentType, s.presignedUploadExpiry)
 	if err != nil {
 		return nil, err
 	}

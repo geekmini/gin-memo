@@ -81,19 +81,19 @@ func main() {
 	authorizer := authz.NewLocalAuthorizer(teamMemberRepo)
 
 	// Transcription queue and processor
-	transcriptionQueue := queue.NewMemoryQueue(100)
+	transcriptionQueue := queue.NewMemoryQueue(cfg.TranscriptionQueueSize)
 	transcriptionService := transcription.NewMockService()
 
 	// Service layer
 	authService := service.NewAuthService(userRepo, refreshTokenRepo, redisCache, jwtManager, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
-	userService := service.NewUserService(userRepo, redisCache)
-	voiceMemoService := service.NewVoiceMemoService(voiceMemoRepo, s3Client, transcriptionQueue)
+	userService := service.NewUserService(userRepo, redisCache, cfg.UserCacheTTL)
+	voiceMemoService := service.NewVoiceMemoService(voiceMemoRepo, s3Client, transcriptionQueue, cfg.PresignedURLExpiry, cfg.PresignedUploadExpiry)
 	teamService := service.NewTeamService(teamRepo, teamMemberRepo, teamInvitationRepo, voiceMemoRepo)
 	teamMemberService := service.NewTeamMemberService(teamMemberRepo, userRepo, teamRepo)
 	teamInvitationService := service.NewTeamInvitationService(teamInvitationRepo, teamMemberRepo, teamRepo, userRepo)
 
 	// Transcription processor (uses voiceMemoRepo for updates)
-	transcriptionProcessor := queue.NewProcessor(transcriptionQueue, transcriptionService, voiceMemoRepo, 2)
+	transcriptionProcessor := queue.NewProcessor(transcriptionQueue, transcriptionService, voiceMemoRepo, cfg.TranscriptionWorkerCount)
 
 	// Handler layer
 	authHandler := handler.NewAuthHandler(authService)

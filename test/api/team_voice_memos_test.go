@@ -539,6 +539,38 @@ func TestDeleteTeamVoiceMemo(t *testing.T) {
 		assert.Equal(t, http.StatusNotFound, getW.Code)
 	})
 
+	t.Run("success - idempotent delete (already deleted team memo)", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
+		_, ownerToken := authHelper.CreateAuthenticatedUser(t, "Owner", "owner1b@example.com", "password123")
+		teamData := teamHelper.CreateTeam(t, ownerToken, "Idempotent Delete Team")
+		teamID := testserver.GetIDFromResponse(t, teamData)
+
+		// Create a memo
+		createReq := models.CreateVoiceMemoRequest{
+			Title:       "Double Delete Team Memo",
+			Duration:    60,
+			FileSize:    512000,
+			AudioFormat: "mp3",
+		}
+		createW := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/teams/"+teamID+"/voice-memos", ownerToken, createReq)
+		require.Equal(t, http.StatusCreated, createW.Code)
+
+		createResp := testutil.ParseAPIResponse(t, createW)
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
+
+		// First delete
+		w1 := testutil.MakeAuthRequest(t, testServer.Router, http.MethodDelete, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID, ownerToken, nil)
+		assert.Equal(t, http.StatusNoContent, w1.Code)
+
+		// Second delete should also succeed (idempotent)
+		w2 := testutil.MakeAuthRequest(t, testServer.Router, http.MethodDelete, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID, ownerToken, nil)
+		assert.Equal(t, http.StatusNoContent, w2.Code)
+	})
+
 	t.Run("success - admin deletes team memo", func(t *testing.T) {
 		testServer.CleanupBetweenTests(t)
 
@@ -673,6 +705,136 @@ func TestDeleteTeamVoiceMemo(t *testing.T) {
 		w := testutil.MakeRequest(t, testServer.Router, http.MethodDelete, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID, nil)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("error - delete team memo from wrong team returns 404", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
+		// Create two users, each with their own team (free users can only create 1 team)
+		_, owner1Token := authHelper.CreateAuthenticatedUser(t, "Owner1", "owner6@example.com", "password123")
+		owner2Data, owner2Token := authHelper.CreateAuthenticatedUser(t, "Owner2", "owner6b@example.com", "password123")
+		owner2OID := testserver.GetObjectIDFromResponse(t, owner2Data)
+
+		// Create team 1 with owner 1
+		team1Data := teamHelper.CreateTeam(t, owner1Token, "Team One")
+		team1ID := testserver.GetIDFromResponse(t, team1Data)
+		team1OID := testserver.GetObjectIDFromResponse(t, team1Data)
+
+		// Create team 2 with owner 2
+		team2Data := teamHelper.CreateTeam(t, owner2Token, "Team Two")
+		team2ID := testserver.GetIDFromResponse(t, team2Data)
+
+		// Add owner 2 to team 1 as a member so they can access the memo
+		teamHelper.SeedTeamMember(t, &models.TeamMember{
+			TeamID:   team1OID,
+			UserID:   owner2OID,
+			Role:     models.RoleMember,
+			JoinedAt: time.Now(),
+		})
+
+		// Create a memo in team 1
+		createReq := models.CreateVoiceMemoRequest{
+			Title:       "Team 1 Memo",
+			Duration:    60,
+			FileSize:    512000,
+			AudioFormat: "mp3",
+		}
+		createW := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/teams/"+team1ID+"/voice-memos", owner1Token, createReq)
+		require.Equal(t, http.StatusCreated, createW.Code)
+
+		createResp := testutil.ParseAPIResponse(t, createW)
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
+
+		// Try to delete memo using team 2's ID (wrong team) - owner2 is owner of team 2
+		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodDelete, "/api/v1/teams/"+team2ID+"/voice-memos/"+memoID, owner2Token, nil)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+	t.Run("success - version field increments on delete", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
+		_, ownerToken := authHelper.CreateAuthenticatedUser(t, "Owner", "owner7@example.com", "password123")
+		teamData := teamHelper.CreateTeam(t, ownerToken, "Version Test Team")
+		teamID := testserver.GetIDFromResponse(t, teamData)
+
+		// Create a memo
+		createReq := models.CreateVoiceMemoRequest{
+			Title:       "Version Test Memo",
+			Duration:    60,
+			FileSize:    512000,
+			AudioFormat: "mp3",
+		}
+		createW := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/teams/"+teamID+"/voice-memos", ownerToken, createReq)
+		require.Equal(t, http.StatusCreated, createW.Code)
+
+		createResp := testutil.ParseAPIResponse(t, createW)
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
+
+		// Get initial version from database
+		memoOID, err := primitive.ObjectIDFromHex(memoID)
+		require.NoError(t, err)
+		initialMemo, err := testServer.VoiceMemoRepo.FindByID(context.Background(), memoOID)
+		require.NoError(t, err)
+		initialVersion := initialMemo.Version
+
+		// Delete the memo
+		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodDelete, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID, ownerToken, nil)
+		assert.Equal(t, http.StatusNoContent, w.Code)
+
+		// Verify version incremented (need to fetch including deleted)
+		deletedMemo, err := testServer.VoiceMemoRepo.FindByIDIncludingDeleted(context.Background(), memoOID)
+		require.NoError(t, err)
+		assert.Greater(t, deletedMemo.Version, initialVersion, "version should increment on delete")
+	})
+
+	t.Run("success - updatedAt field is set on delete", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
+		_, ownerToken := authHelper.CreateAuthenticatedUser(t, "Owner", "owner8@example.com", "password123")
+		teamData := teamHelper.CreateTeam(t, ownerToken, "UpdatedAt Test Team")
+		teamID := testserver.GetIDFromResponse(t, teamData)
+
+		// Create a memo
+		createReq := models.CreateVoiceMemoRequest{
+			Title:       "UpdatedAt Test Memo",
+			Duration:    60,
+			FileSize:    512000,
+			AudioFormat: "mp3",
+		}
+		createW := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/teams/"+teamID+"/voice-memos", ownerToken, createReq)
+		require.Equal(t, http.StatusCreated, createW.Code)
+
+		createResp := testutil.ParseAPIResponse(t, createW)
+		memo, ok := createResp.Data["memo"].(map[string]interface{})
+		require.True(t, ok, "memo should be map[string]interface{}")
+		memoID, ok := memo["id"].(string)
+		require.True(t, ok, "memo id should be a string")
+
+		// Get initial updatedAt from database
+		memoOID, err := primitive.ObjectIDFromHex(memoID)
+		require.NoError(t, err)
+		initialMemo, err := testServer.VoiceMemoRepo.FindByID(context.Background(), memoOID)
+		require.NoError(t, err)
+		initialUpdatedAt := initialMemo.UpdatedAt
+
+		// Wait a moment to ensure time difference
+		time.Sleep(10 * time.Millisecond)
+
+		// Delete the memo
+		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodDelete, "/api/v1/teams/"+teamID+"/voice-memos/"+memoID, ownerToken, nil)
+		assert.Equal(t, http.StatusNoContent, w.Code)
+
+		// Verify updatedAt was updated (need to fetch including deleted)
+		deletedMemo, err := testServer.VoiceMemoRepo.FindByIDIncludingDeleted(context.Background(), memoOID)
+		require.NoError(t, err)
+		assert.True(t, deletedMemo.UpdatedAt.After(initialUpdatedAt), "updatedAt should be updated on delete")
 	})
 }
 

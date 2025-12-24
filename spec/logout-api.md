@@ -321,5 +321,5 @@ sequenceDiagram
 
 ## Open Questions
 
-- [ ] Should refresh tokens be rotated on each refresh?
-- [ ] Should we implement "logout from all devices" in the future?
+- [x] Should refresh tokens be rotated on each refresh? → [GitHub Issue #34](https://github.com/geekmini/gin-memo/issues/34)
+- [x] Should we implement "logout from all devices" in the future? → [GitHub Issue #35](https://github.com/geekmini/gin-memo/issues/35)

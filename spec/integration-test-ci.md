@@ -131,7 +131,7 @@ Integration tests run automatically on every PR via GitHub Actions:
 
 - [x] Create `.github/workflows/integration-tests.yml`
 - [x] Update `CLAUDE.md` documentation
-- [ ] Verify workflow triggers correctly on test PR
+- [x] Verify workflow triggers correctly on test PR
 
 ## Out of Scope
 

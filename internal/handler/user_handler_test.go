@@ -42,7 +42,7 @@ func TestUserHandler_GetUser(t *testing.T) {
 			name:   "successful get user",
 			userID: userID.Hex(),
 			mockSetup: func(m *mocks.MockUserService) {
-				m.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				m.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return &models.User{
 						ID:        userID,
 						Email:     "test@example.com",
@@ -63,10 +63,23 @@ func TestUserHandler_GetUser(t *testing.T) {
 			},
 		},
 		{
+			name:           "invalid user ID format",
+			userID:         "invalid-id",
+			mockSetup:      func(m *mocks.MockUserService) {},
+			expectedStatus: http.StatusBadRequest,
+			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
+				var resp map[string]interface{}
+				err := json.Unmarshal(w.Body.Bytes(), &resp)
+				assert.NoError(t, err)
+				assert.Equal(t, false, resp["success"])
+				assert.Equal(t, "invalid user ID format", resp["error"])
+			},
+		},
+		{
 			name:   "user not found",
 			userID: primitive.NewObjectID().Hex(),
 			mockSetup: func(m *mocks.MockUserService) {
-				m.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				m.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return nil, apperrors.ErrUserNotFound
 				}
 			},
@@ -76,7 +89,7 @@ func TestUserHandler_GetUser(t *testing.T) {
 			name:   "internal server error",
 			userID: userID.Hex(),
 			mockSetup: func(m *mocks.MockUserService) {
-				m.GetUserFunc = func(ctx context.Context, id string) (*models.User, error) {
+				m.GetUserFunc = func(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 					return nil, errors.New("database error")
 				}
 			},
@@ -210,7 +223,7 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 				Name:  &newName,
 			},
 			mockSetup: func(m *mocks.MockUserService) {
-				m.UpdateUserFunc = func(ctx context.Context, id string, req *models.UpdateUserRequest) (*models.User, error) {
+				m.UpdateUserFunc = func(ctx context.Context, id primitive.ObjectID, req *models.UpdateUserRequest) (*models.User, error) {
 					return &models.User{
 						ID:        userID,
 						Email:     *req.Email,
@@ -231,6 +244,22 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 			},
 		},
 		{
+			name:   "invalid user ID format",
+			userID: "invalid-id",
+			body: models.UpdateUserRequest{
+				Email: &newEmail,
+			},
+			mockSetup:      func(m *mocks.MockUserService) {},
+			expectedStatus: http.StatusBadRequest,
+			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
+				var resp map[string]interface{}
+				err := json.Unmarshal(w.Body.Bytes(), &resp)
+				assert.NoError(t, err)
+				assert.Equal(t, false, resp["success"])
+				assert.Equal(t, "invalid user ID format", resp["error"])
+			},
+		},
+		{
 			name:           "invalid JSON body",
 			userID:         userID.Hex(),
 			body:           "invalid json",
@@ -244,7 +273,7 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 				Email: &newEmail,
 			},
 			mockSetup: func(m *mocks.MockUserService) {
-				m.UpdateUserFunc = func(ctx context.Context, id string, req *models.UpdateUserRequest) (*models.User, error) {
+				m.UpdateUserFunc = func(ctx context.Context, id primitive.ObjectID, req *models.UpdateUserRequest) (*models.User, error) {
 					return nil, apperrors.ErrUserNotFound
 				}
 			},
@@ -257,7 +286,7 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 				Email: &newEmail,
 			},
 			mockSetup: func(m *mocks.MockUserService) {
-				m.UpdateUserFunc = func(ctx context.Context, id string, req *models.UpdateUserRequest) (*models.User, error) {
+				m.UpdateUserFunc = func(ctx context.Context, id primitive.ObjectID, req *models.UpdateUserRequest) (*models.User, error) {
 					return nil, apperrors.ErrUserAlreadyExists
 				}
 			},
@@ -270,7 +299,7 @@ func TestUserHandler_UpdateUser(t *testing.T) {
 				Email: &newEmail,
 			},
 			mockSetup: func(m *mocks.MockUserService) {
-				m.UpdateUserFunc = func(ctx context.Context, id string, req *models.UpdateUserRequest) (*models.User, error) {
+				m.UpdateUserFunc = func(ctx context.Context, id primitive.ObjectID, req *models.UpdateUserRequest) (*models.User, error) {
 					return nil, errors.New("database error")
 				}
 			},
@@ -324,7 +353,7 @@ func TestUserHandler_DeleteUser(t *testing.T) {
 			name:   "successful delete user",
 			userID: userID.Hex(),
 			mockSetup: func(m *mocks.MockUserService) {
-				m.DeleteUserFunc = func(ctx context.Context, id string) error {
+				m.DeleteUserFunc = func(ctx context.Context, id primitive.ObjectID) error {
 					return nil
 				}
 			},
@@ -339,10 +368,23 @@ func TestUserHandler_DeleteUser(t *testing.T) {
 			},
 		},
 		{
+			name:           "invalid user ID format",
+			userID:         "invalid-id",
+			mockSetup:      func(m *mocks.MockUserService) {},
+			expectedStatus: http.StatusBadRequest,
+			checkResponse: func(t *testing.T, w *httptest.ResponseRecorder) {
+				var resp map[string]interface{}
+				err := json.Unmarshal(w.Body.Bytes(), &resp)
+				assert.NoError(t, err)
+				assert.Equal(t, false, resp["success"])
+				assert.Equal(t, "invalid user ID format", resp["error"])
+			},
+		},
+		{
 			name:   "user not found",
 			userID: primitive.NewObjectID().Hex(),
 			mockSetup: func(m *mocks.MockUserService) {
-				m.DeleteUserFunc = func(ctx context.Context, id string) error {
+				m.DeleteUserFunc = func(ctx context.Context, id primitive.ObjectID) error {
 					return apperrors.ErrUserNotFound
 				}
 			},
@@ -352,7 +394,7 @@ func TestUserHandler_DeleteUser(t *testing.T) {
 			name:   "internal server error",
 			userID: userID.Hex(),
 			mockSetup: func(m *mocks.MockUserService) {
-				m.DeleteUserFunc = func(ctx context.Context, id string) error {
+				m.DeleteUserFunc = func(ctx context.Context, id primitive.ObjectID) error {
 					return errors.New("database error")
 				}
 			},

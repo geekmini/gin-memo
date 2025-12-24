@@ -1,0 +1,136 @@
+# golangci-lint configuration
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    # Default linters
+    - errcheck      # Check for unchecked errors
+    - gosimple      # Simplify code
+    - govet         # Go vet checks
+    - ineffassign   # Detect unused assignments
+    - staticcheck   # Static analysis
+    - unused        # Find unused code
+
+    # Additional useful linters
+    - bodyclose     # Check HTTP response body is closed
+    - durationcheck # Check for duration multiplication issues
+    - errorlint     # Find issues with error wrapping
+    - copyloopvar   # Check for loop variable copies (replaces deprecated exportloopref)
+    - goconst       # Find repeated strings that could be constants
+    - gocritic      # Opinionated linter with many checks
+    - gofmt         # Check code is formatted
+    - gosec         # Security checks
+    - misspell      # Find common spelling mistakes
+    - nilerr        # Find code returning nil error incorrectly
+    - noctx         # Find HTTP requests without context
+    - prealloc      # Find slice declarations that could be preallocated
+    - revive        # Fast, configurable linter
+    - unconvert     # Remove unnecessary type conversions
+    - unparam       # Find unused function parameters
+    - wastedassign  # Find wasted assignment statements
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment  # Too noisy for this project
+      - shadow          # Common pattern in handlers with ShouldBindJSON
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    disabled-checks:
+      - hugeParam          # Too strict for handler functions
+      - rangeValCopy       # Often acceptable for small structs
+      - appendAssign       # False positives with pipeline patterns
+      - httpNoBody         # Style preference, nil is acceptable
+      - unnecessaryBlock   # Used intentionally for route grouping readability
+      - exitAfterDefer     # log.Fatalf at startup is intentional
+      - paramTypeCombine   # Style preference
+      - equalFold          # Existing pattern works correctly
+
+  gosec:
+    excludes:
+      - G104  # Audit errors not checked (too noisy with defer)
+      - G112  # ReadHeaderTimeout - using default Gin server
+      - G115  # Integer overflow - controlled values in retry logic
+      - G404  # Weak RNG - acceptable for non-security transcription delays
+
+  revive:
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+        disabled: true  # Not requiring package comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
+        disabled: true  # Handled by unparam
+      - name: unreachable-code
+      - name: redefines-builtin-id
+
+  errorlint:
+    errorf: true
+    asserts: true
+    comparison: true
+
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests
+    - path: _test\.go
+      linters:
+        - goconst
+        - gosec
+        - noctx
+        - unparam
+        - gocritic
+
+    # Exclude generated files
+    - path: swagger/
+      linters:
+        - all
+
+    # Exclude mocks
+    - path: mocks/
+      linters:
+        - all
+
+    # Exclude test utilities
+    - path: test/testutil/
+      linters:
+        - noctx
+
+    # Exclude seed data tool
+    - path: cmd/seed/
+      linters:
+        - gocritic
+        - prealloc
+
+  max-issues-per-linter: 50
+  max-same-issues: 5

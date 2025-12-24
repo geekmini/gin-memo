@@ -762,6 +762,10 @@ var (
 
 ## Open Questions
 
-- [ ] Should we send email notifications for invitations? (deferred)
-- [ ] Background job for cleaning expired invitations? (deferred)
-- [ ] Rate limiting on invitation creation? (deferred)
+_All open questions have been converted to GitHub issues for tracking._
+
+| Question                                        | Issue                                              | Priority |
+| ----------------------------------------------- | -------------------------------------------------- | -------- |
+| Background job for cleaning expired invitations | [#31](https://github.com/geekmini/gin-memo/issues/31) | Medium   |
+| Rate limiting on invitation creation            | [#32](https://github.com/geekmini/gin-memo/issues/32) | Medium   |
+| Email notifications for invitations             | [#33](https://github.com/geekmini/gin-memo/issues/33) | Low      |

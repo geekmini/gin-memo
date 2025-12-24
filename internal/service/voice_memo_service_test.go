@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	apperrors "gin-sample/internal/errors"
 	"gin-sample/internal/models"
@@ -25,7 +26,7 @@ func TestNewVoiceMemoService(t *testing.T) {
 	mockStorage := storagemocks.NewMockStorage(ctrl)
 	mockQueue := queuemocks.NewMockQueue(ctrl)
 
-	service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+	service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 
 	assert.NotNil(t, service)
 	assert.Equal(t, mockRepo, service.repo)
@@ -70,7 +71,7 @@ func TestVoiceMemoService_ListByUserID(t *testing.T) {
 			GetPresignedURL(gomock.Any(), memos[1].AudioFileKey, gomock.Any()).
 			Return("https://s3.example.com/memo2.mp3", nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.ListByUserID(context.Background(), validUserID.Hex(), 1, 10)
 
 		require.NoError(t, err)
@@ -95,7 +96,7 @@ func TestVoiceMemoService_ListByUserID(t *testing.T) {
 			FindByUserID(gomock.Any(), validUserID, 1, 10).
 			Return([]models.VoiceMemo{}, 0, nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.ListByUserID(context.Background(), validUserID.Hex(), 0, 0)
 
 		require.NoError(t, err)
@@ -116,7 +117,7 @@ func TestVoiceMemoService_ListByUserID(t *testing.T) {
 			FindByUserID(gomock.Any(), validUserID, 1, 10).
 			Return([]models.VoiceMemo{}, 0, nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.ListByUserID(context.Background(), validUserID.Hex(), 1, 100)
 
 		require.NoError(t, err)
@@ -131,7 +132,7 @@ func TestVoiceMemoService_ListByUserID(t *testing.T) {
 		mockStorage := storagemocks.NewMockStorage(ctrl)
 		mockQueue := queuemocks.NewMockQueue(ctrl)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.ListByUserID(context.Background(), "invalid-id", 1, 10)
 
 		assert.Nil(t, resp)
@@ -150,7 +151,7 @@ func TestVoiceMemoService_ListByUserID(t *testing.T) {
 			FindByUserID(gomock.Any(), validUserID, 1, 10).
 			Return(nil, 0, assert.AnError)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.ListByUserID(context.Background(), validUserID.Hex(), 1, 10)
 
 		assert.Nil(t, resp)
@@ -190,7 +191,7 @@ func TestVoiceMemoService_ListByUserID(t *testing.T) {
 			Return("", assert.AnError).
 			Times(2)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.ListByUserID(context.Background(), validUserID.Hex(), 1, 10)
 
 		require.NoError(t, err)
@@ -212,7 +213,7 @@ func TestVoiceMemoService_ListByUserID(t *testing.T) {
 			FindByUserID(gomock.Any(), validUserID, 1, 10).
 			Return([]models.VoiceMemo{}, 15, nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.ListByUserID(context.Background(), validUserID.Hex(), 1, 10)
 
 		require.NoError(t, err)
@@ -236,7 +237,7 @@ func TestVoiceMemoService_DeleteVoiceMemo(t *testing.T) {
 			SoftDeleteWithOwnership(gomock.Any(), memoID, userID).
 			Return(nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.DeleteVoiceMemo(context.Background(), memoID, userID)
 
 		assert.NoError(t, err)
@@ -254,7 +255,7 @@ func TestVoiceMemoService_DeleteVoiceMemo(t *testing.T) {
 			SoftDeleteWithOwnership(gomock.Any(), memoID, userID).
 			Return(apperrors.ErrVoiceMemoNotFound)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.DeleteVoiceMemo(context.Background(), memoID, userID)
 
 		assert.Equal(t, apperrors.ErrVoiceMemoNotFound, err)
@@ -290,7 +291,7 @@ func TestVoiceMemoService_ListByTeamID(t *testing.T) {
 			GetPresignedURL(gomock.Any(), memos[0].AudioFileKey, gomock.Any()).
 			Return("https://s3.example.com/team-memo1.mp3", nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.ListByTeamID(context.Background(), validTeamID.Hex(), 1, 10)
 
 		require.NoError(t, err)
@@ -306,7 +307,7 @@ func TestVoiceMemoService_ListByTeamID(t *testing.T) {
 		mockStorage := storagemocks.NewMockStorage(ctrl)
 		mockQueue := queuemocks.NewMockQueue(ctrl)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.ListByTeamID(context.Background(), "invalid-id", 1, 10)
 
 		assert.Nil(t, resp)
@@ -325,7 +326,7 @@ func TestVoiceMemoService_ListByTeamID(t *testing.T) {
 			FindByTeamID(gomock.Any(), validTeamID, 1, 10).
 			Return([]models.VoiceMemo{}, 0, nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.ListByTeamID(context.Background(), validTeamID.Hex(), -1, 50)
 
 		require.NoError(t, err)
@@ -360,7 +361,7 @@ func TestVoiceMemoService_GetVoiceMemo(t *testing.T) {
 			GetPresignedURL(gomock.Any(), memo.AudioFileKey, gomock.Any()).
 			Return("https://s3.example.com/memo1.mp3", nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		result, err := service.GetVoiceMemo(context.Background(), memoID)
 
 		require.NoError(t, err)
@@ -392,7 +393,7 @@ func TestVoiceMemoService_GetVoiceMemo(t *testing.T) {
 			GetPresignedURL(gomock.Any(), gomock.Any(), gomock.Any()).
 			Return("", assert.AnError)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		result, err := service.GetVoiceMemo(context.Background(), memoID)
 
 		require.NoError(t, err)
@@ -412,7 +413,7 @@ func TestVoiceMemoService_GetVoiceMemo(t *testing.T) {
 			FindByID(gomock.Any(), memoID).
 			Return(nil, apperrors.ErrVoiceMemoNotFound)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		result, err := service.GetVoiceMemo(context.Background(), memoID)
 
 		assert.Nil(t, result)
@@ -439,7 +440,7 @@ func TestVoiceMemoService_GetVoiceMemo(t *testing.T) {
 			Return(memoWithoutKey, nil)
 
 		// GetPresignedURL should NOT be called
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		result, err := service.GetVoiceMemo(context.Background(), memoID)
 
 		require.NoError(t, err)
@@ -464,7 +465,7 @@ func TestVoiceMemoService_DeleteTeamVoiceMemo(t *testing.T) {
 			SoftDeleteWithTeam(gomock.Any(), memoID, teamID).
 			Return(nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.DeleteTeamVoiceMemo(context.Background(), memoID, teamID)
 
 		assert.NoError(t, err)
@@ -482,7 +483,7 @@ func TestVoiceMemoService_DeleteTeamVoiceMemo(t *testing.T) {
 			SoftDeleteWithTeam(gomock.Any(), memoID, teamID).
 			Return(apperrors.ErrVoiceMemoNotFound)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.DeleteTeamVoiceMemo(context.Background(), memoID, teamID)
 
 		assert.Equal(t, apperrors.ErrVoiceMemoNotFound, err)
@@ -523,7 +524,7 @@ func TestVoiceMemoService_CreateVoiceMemo(t *testing.T) {
 			GetPresignedPutURL(gomock.Any(), gomock.Any(), "audio/mpeg", gomock.Any()).
 			Return("https://s3.example.com/upload-url", nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.CreateVoiceMemo(context.Background(), userID, req)
 
 		require.NoError(t, err)
@@ -560,7 +561,7 @@ func TestVoiceMemoService_CreateVoiceMemo(t *testing.T) {
 			GetPresignedPutURL(gomock.Any(), gomock.Any(), "audio/wav", gomock.Any()).
 			Return("https://s3.example.com/upload-url", nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.CreateVoiceMemo(context.Background(), userID, reqWithNilTags)
 
 		require.NoError(t, err)
@@ -579,7 +580,7 @@ func TestVoiceMemoService_CreateVoiceMemo(t *testing.T) {
 			Create(gomock.Any(), gomock.Any()).
 			Return(assert.AnError)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.CreateVoiceMemo(context.Background(), userID, req)
 
 		assert.Nil(t, resp)
@@ -602,7 +603,7 @@ func TestVoiceMemoService_CreateVoiceMemo(t *testing.T) {
 			GetPresignedPutURL(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Return("", assert.AnError)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.CreateVoiceMemo(context.Background(), userID, req)
 
 		assert.Nil(t, resp)
@@ -644,7 +645,7 @@ func TestVoiceMemoService_CreateVoiceMemo(t *testing.T) {
 					GetPresignedPutURL(gomock.Any(), gomock.Any(), tc.contentType, gomock.Any()).
 					Return("https://s3.example.com/upload", nil)
 
-				service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+				service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 				_, err := service.CreateVoiceMemo(context.Background(), userID, formatReq)
 
 				assert.NoError(t, err)
@@ -688,7 +689,7 @@ func TestVoiceMemoService_CreateTeamVoiceMemo(t *testing.T) {
 			GetPresignedPutURL(gomock.Any(), gomock.Any(), "audio/mp4", gomock.Any()).
 			Return("https://s3.example.com/team-upload-url", nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.CreateTeamVoiceMemo(context.Background(), userID, teamID, req)
 
 		require.NoError(t, err)
@@ -709,7 +710,7 @@ func TestVoiceMemoService_CreateTeamVoiceMemo(t *testing.T) {
 			Create(gomock.Any(), gomock.Any()).
 			Return(assert.AnError)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		resp, err := service.CreateTeamVoiceMemo(context.Background(), userID, teamID, req)
 
 		assert.Nil(t, resp)
@@ -748,7 +749,7 @@ func TestVoiceMemoService_ConfirmUpload(t *testing.T) {
 				return nil
 			})
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.ConfirmUpload(context.Background(), memoID, userID)
 
 		assert.NoError(t, err)
@@ -766,7 +767,7 @@ func TestVoiceMemoService_ConfirmUpload(t *testing.T) {
 			UpdateStatusWithOwnership(gomock.Any(), memoID, userID, models.StatusPendingUpload, models.StatusTranscribing).
 			Return(nil, apperrors.ErrVoiceMemoNotFound)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.ConfirmUpload(context.Background(), memoID, userID)
 
 		assert.Equal(t, apperrors.ErrVoiceMemoNotFound, err)
@@ -792,7 +793,7 @@ func TestVoiceMemoService_ConfirmUpload(t *testing.T) {
 			UpdateStatusConditional(gomock.Any(), memoID, models.StatusTranscribing, models.StatusPendingUpload).
 			Return(nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.ConfirmUpload(context.Background(), memoID, userID)
 
 		assert.Equal(t, apperrors.ErrTranscriptionQueueFull, err)
@@ -818,7 +819,7 @@ func TestVoiceMemoService_ConfirmUpload(t *testing.T) {
 			UpdateStatusConditional(gomock.Any(), memoID, models.StatusTranscribing, models.StatusPendingUpload).
 			Return(assert.AnError) // Revert fails
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.ConfirmUpload(context.Background(), memoID, userID)
 
 		// Should still return queue full error
@@ -841,7 +842,7 @@ func TestVoiceMemoService_ConfirmUpload(t *testing.T) {
 			Enqueue(gomock.Any()).
 			Return(assert.AnError) // Not ErrQueueFull
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.ConfirmUpload(context.Background(), memoID, userID)
 
 		assert.Error(t, err)
@@ -875,7 +876,7 @@ func TestVoiceMemoService_ConfirmTeamUpload(t *testing.T) {
 			Enqueue(gomock.Any()).
 			Return(nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.ConfirmTeamUpload(context.Background(), memoID, teamID)
 
 		assert.NoError(t, err)
@@ -901,7 +902,7 @@ func TestVoiceMemoService_ConfirmTeamUpload(t *testing.T) {
 			UpdateStatusConditional(gomock.Any(), memoID, models.StatusTranscribing, models.StatusPendingUpload).
 			Return(nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.ConfirmTeamUpload(context.Background(), memoID, teamID)
 
 		assert.Equal(t, apperrors.ErrTranscriptionQueueFull, err)
@@ -937,7 +938,7 @@ func TestVoiceMemoService_RetryTranscription(t *testing.T) {
 				return nil
 			})
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.RetryTranscription(context.Background(), memoID, userID)
 
 		assert.NoError(t, err)
@@ -955,7 +956,7 @@ func TestVoiceMemoService_RetryTranscription(t *testing.T) {
 			UpdateStatusWithOwnership(gomock.Any(), memoID, userID, models.StatusFailed, models.StatusTranscribing).
 			Return(nil, apperrors.ErrVoiceMemoNotFound)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.RetryTranscription(context.Background(), memoID, userID)
 
 		assert.Equal(t, apperrors.ErrVoiceMemoNotFound, err)
@@ -981,7 +982,7 @@ func TestVoiceMemoService_RetryTranscription(t *testing.T) {
 			UpdateStatusConditional(gomock.Any(), memoID, models.StatusTranscribing, models.StatusFailed).
 			Return(nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.RetryTranscription(context.Background(), memoID, userID)
 
 		assert.Equal(t, apperrors.ErrTranscriptionQueueFull, err)
@@ -1014,7 +1015,7 @@ func TestVoiceMemoService_RetryTeamTranscription(t *testing.T) {
 			Enqueue(gomock.Any()).
 			Return(nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.RetryTeamTranscription(context.Background(), memoID, teamID)
 
 		assert.NoError(t, err)
@@ -1040,7 +1041,7 @@ func TestVoiceMemoService_RetryTeamTranscription(t *testing.T) {
 			UpdateStatusConditional(gomock.Any(), memoID, models.StatusTranscribing, models.StatusFailed).
 			Return(nil)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.RetryTeamTranscription(context.Background(), memoID, teamID)
 
 		assert.Equal(t, apperrors.ErrTranscriptionQueueFull, err)
@@ -1058,7 +1059,7 @@ func TestVoiceMemoService_RetryTeamTranscription(t *testing.T) {
 			UpdateStatusWithTeam(gomock.Any(), memoID, teamID, models.StatusFailed, models.StatusTranscribing).
 			Return(nil, apperrors.ErrVoiceMemoNotFound)
 
-		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue)
+		service := NewVoiceMemoService(mockRepo, mockStorage, mockQueue, time.Hour, 15*time.Minute)
 		err := service.RetryTeamTranscription(context.Background(), memoID, teamID)
 
 		assert.Equal(t, apperrors.ErrVoiceMemoNotFound, err)

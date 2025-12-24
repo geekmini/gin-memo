@@ -221,9 +221,9 @@ jobs:
 
 1. [x] Create `.github/workflows/unit-tests.yml` with workflow definition
 2. [x] Verify `CODECOV_TOKEN` secret exists in repository settings
-3. [ ] Test by opening a PR with Go code changes
-4. [ ] Verify workflow completes successfully
-5. [ ] Verify coverage appears in Codecov
+3. [x] Test by opening a PR with Go code changes
+4. [x] Verify workflow completes successfully
+5. [x] Verify coverage appears in Codecov
 
 ## Out of Scope
 

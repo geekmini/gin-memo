@@ -42,6 +42,20 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 	return m.recorder
 }
 
+// DeleteObject mocks base method.
+func (m *MockStorage) DeleteObject(ctx context.Context, key string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteObject", ctx, key)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteObject indicates an expected call of DeleteObject.
+func (mr *MockStorageMockRecorder) DeleteObject(ctx, key any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteObject", reflect.TypeOf((*MockStorage)(nil).DeleteObject), ctx, key)
+}
+
 // GetPresignedPutURL mocks base method.
 func (m *MockStorage) GetPresignedPutURL(ctx context.Context, key, contentType string, expiry time.Duration) (string, error) {
 	m.ctrl.T.Helper()

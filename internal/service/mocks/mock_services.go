@@ -47,13 +47,13 @@ func (m *MockAuthService) Logout(ctx context.Context, req *models.LogoutRequest)
 
 // MockUserService is a mock implementation of UserServicer.
 type MockUserService struct {
-	GetUserFunc     func(ctx context.Context, id string) (*models.User, error)
+	GetUserFunc     func(ctx context.Context, id primitive.ObjectID) (*models.User, error)
 	GetAllUsersFunc func(ctx context.Context) ([]models.User, error)
-	UpdateUserFunc  func(ctx context.Context, id string, req *models.UpdateUserRequest) (*models.User, error)
-	DeleteUserFunc  func(ctx context.Context, id string) error
+	UpdateUserFunc  func(ctx context.Context, id primitive.ObjectID, req *models.UpdateUserRequest) (*models.User, error)
+	DeleteUserFunc  func(ctx context.Context, id primitive.ObjectID) error
 }
 
-func (m *MockUserService) GetUser(ctx context.Context, id string) (*models.User, error) {
+func (m *MockUserService) GetUser(ctx context.Context, id primitive.ObjectID) (*models.User, error) {
 	if m.GetUserFunc != nil {
 		return m.GetUserFunc(ctx, id)
 	}
@@ -67,14 +67,14 @@ func (m *MockUserService) GetAllUsers(ctx context.Context) ([]models.User, error
 	return nil, nil
 }
 
-func (m *MockUserService) UpdateUser(ctx context.Context, id string, req *models.UpdateUserRequest) (*models.User, error) {
+func (m *MockUserService) UpdateUser(ctx context.Context, id primitive.ObjectID, req *models.UpdateUserRequest) (*models.User, error) {
 	if m.UpdateUserFunc != nil {
 		return m.UpdateUserFunc(ctx, id, req)
 	}
 	return nil, nil
 }
 
-func (m *MockUserService) DeleteUser(ctx context.Context, id string) error {
+func (m *MockUserService) DeleteUser(ctx context.Context, id primitive.ObjectID) error {
 	if m.DeleteUserFunc != nil {
 		return m.DeleteUserFunc(ctx, id)
 	}

@@ -169,8 +169,14 @@ func (h *TeamInvitationHandler) ListMyInvitations(c *gin.Context) {
 		return
 	}
 
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
 	// Get user to get their email
-	user, err := h.userService.GetUser(c.Request.Context(), userIDStr)
+	user, err := h.userService.GetUser(c.Request.Context(), userID)
 	if err != nil {
 		response.InternalError(c)
 		return
@@ -207,7 +213,11 @@ func (h *TeamInvitationHandler) AcceptInvitation(c *gin.Context) {
 		return
 	}
 
-	userID, _ := primitive.ObjectIDFromHex(userIDStr)
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
 
 	invitationID, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
@@ -216,7 +226,7 @@ func (h *TeamInvitationHandler) AcceptInvitation(c *gin.Context) {
 	}
 
 	// Get user to get their email
-	user, err := h.userService.GetUser(c.Request.Context(), userIDStr)
+	user, err := h.userService.GetUser(c.Request.Context(), userID)
 	if err != nil {
 		response.InternalError(c)
 		return
@@ -269,6 +279,12 @@ func (h *TeamInvitationHandler) DeclineInvitation(c *gin.Context) {
 		return
 	}
 
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+
 	invitationID, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
 		response.BadRequest(c, "invalid invitation id format")
@@ -276,7 +292,7 @@ func (h *TeamInvitationHandler) DeclineInvitation(c *gin.Context) {
 	}
 
 	// Get user to get their email
-	user, err := h.userService.GetUser(c.Request.Context(), userIDStr)
+	user, err := h.userService.GetUser(c.Request.Context(), userID)
 	if err != nil {
 		response.InternalError(c)
 		return
