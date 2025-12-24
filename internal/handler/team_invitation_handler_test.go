@@ -434,6 +434,12 @@ func TestTeamInvitationHandler_ListMyInvitations(t *testing.T) {
 			expectedStatus: http.StatusUnauthorized,
 		},
 		{
+			name:           "invalid user ID format",
+			userID:         "invalid-user-id",
+			mockSetup:      func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
 			name:   "user not found",
 			userID: userID.Hex(),
 			mockSetup: func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {
@@ -536,6 +542,13 @@ func TestTeamInvitationHandler_AcceptInvitation(t *testing.T) {
 			invitationID:   "invalid-id",
 			mockSetup:      func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {},
 			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid user ID format",
+			userID:         "invalid-user-id",
+			invitationID:   invitationID.Hex(),
+			mockSetup:      func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {},
+			expectedStatus: http.StatusInternalServerError,
 		},
 		{
 			name:         "user not found",
@@ -694,6 +707,13 @@ func TestTeamInvitationHandler_DeclineInvitation(t *testing.T) {
 			invitationID:   "invalid-id",
 			mockSetup:      func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {},
 			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid user ID format",
+			userID:         "invalid-user-id",
+			invitationID:   invitationID.Hex(),
+			mockSetup:      func(m *mocks.MockTeamInvitationService, u *mocks.MockUserService) {},
+			expectedStatus: http.StatusInternalServerError,
 		},
 		{
 			name:         "user not found",

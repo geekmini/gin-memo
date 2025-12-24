@@ -52,6 +52,26 @@ func TestParseDuration(t *testing.T) {
 	}
 }
 
+func TestParseInt(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int
+	}{
+		{"positive integer", "100", 100},
+		{"zero", "0", 0},
+		{"negative integer", "-5", -5},
+		{"large number", "1000000", 1000000},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseInt(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestLoad(t *testing.T) {
 	t.Run("loads config with all required env vars", func(t *testing.T) {
 		// Set required env vars
