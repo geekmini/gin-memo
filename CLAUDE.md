@@ -151,6 +151,10 @@ var ErrSomething = errors.New("something went wrong")
 - Token contains only user ID
 - Protected routes use `middleware.Auth(jwtManager)`
 
+## Go Version
+
+This project requires **Go 1.25**. All CI workflows use Go 1.25.
+
 ## Environment Variables
 
 See `.env.example` for all required variables. Copy to `.env` and update values:
