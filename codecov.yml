@@ -10,29 +10,29 @@ coverage:
 
 ignore:
   # Entry points - minimal logic, just wiring
-  - "cmd/**"
+  - "cmd/**/*"
 
   # Generated documentation
-  - "swagger/**"
+  - "swagger/**/*"
 
   # Test files themselves
-  - "test/**"
+  - "test/**/*"
   - "**/*_test.go"
 
   # Configuration - simple env loading
-  - "internal/config/**"
+  - "internal/config/**/*"
 
   # Router - just route wiring, no business logic
-  - "internal/router/**"
+  - "internal/router/**/*"
 
   # Models - data structs, no logic
-  - "internal/models/**"
+  - "internal/models/**/*"
 
   # Validator - simple validation rules
-  - "internal/validator/**"
+  - "internal/validator/**/*"
 
   # Mock implementations
-  - "**/mocks/**"
+  - "**/mocks/**/*"
 
   # Interface definitions - no executable code
   - "**/interface.go"
