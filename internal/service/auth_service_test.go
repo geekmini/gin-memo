@@ -468,3 +468,163 @@ func TestAuthService_Logout(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
+
+func TestAuthService_LogoutAll(t *testing.T) {
+	userID := primitive.NewObjectID()
+
+	t.Run("successfully logs out all devices", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+
+		tokens := []models.RefreshToken{
+			{Token: "rf_token_1", UserID: userID},
+			{Token: "rf_token_2", UserID: userID},
+		}
+
+		mockRefreshRepo.EXPECT().
+			FindAllByUserID(gomock.Any(), userID).
+			Return(tokens, nil)
+
+		mockCache.EXPECT().
+			DeleteRefreshTokens(gomock.Any(), []string{"rf_token_1", "rf_token_2"}).
+			Return(nil)
+
+		mockRefreshRepo.EXPECT().
+			DeleteByUserID(gomock.Any(), userID).
+			Return(nil)
+
+		service := NewAuthService(
+			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
+			15*time.Minute, 7*24*time.Hour,
+		)
+
+		err := service.LogoutAll(context.Background(), userID)
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("succeeds when user has no tokens", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+
+		mockRefreshRepo.EXPECT().
+			FindAllByUserID(gomock.Any(), userID).
+			Return([]models.RefreshToken{}, nil)
+
+		mockRefreshRepo.EXPECT().
+			DeleteByUserID(gomock.Any(), userID).
+			Return(nil)
+
+		service := NewAuthService(
+			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
+			15*time.Minute, 7*24*time.Hour,
+		)
+
+		err := service.LogoutAll(context.Background(), userID)
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("returns error when FindAllByUserID fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+
+		mockRefreshRepo.EXPECT().
+			FindAllByUserID(gomock.Any(), userID).
+			Return(nil, assert.AnError)
+
+		service := NewAuthService(
+			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
+			15*time.Minute, 7*24*time.Hour,
+		)
+
+		err := service.LogoutAll(context.Background(), userID)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("ignores cache delete error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+
+		tokens := []models.RefreshToken{
+			{Token: "rf_token_1", UserID: userID},
+		}
+
+		mockRefreshRepo.EXPECT().
+			FindAllByUserID(gomock.Any(), userID).
+			Return(tokens, nil)
+
+		mockCache.EXPECT().
+			DeleteRefreshTokens(gomock.Any(), []string{"rf_token_1"}).
+			Return(assert.AnError) // Cache error is ignored
+
+		mockRefreshRepo.EXPECT().
+			DeleteByUserID(gomock.Any(), userID).
+			Return(nil)
+
+		service := NewAuthService(
+			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
+			15*time.Minute, 7*24*time.Hour,
+		)
+
+		err := service.LogoutAll(context.Background(), userID)
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("returns error when DeleteByUserID fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+
+		tokens := []models.RefreshToken{
+			{Token: "rf_token_1", UserID: userID},
+		}
+
+		mockRefreshRepo.EXPECT().
+			FindAllByUserID(gomock.Any(), userID).
+			Return(tokens, nil)
+
+		mockCache.EXPECT().
+			DeleteRefreshTokens(gomock.Any(), []string{"rf_token_1"}).
+			Return(nil)
+
+		mockRefreshRepo.EXPECT().
+			DeleteByUserID(gomock.Any(), userID).
+			Return(assert.AnError)
+
+		service := NewAuthService(
+			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
+			15*time.Minute, 7*24*time.Hour,
+		)
+
+		err := service.LogoutAll(context.Background(), userID)
+
+		assert.Error(t, err)
+	})
+}

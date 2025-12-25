@@ -445,3 +445,77 @@ func TestAuthHandler_Logout(t *testing.T) {
 		})
 	}
 }
+
+func TestAuthHandler_LogoutAll(t *testing.T) {
+	userID := primitive.NewObjectID()
+
+	tests := []struct {
+		name           string
+		setupContext   func(*gin.Context)
+		mockSetup      func(*mocks.MockAuthService)
+		expectedStatus int
+	}{
+		{
+			name: "successful logout all devices",
+			setupContext: func(c *gin.Context) {
+				c.Set("userID", userID.Hex())
+			},
+			mockSetup: func(m *mocks.MockAuthService) {
+				m.LogoutAllFunc = func(ctx context.Context, id primitive.ObjectID) error {
+					return nil
+				}
+			},
+			expectedStatus: http.StatusNoContent,
+		},
+		{
+			name: "invalid user ID in context",
+			setupContext: func(c *gin.Context) {
+				c.Set("userID", "invalid-object-id")
+			},
+			mockSetup:      func(m *mocks.MockAuthService) {},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "missing user ID in context",
+			setupContext: func(c *gin.Context) {
+				// Don't set userID
+			},
+			mockSetup:      func(m *mocks.MockAuthService) {},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "internal server error",
+			setupContext: func(c *gin.Context) {
+				c.Set("userID", userID.Hex())
+			},
+			mockSetup: func(m *mocks.MockAuthService) {
+				m.LogoutAllFunc = func(ctx context.Context, id primitive.ObjectID) error {
+					return errors.New("database error")
+				}
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := &mocks.MockAuthService{}
+			tt.mockSetup(mockService)
+
+			handler := NewAuthHandler(mockService)
+
+			router := gin.New()
+			router.POST("/auth/logout-all", func(c *gin.Context) {
+				tt.setupContext(c)
+				handler.LogoutAll(c)
+			})
+
+			req := httptest.NewRequest(http.MethodPost, "/auth/logout-all", nil)
+			w := httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+		})
+	}
+}
