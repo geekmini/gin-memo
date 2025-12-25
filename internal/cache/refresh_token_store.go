@@ -163,8 +163,18 @@ func (s *refreshTokenStore) rotateFallback(ctx context.Context, familyID string,
 	return s.cache.Set(ctx, refreshTokenFamilyKey(familyID), data, ttl)
 }
 
-// Delete removes a refresh token family.
+// Delete removes a refresh token family and updates the user index.
 func (s *refreshTokenStore) Delete(ctx context.Context, familyID string) error {
+	// Get the token data first to find the user ID for index cleanup
+	if s.client != nil {
+		data, err := s.Get(ctx, familyID)
+		if err == nil && data != nil {
+			// Remove family ID from user's set (best-effort)
+			userKey := userRefreshTokensKey(data.UserID)
+			_ = s.client.SRem(ctx, userKey, familyID)
+		}
+	}
+
 	return s.cache.Delete(ctx, refreshTokenFamilyKey(familyID))
 }
 
