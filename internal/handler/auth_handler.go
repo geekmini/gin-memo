@@ -167,7 +167,7 @@ func (h *AuthHandler) LogoutAll(c *gin.Context) {
 	userIDStr := middleware.GetUserID(c)
 	userID, err := primitive.ObjectIDFromHex(userIDStr)
 	if err != nil {
-		response.Unauthorized(c, "invalid user ID")
+		response.Unauthorized(c, "invalid session")
 		return
 	}
 

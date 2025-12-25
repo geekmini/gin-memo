@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"log"
 	"time"
 
 	"gin-sample/internal/cache"
@@ -150,7 +151,9 @@ func (s *AuthService) LogoutAll(ctx context.Context, userID primitive.ObjectID) 
 		}
 
 		// Batch delete from cache (best-effort)
-		_ = s.cache.DeleteRefreshTokens(ctx, tokenStrings)
+		if err := s.cache.DeleteRefreshTokens(ctx, tokenStrings); err != nil {
+			log.Printf("Warning: failed to delete refresh tokens from cache for user %s: %v", userID.Hex(), err)
+		}
 	}
 
 	// Delete all from MongoDB
