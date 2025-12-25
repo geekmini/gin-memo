@@ -216,3 +216,86 @@ func TestRefreshTokenRepository_DeleteByUserID(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
+
+func TestRefreshTokenRepository_FindAllByUserID(t *testing.T) {
+	tdb := SetupTestDB(t)
+	defer tdb.Cleanup(t)
+
+	repo := NewRefreshTokenRepository(tdb.Database)
+	ctx := context.Background()
+
+	t.Run("finds all tokens for user", func(t *testing.T) {
+		tdb.ClearCollection(t, "refresh_tokens")
+
+		userID := primitive.NewObjectID()
+
+		// Create multiple tokens for same user
+		for i := 0; i < 3; i++ {
+			token := &models.RefreshToken{
+				Token:     "rf_findall_token_" + string(rune('a'+i)),
+				UserID:    userID,
+				ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
+			}
+			err := repo.Create(ctx, token)
+			require.NoError(t, err)
+		}
+
+		// Create token for different user (should not be included)
+		otherToken := &models.RefreshToken{
+			Token:     "rf_other_user_findall",
+			UserID:    primitive.NewObjectID(),
+			ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
+		}
+		err := repo.Create(ctx, otherToken)
+		require.NoError(t, err)
+
+		// Find all tokens for first user
+		tokens, err := repo.FindAllByUserID(ctx, userID)
+
+		require.NoError(t, err)
+		assert.Len(t, tokens, 3)
+		for _, token := range tokens {
+			assert.Equal(t, userID, token.UserID)
+		}
+	})
+
+	t.Run("returns empty slice when user has no tokens", func(t *testing.T) {
+		tdb.ClearCollection(t, "refresh_tokens")
+
+		tokens, err := repo.FindAllByUserID(ctx, primitive.NewObjectID())
+
+		require.NoError(t, err)
+		assert.Empty(t, tokens)
+	})
+
+	t.Run("excludes expired tokens", func(t *testing.T) {
+		tdb.ClearCollection(t, "refresh_tokens")
+
+		userID := primitive.NewObjectID()
+
+		// Create valid token
+		validToken := &models.RefreshToken{
+			Token:     "rf_valid_token",
+			UserID:    userID,
+			ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
+		}
+		err := repo.Create(ctx, validToken)
+		require.NoError(t, err)
+
+		// Create expired token
+		expiredToken := &models.RefreshToken{
+			Token:     "rf_expired_findall",
+			UserID:    userID,
+			ExpiresAt: time.Now().Add(-1 * time.Hour),
+		}
+		err = repo.Create(ctx, expiredToken)
+		require.NoError(t, err)
+
+		// Find all should only return valid token
+		tokens, err := repo.FindAllByUserID(ctx, userID)
+
+		require.NoError(t, err)
+		assert.Len(t, tokens, 1)
+		assert.Equal(t, "rf_valid_token", tokens[0].Token)
+	})
+}
