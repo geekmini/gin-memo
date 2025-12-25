@@ -40,3 +40,4 @@ tmp/
 # Claude Code dev session state
 .claude/dev-checkpoint.md
 .claude/dev-checkpoints/
+.claude/settings.local.json
