@@ -246,12 +246,18 @@ When using `putCollection`, you MUST:
 }
 ```
 
-**Common Error:**
+**Common Errors:**
 
 If you omit the `info` object, you'll get:
 ```
 API request failed: 400 {"error":{"name":"paramMissingError","message":"'info' key is required when 'collection' is empty."}}
 ```
+
+If you omit the `id` field on any item (including new items), you'll get:
+```
+Invalid arguments for tool putCollection: [{"code": "invalid_type", "expected": "string", "received": "undefined", "path": ["collection", "item", 5, "id"], "message": "Required"}]
+```
+**Fix:** Generate a UUID for the new item using `uuidgen | tr '[:upper:]' '[:lower:]'`
 
 ### Recommended Approach for Adding Endpoints
 
@@ -262,8 +268,9 @@ API request failed: 400 {"error":{"name":"paramMissingError","message":"'info' k
 
 **Workflow for adding new endpoints:**
 1. First, get the full collection with `getCollection` (model=full)
-2. Add new items to the item array with full configuration
-3. Use `putCollection` with the complete collection (preserving existing item IDs)
+2. Generate a UUID for each new item: `uuidgen | tr '[:upper:]' '[:lower:]'`
+3. Add new items to the item array with full configuration (including the generated `id`)
+4. Use `putCollection` with the complete collection (preserving existing item IDs)
 
 ### Example: Adding New Endpoints with `putCollection`
 
@@ -284,8 +291,10 @@ API request failed: 400 {"error":{"name":"paramMissingError","message":"'info' k
       // ... existing items with their IDs preserved ...
       {"id": "existing-item-id", "name": "Existing Endpoint", ...},
 
-      // New items (no ID = will be created)
+      // New items MUST have a generated UUID
+      // Generate with: uuidgen | tr '[:upper:]' '[:lower:]'
       {
+        "id": "0fc4d1fb-5c13-4f6a-af42-9509917dd01e",
         "name": "[Private Memos] Confirm Upload",
         "request": {
           "method": "POST",
@@ -306,6 +315,8 @@ API request failed: 400 {"error":{"name":"paramMissingError","message":"'info' k
 ```
 
 **Warning:** If you omit existing items from the `item` array, they will be DELETED.
+
+**Warning:** ALL items (including new ones) MUST have an `id` field. The API schema requires it. Generate a UUID for new items before calling `putCollection`.
 
 ---
 

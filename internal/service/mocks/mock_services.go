@@ -11,10 +11,11 @@ import (
 
 // MockAuthService is a mock implementation of AuthServicer.
 type MockAuthService struct {
-	RegisterFunc func(ctx context.Context, req *models.CreateUserRequest) (*models.AuthResponse, error)
-	LoginFunc    func(ctx context.Context, req *models.LoginRequest) (*models.AuthResponse, error)
-	RefreshFunc  func(ctx context.Context, req *models.RefreshRequest) (*models.RefreshResponse, error)
-	LogoutFunc   func(ctx context.Context, req *models.LogoutRequest) error
+	RegisterFunc  func(ctx context.Context, req *models.CreateUserRequest) (*models.AuthResponse, error)
+	LoginFunc     func(ctx context.Context, req *models.LoginRequest) (*models.AuthResponse, error)
+	RefreshFunc   func(ctx context.Context, req *models.RefreshRequest) (*models.RefreshResponse, error)
+	LogoutFunc    func(ctx context.Context, req *models.LogoutRequest) error
+	LogoutAllFunc func(ctx context.Context, userID primitive.ObjectID) error
 }
 
 func (m *MockAuthService) Register(ctx context.Context, req *models.CreateUserRequest) (*models.AuthResponse, error) {
@@ -41,6 +42,13 @@ func (m *MockAuthService) Refresh(ctx context.Context, req *models.RefreshReques
 func (m *MockAuthService) Logout(ctx context.Context, req *models.LogoutRequest) error {
 	if m.LogoutFunc != nil {
 		return m.LogoutFunc(ctx, req)
+	}
+	return nil
+}
+
+func (m *MockAuthService) LogoutAll(ctx context.Context, userID primitive.ObjectID) error {
+	if m.LogoutAllFunc != nil {
+		return m.LogoutAllFunc(ctx, userID)
 	}
 	return nil
 }

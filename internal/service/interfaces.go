@@ -15,6 +15,7 @@ type AuthServicer interface {
 	Login(ctx context.Context, req *models.LoginRequest) (*models.AuthResponse, error)
 	Refresh(ctx context.Context, req *models.RefreshRequest) (*models.RefreshResponse, error)
 	Logout(ctx context.Context, req *models.LogoutRequest) error
+	LogoutAll(ctx context.Context, userID primitive.ObjectID) error
 }
 
 // UserServicer defines the interface for user operations.

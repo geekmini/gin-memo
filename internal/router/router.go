@@ -59,6 +59,7 @@ func Setup(cfg *Config) *gin.Engine {
 		authProtected.Use(middleware.Auth(cfg.JWTManager))
 		{
 			authProtected.POST("/logout", cfg.AuthHandler.Logout)
+			authProtected.POST("/logout-all", cfg.AuthHandler.LogoutAll)
 		}
 
 		// User routes (protected)

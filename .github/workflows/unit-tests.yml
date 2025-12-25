@@ -42,6 +42,7 @@ jobs:
         with:
           go-version-input: '1.25'
           go-package: ./...
+          repo-checkout: false
 
       - name: Install gotestsum
         run: go install gotest.tools/gotestsum@latest

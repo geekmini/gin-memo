@@ -6,11 +6,13 @@ import (
 	"net/http"
 
 	apperrors "gin-sample/internal/errors"
+	"gin-sample/internal/middleware"
 	"gin-sample/internal/models"
 	"gin-sample/internal/service"
 	"gin-sample/pkg/response"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // AuthHandler handles HTTP requests for authentication operations.
@@ -144,6 +146,32 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 
 	if err := h.service.Logout(c.Request.Context(), &req); err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// LogoutAll godoc
+// @Summary      Logout from all devices
+// @Description  Invalidate all refresh tokens for the authenticated user
+// @Tags         auth
+// @Produce      json
+// @Success      204      "No Content"
+// @Failure      401      {object}  response.Response
+// @Failure      500      {object}  response.Response
+// @Security     BearerAuth
+// @Router       /auth/logout-all [post]
+func (h *AuthHandler) LogoutAll(c *gin.Context) {
+	userIDStr := middleware.GetUserID(c)
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		response.Unauthorized(c, "invalid session")
+		return
+	}
+
+	if err := h.service.LogoutAll(c.Request.Context(), userID); err != nil {
 		response.InternalError(c)
 		return
 	}
