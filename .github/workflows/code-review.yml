@@ -1,12 +1,5 @@
 name: Claude Code Review
 
-# AI-powered code review on pull requests using Claude Code.
-#
-# Triggers: PR opened, synchronized (new commits pushed), or ready_for_review
-#
-# Requirements:
-# - ANTHROPIC_API_KEY secret must be configured
-
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review]
@@ -36,10 +29,8 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
-            Review PR #${{ github.event.pull_request.number }} in ${{ github.repository }}.
-
-            Use the review-pr-ci skill to perform the review.
-
+          plugin_marketplaces: geekmini/claude-code-marketplace
+          plugins: github-pr-reviewer@geekmini-claude-code-plugins
+          prompt: Review this PR using the review-pr-ci skill with guideline at docs/code-review-guide.md
           claude_args: |
             --model claude-opus-4-5 --allowed-tools "Skill,Bash(gh api:*),Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh repo view:*),mcp__github_inline_comment__create_inline_comment,Read,Grep,Glob"
