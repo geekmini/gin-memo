@@ -3,11 +3,15 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
+
+// ErrRefreshTokenFamilyNotFound is returned when a refresh token family does not exist.
+var ErrRefreshTokenFamilyNotFound = errors.New("refresh token family not found")
 
 // RefreshTokenData represents the data stored in Redis for a refresh token family.
 type RefreshTokenData struct {
@@ -110,7 +114,7 @@ func (s *refreshTokenStore) Rotate(ctx context.Context, familyID string, newToke
 		_, err := rotateScript.Run(ctx, s.client, []string{key}, newTokenHash, ttlSeconds).Result()
 		if err != nil {
 			if err.Error() == "refresh token family not found" {
-				return fmt.Errorf("refresh token family not found")
+				return ErrRefreshTokenFamilyNotFound
 			}
 			return fmt.Errorf("rotate script failed: %w", err)
 		}
@@ -128,7 +132,7 @@ func (s *refreshTokenStore) rotateFallback(ctx context.Context, familyID string,
 		return err
 	}
 	if data == nil {
-		return fmt.Errorf("refresh token family not found")
+		return ErrRefreshTokenFamilyNotFound
 	}
 
 	data.PreviousTokenHash = data.CurrentTokenHash
