@@ -141,6 +141,16 @@ func TestRefreshTokenGenerator_ExtractFamilyID(t *testing.T) {
 
 		assert.Error(t, err)
 	})
+
+	t.Run("returns error for non-hex family ID", func(t *testing.T) {
+		// Valid structure (16 chars) but family ID contains non-hex characters (g, h, i, j)
+		token := "rt_ghij567890abcdef_fedcba0987654321fedcba0987654321"
+
+		_, err := gen.ExtractFamilyID(token)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid family ID format: must be hex")
+	})
 }
 
 func TestRefreshTokenGenerator_Hash(t *testing.T) {

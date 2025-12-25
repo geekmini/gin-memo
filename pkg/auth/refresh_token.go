@@ -69,6 +69,10 @@ func (g *refreshTokenGenerator) ExtractFamilyID(token string) (string, error) {
 	if len(parts[1]) != 16 {
 		return "", fmt.Errorf("invalid family ID length")
 	}
+	// Validate hex characters
+	if _, err := hex.DecodeString(parts[1]); err != nil {
+		return "", fmt.Errorf("invalid family ID format: must be hex")
+	}
 	return parts[1], nil
 }
 
