@@ -1078,6 +1078,169 @@ func TestAuthService_LogoutAll_WithRotation(t *testing.T) {
 	})
 }
 
+func TestAuthService_Register_WithRotation_ErrorCases(t *testing.T) {
+	createUserReq := &models.CreateUserRequest{
+		Email:    "test@example.com",
+		Password: "password123",
+		Name:     "Test User",
+	}
+
+	t.Run("returns error when token generation fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		mockUserRepo.EXPECT().
+			Create(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, user *models.User) error {
+				user.ID = primitive.NewObjectID()
+				return nil
+			})
+
+		mockJWT.EXPECT().
+			GenerateToken(gomock.Any()).
+			Return("access-token", nil)
+
+		// Token generation fails
+		mockTokenGen.EXPECT().
+			Generate().
+			Return("", "", assert.AnError)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Register(context.Background(), createUserReq)
+
+		assert.Nil(t, resp)
+		assert.Error(t, err)
+	})
+
+	t.Run("returns error when token store create fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		mockUserRepo.EXPECT().
+			Create(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, user *models.User) error {
+				user.ID = primitive.NewObjectID()
+				return nil
+			})
+
+		mockJWT.EXPECT().
+			GenerateToken(gomock.Any()).
+			Return("access-token", nil)
+
+		mockTokenGen.EXPECT().
+			Generate().
+			Return("rt_family123_random456", "family123", nil)
+
+		mockTokenGen.EXPECT().
+			Hash("rt_family123_random456").
+			Return("hashed_token")
+
+		// Token store create fails
+		mockTokenStore.EXPECT().
+			Create(gomock.Any(), "family123", gomock.Any(), 7*24*time.Hour).
+			Return(assert.AnError)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Register(context.Background(), createUserReq)
+
+		assert.Nil(t, resp)
+		assert.Error(t, err)
+	})
+}
+
+func TestAuthService_Register_LegacyToken_ErrorCases(t *testing.T) {
+	createUserReq := &models.CreateUserRequest{
+		Email:    "test@example.com",
+		Password: "password123",
+		Name:     "Test User",
+	}
+
+	t.Run("returns error when refresh token repo create fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+
+		mockUserRepo.EXPECT().
+			Create(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, user *models.User) error {
+				user.ID = primitive.NewObjectID()
+				return nil
+			})
+
+		mockJWT.EXPECT().
+			GenerateToken(gomock.Any()).
+			Return("access-token", nil)
+
+		// Refresh token repo create fails
+		mockRefreshRepo.EXPECT().
+			Create(gomock.Any(), gomock.Any()).
+			Return(assert.AnError)
+
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
+
+		resp, err := service.Register(context.Background(), createUserReq)
+
+		assert.Nil(t, resp)
+		assert.Error(t, err)
+	})
+}
+
+func TestAuthService_Refresh_LegacyToken_ErrorCases(t *testing.T) {
+	refreshReq := &models.RefreshRequest{
+		RefreshToken: "rf_valid_refresh_token",
+	}
+
+	t.Run("returns error when JWT generation fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+
+		mockCache.EXPECT().
+			GetRefreshToken(gomock.Any(), refreshReq.RefreshToken).
+			Return("user123", nil)
+
+		// JWT generation fails
+		mockJWT.EXPECT().
+			GenerateToken("user123").
+			Return("", assert.AnError)
+
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
+
+		resp, err := service.Refresh(context.Background(), refreshReq)
+
+		assert.Nil(t, resp)
+		assert.Error(t, err)
+	})
+}
+
 func TestAuthService_Refresh_WithRotation_EdgeCases(t *testing.T) {
 	refreshReq := &models.RefreshRequest{
 		RefreshToken: "rt_family123_random456",
