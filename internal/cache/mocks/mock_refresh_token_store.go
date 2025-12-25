@@ -70,6 +70,20 @@ func (mr *MockRefreshTokenStoreMockRecorder) Delete(ctx, familyID any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRefreshTokenStore)(nil).Delete), ctx, familyID)
 }
 
+// DeleteAllByUserID mocks base method.
+func (m *MockRefreshTokenStore) DeleteAllByUserID(ctx context.Context, userID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteAllByUserID", ctx, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAllByUserID indicates an expected call of DeleteAllByUserID.
+func (mr *MockRefreshTokenStoreMockRecorder) DeleteAllByUserID(ctx, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAllByUserID", reflect.TypeOf((*MockRefreshTokenStore)(nil).DeleteAllByUserID), ctx, userID)
+}
+
 // Get mocks base method.
 func (m *MockRefreshTokenStore) Get(ctx context.Context, familyID string) (*cache.RefreshTokenData, error) {
 	m.ctrl.T.Helper()

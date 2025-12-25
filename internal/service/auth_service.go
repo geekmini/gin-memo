@@ -242,7 +242,14 @@ func (s *AuthService) logoutWithoutRotation(ctx context.Context, req *models.Log
 
 // LogoutAll invalidates all refresh tokens for a user.
 func (s *AuthService) LogoutAll(ctx context.Context, userID primitive.ObjectID) error {
-	// Get all tokens for user from MongoDB
+	// Handle rotation-enabled mode
+	if s.rotationEnabled && s.tokenStore != nil {
+		if err := s.tokenStore.DeleteAllByUserID(ctx, userID.Hex()); err != nil {
+			return err
+		}
+	}
+
+	// Handle legacy tokens (always clean up for backward compatibility)
 	tokens, err := s.refreshTokenRepo.FindAllByUserID(ctx, userID)
 	if err != nil {
 		return err

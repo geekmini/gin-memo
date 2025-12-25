@@ -32,6 +32,8 @@ type RefreshTokenStore interface {
 	Rotate(ctx context.Context, familyID string, newTokenHash string, ttl time.Duration) error
 	// Delete removes a refresh token family.
 	Delete(ctx context.Context, familyID string) error
+	// DeleteAllByUserID removes all refresh token families for a user.
+	DeleteAllByUserID(ctx context.Context, userID string) error
 }
 
 // RedisClientProvider provides access to the underlying Redis client.
@@ -59,9 +61,29 @@ func refreshTokenFamilyKey(familyID string) string {
 	return fmt.Sprintf("refresh_token:%s", familyID)
 }
 
+// userRefreshTokensKey generates a cache key for a user's refresh token families set.
+func userRefreshTokensKey(userID string) string {
+	return fmt.Sprintf("user_refresh_tokens:%s", userID)
+}
+
 // Create stores a new refresh token family.
 func (s *refreshTokenStore) Create(ctx context.Context, familyID string, data *RefreshTokenData, ttl time.Duration) error {
-	return s.cache.Set(ctx, refreshTokenFamilyKey(familyID), data, ttl)
+	if err := s.cache.Set(ctx, refreshTokenFamilyKey(familyID), data, ttl); err != nil {
+		return err
+	}
+
+	// Add family ID to user's set for logout-all support
+	if s.client != nil {
+		userKey := userRefreshTokensKey(data.UserID)
+		if err := s.client.SAdd(ctx, userKey, familyID).Err(); err != nil {
+			// Best-effort: don't fail the create if index update fails
+			return nil
+		}
+		// Set expiry on the user's set to match the longest possible token TTL
+		_ = s.client.Expire(ctx, userKey, ttl)
+	}
+
+	return nil
 }
 
 // Get retrieves refresh token data by family ID.
@@ -144,4 +166,30 @@ func (s *refreshTokenStore) rotateFallback(ctx context.Context, familyID string,
 // Delete removes a refresh token family.
 func (s *refreshTokenStore) Delete(ctx context.Context, familyID string) error {
 	return s.cache.Delete(ctx, refreshTokenFamilyKey(familyID))
+}
+
+// DeleteAllByUserID removes all refresh token families for a user.
+func (s *refreshTokenStore) DeleteAllByUserID(ctx context.Context, userID string) error {
+	if s.client == nil {
+		// Fallback: no-op for non-Redis clients (mocks)
+		return nil
+	}
+
+	userKey := userRefreshTokensKey(userID)
+
+	// Get all family IDs for this user
+	familyIDs, err := s.client.SMembers(ctx, userKey).Result()
+	if err != nil {
+		return fmt.Errorf("failed to get user token families: %w", err)
+	}
+
+	// Delete each token family
+	for _, familyID := range familyIDs {
+		_ = s.cache.Delete(ctx, refreshTokenFamilyKey(familyID))
+	}
+
+	// Delete the user's family set
+	_ = s.client.Del(ctx, userKey)
+
+	return nil
 }
