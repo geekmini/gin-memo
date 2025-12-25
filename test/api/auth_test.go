@@ -381,6 +381,89 @@ func TestLogout(t *testing.T) {
 	})
 }
 
+// TestLogoutAll tests the POST /api/v1/auth/logout-all endpoint.
+func TestLogoutAll(t *testing.T) {
+	testServer.CleanupBetweenTests(t)
+
+	// Create a test user
+	authHelper := testserver.NewAuthHelper(testServer)
+	authHelper.RegisterUser(t, "Logout All Test User", "logoutall@example.com", "password123")
+
+	// Login multiple times to create multiple refresh tokens
+	loginData1 := authHelper.Login(t, "logoutall@example.com", "password123")
+	loginData2 := authHelper.Login(t, "logoutall@example.com", "password123")
+	loginData3 := authHelper.Login(t, "logoutall@example.com", "password123")
+
+	accessToken1, ok := loginData1["accessToken"].(string)
+	require.True(t, ok)
+	refreshToken1, ok := loginData1["refreshToken"].(string)
+	require.True(t, ok)
+	refreshToken2, ok := loginData2["refreshToken"].(string)
+	require.True(t, ok)
+	refreshToken3, ok := loginData3["refreshToken"].(string)
+	require.True(t, ok)
+
+	t.Run("success - invalidates all refresh tokens", func(t *testing.T) {
+		// Call logout-all
+		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/auth/logout-all", accessToken1, nil)
+
+		assert.Equal(t, http.StatusNoContent, w.Code)
+
+		// Verify all refresh tokens are now invalid
+		refreshReq1 := models.RefreshRequest{RefreshToken: refreshToken1}
+		w1 := testutil.MakeRequest(t, testServer.Router, http.MethodPost, "/api/v1/auth/refresh", refreshReq1)
+		assert.Equal(t, http.StatusUnauthorized, w1.Code, "refreshToken1 should be invalidated")
+
+		refreshReq2 := models.RefreshRequest{RefreshToken: refreshToken2}
+		w2 := testutil.MakeRequest(t, testServer.Router, http.MethodPost, "/api/v1/auth/refresh", refreshReq2)
+		assert.Equal(t, http.StatusUnauthorized, w2.Code, "refreshToken2 should be invalidated")
+
+		refreshReq3 := models.RefreshRequest{RefreshToken: refreshToken3}
+		w3 := testutil.MakeRequest(t, testServer.Router, http.MethodPost, "/api/v1/auth/refresh", refreshReq3)
+		assert.Equal(t, http.StatusUnauthorized, w3.Code, "refreshToken3 should be invalidated")
+	})
+
+	t.Run("error - unauthorized without access token", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
+		w := testutil.MakeRequest(t, testServer.Router, http.MethodPost, "/api/v1/auth/logout-all", nil)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("error - invalid access token", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
+		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/auth/logout-all", "invalid-token", nil)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("success - user can still login after logout-all", func(t *testing.T) {
+		testServer.CleanupBetweenTests(t)
+
+		// Register and login
+		authHelper.RegisterUser(t, "Logout All Relogin Test", "logoutallrelogin@example.com", "password123")
+		loginData := authHelper.Login(t, "logoutallrelogin@example.com", "password123")
+		accessToken, _ := loginData["accessToken"].(string)
+
+		// Logout all
+		w := testutil.MakeAuthRequest(t, testServer.Router, http.MethodPost, "/api/v1/auth/logout-all", accessToken, nil)
+		assert.Equal(t, http.StatusNoContent, w.Code)
+
+		// Login again should work
+		loginData2 := authHelper.Login(t, "logoutallrelogin@example.com", "password123")
+		newRefreshToken, ok := loginData2["refreshToken"].(string)
+		require.True(t, ok)
+		assert.NotEmpty(t, newRefreshToken)
+
+		// New refresh token should work
+		refreshReq := models.RefreshRequest{RefreshToken: newRefreshToken}
+		w2 := testutil.MakeRequest(t, testServer.Router, http.MethodPost, "/api/v1/auth/refresh", refreshReq)
+		assert.Equal(t, http.StatusOK, w2.Code)
+	})
+}
+
 // TestAuthTokenValidity tests that access tokens work correctly with protected endpoints.
 func TestAuthTokenValidity(t *testing.T) {
 	testServer.CleanupBetweenTests(t)
