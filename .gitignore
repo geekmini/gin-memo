@@ -41,3 +41,7 @@ tmp/
 .claude/dev-checkpoint.md
 .claude/dev-checkpoints/
 .claude/settings.local.json
+
+# Dev Flow Plugin
+.dev-flow-session.json
+.dev-flow-sessions/

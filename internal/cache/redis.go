@@ -39,6 +39,11 @@ func NewRedis(uri string) *Redis {
 	return &Redis{client: client}
 }
 
+// Client returns the underlying Redis client.
+func (r *Redis) Client() *redis.Client {
+	return r.client
+}
+
 // Close closes the Redis connection.
 func (r *Redis) Close() {
 	if err := r.client.Close(); err != nil {

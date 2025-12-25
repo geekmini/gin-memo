@@ -69,6 +69,15 @@ func main() {
 	// JWT Manager
 	jwtManager := auth.NewJWTManager(cfg.AccessTokenSecret, cfg.AccessTokenExpiry)
 
+	// Refresh token generator and store (for rotation)
+	var tokenGenerator auth.RefreshTokenGenerator
+	var tokenStore cache.RefreshTokenStore
+	if cfg.RefreshTokenRotation {
+		tokenGenerator = auth.NewRefreshTokenGenerator()
+		tokenStore = cache.NewRefreshTokenStore(redisCache)
+		log.Println("Refresh token rotation enabled")
+	}
+
 	// Repository layer
 	userRepo := repository.NewUserRepository(mongoDB.Database)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(mongoDB.Database)
@@ -85,7 +94,17 @@ func main() {
 	transcriptionService := transcription.NewMockService()
 
 	// Service layer
-	authService := service.NewAuthService(userRepo, refreshTokenRepo, redisCache, jwtManager, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
+	authService := service.NewAuthService(service.AuthServiceConfig{
+		UserRepo:         userRepo,
+		RefreshTokenRepo: refreshTokenRepo,
+		Cache:            redisCache,
+		TokenStore:       tokenStore,
+		JWTManager:       jwtManager,
+		TokenGenerator:   tokenGenerator,
+		AccessTokenTTL:   cfg.AccessTokenExpiry,
+		RefreshTokenTTL:  cfg.RefreshTokenExpiry,
+		RotationEnabled:  cfg.RefreshTokenRotation,
+	})
 	userService := service.NewUserService(userRepo, redisCache, cfg.UserCacheTTL)
 	voiceMemoService := service.NewVoiceMemoService(voiceMemoRepo, s3Client, transcriptionQueue, cfg.PresignedURLExpiry, cfg.PresignedUploadExpiry)
 	teamService := service.NewTeamService(teamRepo, teamMemberRepo, teamInvitationRepo, voiceMemoRepo)
