@@ -35,7 +35,9 @@ type AuthResponse struct {
 }
 
 // RefreshResponse is the response after successful token refresh.
+// When rotation is enabled, RefreshToken contains the new rotated token.
 type RefreshResponse struct {
-	AccessToken string `json:"accessToken" example:"eyJhbGciOiJIUzI1NiIs..."`
-	ExpiresIn   int    `json:"expiresIn" example:"900"`
+	AccessToken  string `json:"accessToken" example:"eyJhbGciOiJIUzI1NiIs..."`
+	RefreshToken string `json:"refreshToken,omitempty" example:"rt_a1b2c3d4e5f67890_..."`
+	ExpiresIn    int    `json:"expiresIn" example:"900"`
 }

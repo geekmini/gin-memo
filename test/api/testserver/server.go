@@ -122,14 +122,15 @@ func New(ctx context.Context) (*TestServer, error) {
 	transcriptionService := transcription.NewMockService()
 
 	// Service layer
-	authService := service.NewAuthService(
-		userRepo,
-		refreshTokenRepo,
-		redisCache,
-		jwtManager,
-		TestAccessTokenExpiry,
-		TestRefreshTokenExpiry,
-	)
+	authService := service.NewAuthService(service.AuthServiceConfig{
+		UserRepo:         userRepo,
+		RefreshTokenRepo: refreshTokenRepo,
+		Cache:            redisCache,
+		JWTManager:       jwtManager,
+		AccessTokenTTL:   TestAccessTokenExpiry,
+		RefreshTokenTTL:  TestRefreshTokenExpiry,
+		RotationEnabled:  false,
+	})
 	userService := service.NewUserService(userRepo, redisCache, 5*time.Minute)
 	voiceMemoService := service.NewVoiceMemoService(voiceMemoRepo, s3Client, transcriptionQueue, 15*time.Minute, 15*time.Minute)
 	teamService := service.NewTeamService(teamRepo, teamMemberRepo, teamInvitationRepo, voiceMemoRepo)

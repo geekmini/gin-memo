@@ -16,6 +16,8 @@ var (
 	ErrInvalidToken        = errors.New("invalid token")
 	ErrTokenExpired        = errors.New("token expired")
 	ErrInvalidRefreshToken = errors.New("invalid or expired refresh token")
+	ErrRefreshTokenExpired = errors.New("refresh token expired")
+	ErrRefreshTokenReused  = errors.New("refresh token reuse detected")
 )
 
 // Voice memo errors

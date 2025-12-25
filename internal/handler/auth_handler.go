@@ -113,11 +113,16 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 	result, err := h.service.Refresh(c.Request.Context(), &req)
 	if err != nil {
-		if errors.Is(err, apperrors.ErrInvalidRefreshToken) {
+		switch {
+		case errors.Is(err, apperrors.ErrInvalidRefreshToken):
 			response.Unauthorized(c, err.Error())
-			return
+		case errors.Is(err, apperrors.ErrRefreshTokenExpired):
+			response.Unauthorized(c, err.Error())
+		case errors.Is(err, apperrors.ErrRefreshTokenReused):
+			response.Unauthorized(c, err.Error())
+		default:
+			response.InternalError(c)
 		}
-		response.InternalError(c)
 		return
 	}
 

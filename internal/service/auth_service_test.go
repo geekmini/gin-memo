@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"gin-sample/internal/cache"
 	cachemocks "gin-sample/internal/cache/mocks"
 	apperrors "gin-sample/internal/errors"
 	"gin-sample/internal/models"
@@ -18,6 +19,24 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+// newTestAuthService creates an AuthService with the given mocks for legacy (non-rotation) mode testing.
+func newTestAuthService(
+	userRepo *repomocks.MockUserRepository,
+	refreshTokenRepo *repomocks.MockRefreshTokenRepository,
+	cache *cachemocks.MockCache,
+	jwtManager *authmocks.MockTokenManager,
+) *AuthService {
+	return NewAuthService(AuthServiceConfig{
+		UserRepo:         userRepo,
+		RefreshTokenRepo: refreshTokenRepo,
+		Cache:            cache,
+		JWTManager:       jwtManager,
+		AccessTokenTTL:   15 * time.Minute,
+		RefreshTokenTTL:  7 * 24 * time.Hour,
+		RotationEnabled:  false,
+	})
+}
+
 func TestNewAuthService(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -27,14 +46,7 @@ func TestNewAuthService(t *testing.T) {
 	mockCache := cachemocks.NewMockCache(ctrl)
 	mockJWT := authmocks.NewMockTokenManager(ctrl)
 
-	service := NewAuthService(
-		mockUserRepo,
-		mockRefreshRepo,
-		mockCache,
-		mockJWT,
-		15*time.Minute,
-		7*24*time.Hour,
-	)
+	service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 	assert.NotNil(t, service)
 }
@@ -81,10 +93,7 @@ func TestAuthService_Register(t *testing.T) {
 			SetRefreshToken(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 			Return(nil)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		resp, err := service.Register(context.Background(), createUserReq)
 
@@ -108,10 +117,7 @@ func TestAuthService_Register(t *testing.T) {
 			Create(gomock.Any(), gomock.Any()).
 			Return(apperrors.ErrUserAlreadyExists)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		resp, err := service.Register(context.Background(), createUserReq)
 
@@ -139,10 +145,7 @@ func TestAuthService_Register(t *testing.T) {
 			GenerateToken(gomock.Any()).
 			Return("", assert.AnError)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		resp, err := service.Register(context.Background(), createUserReq)
 
@@ -191,10 +194,7 @@ func TestAuthService_Login(t *testing.T) {
 			SetRefreshToken(gomock.Any(), gomock.Any(), validUserID.Hex(), gomock.Any()).
 			Return(nil)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		resp, err := service.Login(context.Background(), loginReq)
 
@@ -216,10 +216,7 @@ func TestAuthService_Login(t *testing.T) {
 			FindByEmail(gomock.Any(), loginReq.Email).
 			Return(nil, apperrors.ErrUserNotFound)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		resp, err := service.Login(context.Background(), loginReq)
 
@@ -245,10 +242,7 @@ func TestAuthService_Login(t *testing.T) {
 			Password: "wrongpassword",
 		}
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		resp, err := service.Login(context.Background(), wrongPasswordReq)
 
@@ -280,10 +274,7 @@ func TestAuthService_Refresh(t *testing.T) {
 			GenerateToken(validUserID.Hex()).
 			Return("new-access-token", nil)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		resp, err := service.Refresh(context.Background(), refreshReq)
 
@@ -322,10 +313,7 @@ func TestAuthService_Refresh(t *testing.T) {
 			GenerateToken(validUserID.Hex()).
 			Return("new-access-token", nil)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		resp, err := service.Refresh(context.Background(), refreshReq)
 
@@ -350,10 +338,7 @@ func TestAuthService_Refresh(t *testing.T) {
 			FindByToken(gomock.Any(), refreshReq.RefreshToken).
 			Return(nil, assert.AnError)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		resp, err := service.Refresh(context.Background(), refreshReq)
 
@@ -374,10 +359,7 @@ func TestAuthService_Refresh(t *testing.T) {
 			GetRefreshToken(gomock.Any(), refreshReq.RefreshToken).
 			Return("", assert.AnError)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		resp, err := service.Refresh(context.Background(), refreshReq)
 
@@ -408,10 +390,7 @@ func TestAuthService_Logout(t *testing.T) {
 			DeleteRefreshToken(gomock.Any(), logoutReq.RefreshToken).
 			Return(nil)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		err := service.Logout(context.Background(), logoutReq)
 
@@ -431,10 +410,7 @@ func TestAuthService_Logout(t *testing.T) {
 			DeleteByToken(gomock.Any(), logoutReq.RefreshToken).
 			Return(assert.AnError)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		err := service.Logout(context.Background(), logoutReq)
 
@@ -458,10 +434,7 @@ func TestAuthService_Logout(t *testing.T) {
 			DeleteRefreshToken(gomock.Any(), logoutReq.RefreshToken).
 			Return(assert.AnError) // Cache error is ignored
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		err := service.Logout(context.Background(), logoutReq)
 
@@ -498,10 +471,7 @@ func TestAuthService_LogoutAll(t *testing.T) {
 			DeleteByUserID(gomock.Any(), userID).
 			Return(nil)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		err := service.LogoutAll(context.Background(), userID)
 
@@ -525,10 +495,7 @@ func TestAuthService_LogoutAll(t *testing.T) {
 			DeleteByUserID(gomock.Any(), userID).
 			Return(nil)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		err := service.LogoutAll(context.Background(), userID)
 
@@ -548,10 +515,7 @@ func TestAuthService_LogoutAll(t *testing.T) {
 			FindAllByUserID(gomock.Any(), userID).
 			Return(nil, assert.AnError)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		err := service.LogoutAll(context.Background(), userID)
 
@@ -583,10 +547,7 @@ func TestAuthService_LogoutAll(t *testing.T) {
 			DeleteByUserID(gomock.Any(), userID).
 			Return(nil)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
-		)
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
 
 		err := service.LogoutAll(context.Background(), userID)
 
@@ -618,13 +579,889 @@ func TestAuthService_LogoutAll(t *testing.T) {
 			DeleteByUserID(gomock.Any(), userID).
 			Return(assert.AnError)
 
-		service := NewAuthService(
-			mockUserRepo, mockRefreshRepo, mockCache, mockJWT,
-			15*time.Minute, 7*24*time.Hour,
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
+
+		err := service.LogoutAll(context.Background(), userID)
+
+		assert.Error(t, err)
+	})
+}
+
+// Rotation mode tests
+
+// newTestAuthServiceWithRotation creates an AuthService with rotation enabled for testing.
+func newTestAuthServiceWithRotation(
+	userRepo *repomocks.MockUserRepository,
+	refreshTokenRepo *repomocks.MockRefreshTokenRepository,
+	cache *cachemocks.MockCache,
+	tokenStore *cachemocks.MockRefreshTokenStore,
+	jwtManager *authmocks.MockTokenManager,
+	tokenGenerator *authmocks.MockRefreshTokenGenerator,
+) *AuthService {
+	return NewAuthService(AuthServiceConfig{
+		UserRepo:         userRepo,
+		RefreshTokenRepo: refreshTokenRepo,
+		Cache:            cache,
+		TokenStore:       tokenStore,
+		JWTManager:       jwtManager,
+		TokenGenerator:   tokenGenerator,
+		AccessTokenTTL:   15 * time.Minute,
+		RefreshTokenTTL:  7 * 24 * time.Hour,
+		RotationEnabled:  true,
+	})
+}
+
+func TestAuthService_Register_WithRotation(t *testing.T) {
+	createUserReq := &models.CreateUserRequest{
+		Email:    "test@example.com",
+		Password: "password123",
+		Name:     "Test User",
+	}
+
+	t.Run("successfully registers new user with rotation", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		// Expect user creation
+		mockUserRepo.EXPECT().
+			Create(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, user *models.User) error {
+				user.ID = primitive.NewObjectID()
+				return nil
+			})
+
+		// Expect JWT generation
+		mockJWT.EXPECT().
+			GenerateToken(gomock.Any()).
+			Return("access-token", nil)
+
+		// Expect rotation token generation
+		mockTokenGen.EXPECT().
+			Generate().
+			Return("rt_family123_random456", "family123", nil)
+
+		mockTokenGen.EXPECT().
+			Hash("rt_family123_random456").
+			Return("hashed_token")
+
+		// Expect token store creation
+		mockTokenStore.EXPECT().
+			Create(gomock.Any(), "family123", gomock.Any(), 7*24*time.Hour).
+			Return(nil)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Register(context.Background(), createUserReq)
+
+		require.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, "access-token", resp.AccessToken)
+		assert.Equal(t, "rt_family123_random456", resp.RefreshToken)
+	})
+}
+
+func TestAuthService_Refresh_WithRotation(t *testing.T) {
+	refreshReq := &models.RefreshRequest{
+		RefreshToken: "rt_family123_random456",
+	}
+
+	t.Run("successfully refreshes with rotation", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		storedData := &cache.RefreshTokenData{
+			UserID:           "user123",
+			CurrentTokenHash: "current_hash",
+			ExpiresAt:        time.Now().Add(1 * time.Hour),
+		}
+
+		// Extract family ID from token
+		mockTokenGen.EXPECT().
+			ExtractFamilyID(refreshReq.RefreshToken).
+			Return("family123", nil)
+
+		// Get stored token data
+		mockTokenStore.EXPECT().
+			Get(gomock.Any(), "family123").
+			Return(storedData, nil)
+
+		// Hash incoming token and compare
+		mockTokenGen.EXPECT().
+			Hash(refreshReq.RefreshToken).
+			Return("current_hash")
+
+		mockTokenGen.EXPECT().
+			CompareHashes("current_hash", "current_hash").
+			Return(true)
+
+		// Generate new refresh token
+		mockTokenGen.EXPECT().
+			GenerateWithFamily("family123").
+			Return("rt_family123_newrandom", nil)
+
+		// Generate new access token
+		mockJWT.EXPECT().
+			GenerateToken("user123").
+			Return("new-access-token", nil)
+
+		// Hash new token
+		mockTokenGen.EXPECT().
+			Hash("rt_family123_newrandom").
+			Return("new_hash")
+
+		// Rotate stored data
+		mockTokenStore.EXPECT().
+			Rotate(gomock.Any(), "family123", "new_hash", 7*24*time.Hour).
+			Return(nil)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Refresh(context.Background(), refreshReq)
+
+		require.NoError(t, err)
+		assert.Equal(t, "new-access-token", resp.AccessToken)
+		assert.Equal(t, "rt_family123_newrandom", resp.RefreshToken)
+	})
+
+	t.Run("returns error for invalid token format", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		mockTokenGen.EXPECT().
+			ExtractFamilyID(refreshReq.RefreshToken).
+			Return("", assert.AnError)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Refresh(context.Background(), refreshReq)
+
+		assert.Nil(t, resp)
+		assert.Equal(t, apperrors.ErrInvalidRefreshToken, err)
+	})
+
+	t.Run("returns error for expired token", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		storedData := &cache.RefreshTokenData{
+			UserID:           "user123",
+			CurrentTokenHash: "current_hash",
+			ExpiresAt:        time.Now().Add(-1 * time.Hour), // Expired
+		}
+
+		mockTokenGen.EXPECT().
+			ExtractFamilyID(refreshReq.RefreshToken).
+			Return("family123", nil)
+
+		mockTokenStore.EXPECT().
+			Get(gomock.Any(), "family123").
+			Return(storedData, nil)
+
+		// Token is expired, so delete should be called
+		mockTokenStore.EXPECT().
+			Delete(gomock.Any(), "family123").
+			Return(nil)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Refresh(context.Background(), refreshReq)
+
+		assert.Nil(t, resp)
+		assert.Equal(t, apperrors.ErrRefreshTokenExpired, err)
+	})
+
+	t.Run("detects token reuse and invalidates family", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		storedData := &cache.RefreshTokenData{
+			UserID:            "user123",
+			CurrentTokenHash:  "current_hash",
+			PreviousTokenHash: "previous_hash",
+			ExpiresAt:         time.Now().Add(1 * time.Hour),
+		}
+
+		mockTokenGen.EXPECT().
+			ExtractFamilyID(refreshReq.RefreshToken).
+			Return("family123", nil)
+
+		mockTokenStore.EXPECT().
+			Get(gomock.Any(), "family123").
+			Return(storedData, nil)
+
+		// Hash incoming token
+		mockTokenGen.EXPECT().
+			Hash(refreshReq.RefreshToken).
+			Return("previous_hash") // Matches previous, not current
+
+		// Compare with current (should return false)
+		mockTokenGen.EXPECT().
+			CompareHashes("previous_hash", "current_hash").
+			Return(false)
+
+		// Compare with previous (should return true - reuse detected!)
+		mockTokenGen.EXPECT().
+			CompareHashes("previous_hash", "previous_hash").
+			Return(true)
+
+		// Should delete the family due to reuse
+		mockTokenStore.EXPECT().
+			Delete(gomock.Any(), "family123").
+			Return(nil)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Refresh(context.Background(), refreshReq)
+
+		assert.Nil(t, resp)
+		assert.Equal(t, apperrors.ErrRefreshTokenReused, err)
+	})
+
+	t.Run("returns error for unknown token", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		storedData := &cache.RefreshTokenData{
+			UserID:            "user123",
+			CurrentTokenHash:  "current_hash",
+			PreviousTokenHash: "previous_hash",
+			ExpiresAt:         time.Now().Add(1 * time.Hour),
+		}
+
+		mockTokenGen.EXPECT().
+			ExtractFamilyID(refreshReq.RefreshToken).
+			Return("family123", nil)
+
+		mockTokenStore.EXPECT().
+			Get(gomock.Any(), "family123").
+			Return(storedData, nil)
+
+		// Hash incoming token - doesn't match current or previous
+		mockTokenGen.EXPECT().
+			Hash(refreshReq.RefreshToken).
+			Return("unknown_hash")
+
+		mockTokenGen.EXPECT().
+			CompareHashes("unknown_hash", "current_hash").
+			Return(false)
+
+		mockTokenGen.EXPECT().
+			CompareHashes("unknown_hash", "previous_hash").
+			Return(false)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Refresh(context.Background(), refreshReq)
+
+		assert.Nil(t, resp)
+		assert.Equal(t, apperrors.ErrInvalidRefreshToken, err)
+	})
+}
+
+func TestAuthService_Logout_WithRotation(t *testing.T) {
+	logoutReq := &models.LogoutRequest{
+		RefreshToken: "rt_family123_random456",
+	}
+
+	t.Run("successfully logs out with rotation", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		mockTokenGen.EXPECT().
+			ExtractFamilyID(logoutReq.RefreshToken).
+			Return("family123", nil)
+
+		mockTokenStore.EXPECT().
+			Delete(gomock.Any(), "family123").
+			Return(nil)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		err := service.Logout(context.Background(), logoutReq)
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("logout is idempotent for invalid token format", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		mockTokenGen.EXPECT().
+			ExtractFamilyID(logoutReq.RefreshToken).
+			Return("", assert.AnError)
+
+		// Should not call Delete since token format is invalid
+		// But logout should succeed (idempotent)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		err := service.Logout(context.Background(), logoutReq)
+
+		assert.NoError(t, err)
+	})
+}
+
+func TestAuthService_LogoutAll_WithRotation(t *testing.T) {
+	userID := primitive.NewObjectID()
+
+	t.Run("successfully logs out all devices with rotation", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		// Expect deletion of all rotation tokens for user
+		mockTokenStore.EXPECT().
+			DeleteAllByUserID(gomock.Any(), userID.Hex()).
+			Return(nil)
+
+		// Also handles legacy tokens
+		mockRefreshRepo.EXPECT().
+			FindAllByUserID(gomock.Any(), userID).
+			Return([]models.RefreshToken{}, nil)
+
+		mockRefreshRepo.EXPECT().
+			DeleteByUserID(gomock.Any(), userID).
+			Return(nil)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
 		)
 
 		err := service.LogoutAll(context.Background(), userID)
 
+		assert.NoError(t, err)
+	})
+
+	t.Run("handles both rotation and legacy tokens", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		tokens := []models.RefreshToken{
+			{Token: "rf_legacy_token_1", UserID: userID},
+			{Token: "rf_legacy_token_2", UserID: userID},
+		}
+
+		// Expect deletion of rotation tokens
+		mockTokenStore.EXPECT().
+			DeleteAllByUserID(gomock.Any(), userID.Hex()).
+			Return(nil)
+
+		// Expect legacy token handling
+		mockRefreshRepo.EXPECT().
+			FindAllByUserID(gomock.Any(), userID).
+			Return(tokens, nil)
+
+		mockCache.EXPECT().
+			DeleteRefreshTokens(gomock.Any(), []string{"rf_legacy_token_1", "rf_legacy_token_2"}).
+			Return(nil)
+
+		mockRefreshRepo.EXPECT().
+			DeleteByUserID(gomock.Any(), userID).
+			Return(nil)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		err := service.LogoutAll(context.Background(), userID)
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("returns error when DeleteAllByUserID fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		mockTokenStore.EXPECT().
+			DeleteAllByUserID(gomock.Any(), userID.Hex()).
+			Return(assert.AnError)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		err := service.LogoutAll(context.Background(), userID)
+
+		assert.Error(t, err)
+	})
+}
+
+func TestAuthService_Register_WithRotation_ErrorCases(t *testing.T) {
+	createUserReq := &models.CreateUserRequest{
+		Email:    "test@example.com",
+		Password: "password123",
+		Name:     "Test User",
+	}
+
+	t.Run("returns error when token generation fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		mockUserRepo.EXPECT().
+			Create(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, user *models.User) error {
+				user.ID = primitive.NewObjectID()
+				return nil
+			})
+
+		mockJWT.EXPECT().
+			GenerateToken(gomock.Any()).
+			Return("access-token", nil)
+
+		// Token generation fails
+		mockTokenGen.EXPECT().
+			Generate().
+			Return("", "", assert.AnError)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Register(context.Background(), createUserReq)
+
+		assert.Nil(t, resp)
+		assert.Error(t, err)
+	})
+
+	t.Run("returns error when token store create fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		mockUserRepo.EXPECT().
+			Create(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, user *models.User) error {
+				user.ID = primitive.NewObjectID()
+				return nil
+			})
+
+		mockJWT.EXPECT().
+			GenerateToken(gomock.Any()).
+			Return("access-token", nil)
+
+		mockTokenGen.EXPECT().
+			Generate().
+			Return("rt_family123_random456", "family123", nil)
+
+		mockTokenGen.EXPECT().
+			Hash("rt_family123_random456").
+			Return("hashed_token")
+
+		// Token store create fails
+		mockTokenStore.EXPECT().
+			Create(gomock.Any(), "family123", gomock.Any(), 7*24*time.Hour).
+			Return(assert.AnError)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Register(context.Background(), createUserReq)
+
+		assert.Nil(t, resp)
+		assert.Error(t, err)
+	})
+}
+
+func TestAuthService_Register_LegacyToken_ErrorCases(t *testing.T) {
+	createUserReq := &models.CreateUserRequest{
+		Email:    "test@example.com",
+		Password: "password123",
+		Name:     "Test User",
+	}
+
+	t.Run("returns error when refresh token repo create fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+
+		mockUserRepo.EXPECT().
+			Create(gomock.Any(), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, user *models.User) error {
+				user.ID = primitive.NewObjectID()
+				return nil
+			})
+
+		mockJWT.EXPECT().
+			GenerateToken(gomock.Any()).
+			Return("access-token", nil)
+
+		// Refresh token repo create fails
+		mockRefreshRepo.EXPECT().
+			Create(gomock.Any(), gomock.Any()).
+			Return(assert.AnError)
+
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
+
+		resp, err := service.Register(context.Background(), createUserReq)
+
+		assert.Nil(t, resp)
+		assert.Error(t, err)
+	})
+}
+
+func TestAuthService_Refresh_LegacyToken_ErrorCases(t *testing.T) {
+	refreshReq := &models.RefreshRequest{
+		RefreshToken: "rf_valid_refresh_token",
+	}
+
+	t.Run("returns error when JWT generation fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+
+		mockCache.EXPECT().
+			GetRefreshToken(gomock.Any(), refreshReq.RefreshToken).
+			Return("user123", nil)
+
+		// JWT generation fails
+		mockJWT.EXPECT().
+			GenerateToken("user123").
+			Return("", assert.AnError)
+
+		service := newTestAuthService(mockUserRepo, mockRefreshRepo, mockCache, mockJWT)
+
+		resp, err := service.Refresh(context.Background(), refreshReq)
+
+		assert.Nil(t, resp)
+		assert.Error(t, err)
+	})
+}
+
+func TestAuthService_Refresh_WithRotation_EdgeCases(t *testing.T) {
+	refreshReq := &models.RefreshRequest{
+		RefreshToken: "rt_family123_random456",
+	}
+
+	t.Run("returns error when token family not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		mockTokenGen.EXPECT().
+			ExtractFamilyID(refreshReq.RefreshToken).
+			Return("family123", nil)
+
+		// Token store returns nil (not found)
+		mockTokenStore.EXPECT().
+			Get(gomock.Any(), "family123").
+			Return(nil, nil)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Refresh(context.Background(), refreshReq)
+
+		assert.Nil(t, resp)
+		assert.Equal(t, apperrors.ErrInvalidRefreshToken, err)
+	})
+
+	t.Run("returns error when token store Get fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		mockTokenGen.EXPECT().
+			ExtractFamilyID(refreshReq.RefreshToken).
+			Return("family123", nil)
+
+		mockTokenStore.EXPECT().
+			Get(gomock.Any(), "family123").
+			Return(nil, assert.AnError)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Refresh(context.Background(), refreshReq)
+
+		assert.Nil(t, resp)
+		assert.Equal(t, apperrors.ErrInvalidRefreshToken, err)
+	})
+
+	t.Run("returns error when Rotate fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		storedData := &cache.RefreshTokenData{
+			UserID:           "user123",
+			CurrentTokenHash: "current_hash",
+			ExpiresAt:        time.Now().Add(1 * time.Hour),
+		}
+
+		mockTokenGen.EXPECT().
+			ExtractFamilyID(refreshReq.RefreshToken).
+			Return("family123", nil)
+
+		mockTokenStore.EXPECT().
+			Get(gomock.Any(), "family123").
+			Return(storedData, nil)
+
+		mockTokenGen.EXPECT().
+			Hash(refreshReq.RefreshToken).
+			Return("current_hash")
+
+		mockTokenGen.EXPECT().
+			CompareHashes("current_hash", "current_hash").
+			Return(true)
+
+		mockTokenGen.EXPECT().
+			GenerateWithFamily("family123").
+			Return("rt_family123_newrandom", nil)
+
+		mockJWT.EXPECT().
+			GenerateToken("user123").
+			Return("new-access-token", nil)
+
+		mockTokenGen.EXPECT().
+			Hash("rt_family123_newrandom").
+			Return("new_hash")
+
+		// Rotate fails
+		mockTokenStore.EXPECT().
+			Rotate(gomock.Any(), "family123", "new_hash", 7*24*time.Hour).
+			Return(assert.AnError)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Refresh(context.Background(), refreshReq)
+
+		assert.Nil(t, resp)
+		assert.Error(t, err)
+	})
+
+	t.Run("returns error when GenerateWithFamily fails", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		storedData := &cache.RefreshTokenData{
+			UserID:           "user123",
+			CurrentTokenHash: "current_hash",
+			ExpiresAt:        time.Now().Add(1 * time.Hour),
+		}
+
+		mockTokenGen.EXPECT().
+			ExtractFamilyID(refreshReq.RefreshToken).
+			Return("family123", nil)
+
+		mockTokenStore.EXPECT().
+			Get(gomock.Any(), "family123").
+			Return(storedData, nil)
+
+		mockTokenGen.EXPECT().
+			Hash(refreshReq.RefreshToken).
+			Return("current_hash")
+
+		mockTokenGen.EXPECT().
+			CompareHashes("current_hash", "current_hash").
+			Return(true)
+
+		// GenerateWithFamily fails
+		mockTokenGen.EXPECT().
+			GenerateWithFamily("family123").
+			Return("", assert.AnError)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Refresh(context.Background(), refreshReq)
+
+		assert.Nil(t, resp)
+		assert.Error(t, err)
+	})
+
+	t.Run("returns error when JWT GenerateToken fails during rotation", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		mockUserRepo := repomocks.NewMockUserRepository(ctrl)
+		mockRefreshRepo := repomocks.NewMockRefreshTokenRepository(ctrl)
+		mockCache := cachemocks.NewMockCache(ctrl)
+		mockTokenStore := cachemocks.NewMockRefreshTokenStore(ctrl)
+		mockJWT := authmocks.NewMockTokenManager(ctrl)
+		mockTokenGen := authmocks.NewMockRefreshTokenGenerator(ctrl)
+
+		storedData := &cache.RefreshTokenData{
+			UserID:           "user123",
+			CurrentTokenHash: "current_hash",
+			ExpiresAt:        time.Now().Add(1 * time.Hour),
+		}
+
+		mockTokenGen.EXPECT().
+			ExtractFamilyID(refreshReq.RefreshToken).
+			Return("family123", nil)
+
+		mockTokenStore.EXPECT().
+			Get(gomock.Any(), "family123").
+			Return(storedData, nil)
+
+		mockTokenGen.EXPECT().
+			Hash(refreshReq.RefreshToken).
+			Return("current_hash")
+
+		mockTokenGen.EXPECT().
+			CompareHashes("current_hash", "current_hash").
+			Return(true)
+
+		mockTokenGen.EXPECT().
+			GenerateWithFamily("family123").
+			Return("rt_family123_newrandom", nil)
+
+		// JWT generation fails
+		mockJWT.EXPECT().
+			GenerateToken("user123").
+			Return("", assert.AnError)
+
+		service := newTestAuthServiceWithRotation(
+			mockUserRepo, mockRefreshRepo, mockCache, mockTokenStore, mockJWT, mockTokenGen,
+		)
+
+		resp, err := service.Refresh(context.Background(), refreshReq)
+
+		assert.Nil(t, resp)
 		assert.Error(t, err)
 	})
 }

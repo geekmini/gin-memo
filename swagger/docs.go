@@ -2824,6 +2824,10 @@ const docTemplate = `{
                 "expiresIn": {
                     "type": "integer",
                     "example": 900
+                },
+                "refreshToken": {
+                    "type": "string",
+                    "example": "rt_a1b2c3d4e5f67890_..."
                 }
             }
         },

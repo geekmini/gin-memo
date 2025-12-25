@@ -29,7 +29,8 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          plugin_marketplaces: geekmini/claude-code-marketplace
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          plugin_marketplaces: https://github.com/geekmini/claude-code-marketplace.git
           plugins: github-pr-reviewer@geekmini-claude-code-plugins
           prompt: Review this PR using the review-pr-ci skill with guideline at docs/code-review-guide.md
           claude_args: |

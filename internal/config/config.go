@@ -31,6 +31,8 @@ type Config struct {
 	UserCacheTTL             time.Duration
 	TranscriptionQueueSize   int
 	TranscriptionWorkerCount int
+	// Refresh token rotation
+	RefreshTokenRotation bool
 }
 
 // Load reads configuration from .env file and environment variables
@@ -58,6 +60,8 @@ func Load() *Config {
 		UserCacheTTL:             parseDuration(getEnv("USER_CACHE_TTL", "15m")),
 		TranscriptionQueueSize:   parseInt(getEnv("TRANSCRIPTION_QUEUE_SIZE", "100")),
 		TranscriptionWorkerCount: parseInt(getEnv("TRANSCRIPTION_WORKER_COUNT", "2")),
+		// Refresh token rotation
+		RefreshTokenRotation: getEnv("REFRESH_TOKEN_ROTATION", "false") == "true",
 	}
 
 	return cfg
