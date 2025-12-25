@@ -316,15 +316,20 @@ func (s *AuthService) generateRotationToken(ctx context.Context, userID string) 
 }
 
 // generateRandomToken creates a cryptographically secure random token.
-func generateRandomToken() string {
+func generateRandomToken() (string, error) {
 	bytes := make([]byte, 32)
-	_, _ = rand.Read(bytes)
-	return "rf_" + hex.EncodeToString(bytes)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return "rf_" + hex.EncodeToString(bytes), nil
 }
 
 // generateLegacyToken creates a refresh token using the legacy MongoDB storage.
 func (s *AuthService) generateLegacyToken(ctx context.Context, userID primitive.ObjectID) (string, error) {
-	refreshTokenStr := generateRandomToken()
+	refreshTokenStr, err := generateRandomToken()
+	if err != nil {
+		return "", err
+	}
 
 	refreshToken := &models.RefreshToken{
 		Token:     refreshTokenStr,
