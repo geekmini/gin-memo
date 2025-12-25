@@ -69,6 +69,20 @@ func (mr *MockCacheMockRecorder) DeleteRefreshToken(ctx, token any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRefreshToken", reflect.TypeOf((*MockCache)(nil).DeleteRefreshToken), ctx, token)
 }
 
+// DeleteRefreshTokens mocks base method.
+func (m *MockCache) DeleteRefreshTokens(ctx context.Context, tokens []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteRefreshTokens", ctx, tokens)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteRefreshTokens indicates an expected call of DeleteRefreshTokens.
+func (mr *MockCacheMockRecorder) DeleteRefreshTokens(ctx, tokens any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRefreshTokens", reflect.TypeOf((*MockCache)(nil).DeleteRefreshTokens), ctx, tokens)
+}
+
 // Get mocks base method.
 func (m *MockCache) Get(ctx context.Context, key string, dest any) (bool, error) {
 	m.ctrl.T.Helper()

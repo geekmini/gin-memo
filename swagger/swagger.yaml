@@ -568,6 +568,27 @@ paths:
       summary: User logout
       tags:
       - auth
+  /auth/logout-all:
+    post:
+      description: Invalidate all refresh tokens for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Logout from all devices
+      tags:
+      - auth
   /auth/refresh:
     post:
       consumes:
@@ -1739,6 +1760,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
         "404":
           description: Not Found
           schema:
@@ -1774,6 +1799,10 @@ paths:
                 data:
                   $ref: '#/definitions/models.User'
               type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
         "404":
           description: Not Found
           schema:

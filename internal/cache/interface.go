@@ -21,6 +21,8 @@ type Cache interface {
 	GetRefreshToken(ctx context.Context, token string) (string, error)
 	// DeleteRefreshToken removes a refresh token from cache.
 	DeleteRefreshToken(ctx context.Context, token string) error
+	// DeleteRefreshTokens removes multiple refresh tokens from cache.
+	DeleteRefreshTokens(ctx context.Context, tokens []string) error
 }
 
 // Ensure Redis implements Cache interface

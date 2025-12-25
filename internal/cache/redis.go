@@ -112,3 +112,15 @@ func (r *Redis) GetRefreshToken(ctx context.Context, token string) (string, erro
 func (r *Redis) DeleteRefreshToken(ctx context.Context, token string) error {
 	return r.client.Del(ctx, RefreshTokenCacheKey(token)).Err()
 }
+
+// DeleteRefreshTokens removes multiple refresh tokens from cache.
+func (r *Redis) DeleteRefreshTokens(ctx context.Context, tokens []string) error {
+	if len(tokens) == 0 {
+		return nil
+	}
+	keys := make([]string, len(tokens))
+	for i, token := range tokens {
+		keys[i] = RefreshTokenCacheKey(token)
+	}
+	return r.client.Del(ctx, keys...).Err()
+}

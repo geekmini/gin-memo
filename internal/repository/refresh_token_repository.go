@@ -19,6 +19,7 @@ import (
 type RefreshTokenRepository interface {
 	Create(ctx context.Context, token *models.RefreshToken) error
 	FindByToken(ctx context.Context, token string) (*models.RefreshToken, error)
+	FindAllByUserID(ctx context.Context, userID primitive.ObjectID) ([]models.RefreshToken, error)
 	DeleteByToken(ctx context.Context, token string) error
 	DeleteByUserID(ctx context.Context, userID primitive.ObjectID) error
 }
@@ -93,6 +94,24 @@ func (r *refreshTokenRepository) FindByToken(ctx context.Context, token string) 
 func (r *refreshTokenRepository) DeleteByToken(ctx context.Context, token string) error {
 	_, err := r.collection.DeleteOne(ctx, bson.M{"token": token})
 	return err
+}
+
+// FindAllByUserID finds all non-expired refresh tokens for a user.
+func (r *refreshTokenRepository) FindAllByUserID(ctx context.Context, userID primitive.ObjectID) ([]models.RefreshToken, error) {
+	cursor, err := r.collection.Find(ctx, bson.M{
+		"userId":    userID,
+		"expiresAt": bson.M{"$gt": time.Now()},
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var tokens []models.RefreshToken
+	if err := cursor.All(ctx, &tokens); err != nil {
+		return nil, err
+	}
+	return tokens, nil
 }
 
 // DeleteByUserID removes all refresh tokens for a user.

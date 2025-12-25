@@ -12,6 +12,8 @@ import (
 	"gin-sample/internal/models"
 	"gin-sample/internal/repository"
 	"gin-sample/pkg/auth"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // AuthService handles authentication business logic.
@@ -130,6 +132,29 @@ func (s *AuthService) Logout(ctx context.Context, req *models.LogoutRequest) err
 	_ = s.cache.DeleteRefreshToken(ctx, req.RefreshToken)
 
 	return nil
+}
+
+// LogoutAll invalidates all refresh tokens for a user.
+func (s *AuthService) LogoutAll(ctx context.Context, userID primitive.ObjectID) error {
+	// Get all tokens for user from MongoDB
+	tokens, err := s.refreshTokenRepo.FindAllByUserID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	// Extract token strings for cache deletion
+	if len(tokens) > 0 {
+		tokenStrings := make([]string, len(tokens))
+		for i, t := range tokens {
+			tokenStrings[i] = t.Token
+		}
+
+		// Batch delete from cache (best-effort)
+		_ = s.cache.DeleteRefreshTokens(ctx, tokenStrings)
+	}
+
+	// Delete all from MongoDB
+	return s.refreshTokenRepo.DeleteByUserID(ctx, userID)
 }
 
 // generateAuthResponse creates access and refresh tokens for a user.
