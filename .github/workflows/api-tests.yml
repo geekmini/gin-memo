@@ -41,7 +41,7 @@ jobs:
         run: gotestsum --junitfile junit.xml -- -tags=api -v -race ./test/api/...
 
       - name: Upload test results to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: ./junit.xml
           flags: api
