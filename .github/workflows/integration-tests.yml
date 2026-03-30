@@ -41,7 +41,7 @@ jobs:
         run: gotestsum --junitfile junit.xml -- -v -race -coverprofile=coverage.out -covermode=atomic ./internal/repository/...
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: ./coverage.out
           flags: integration
